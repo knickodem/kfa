@@ -1,0 +1,57 @@
+#' Conducts k fold cross-validation for factor analysis.
+#'
+#' The function splits the data into k folds. For each fold,
+#' an EFA is run on the training data with the
+#' best model then fit in a CFA to the test data.
+#'
+
+
+kfold_fa <- function(items, extract.method, rotation = "oblimin",
+                     k = NULL, rmsea0 = .05, rmseaA = .08,
+                     m = floor(ncol(items) / 4), threshold = NA, # might not make threshold an argument
+                     ordered = NULL, missing = "listwise", ...){
+
+  # The ordered = TRUE functionality in lavaan is not currently equivalent to listing
+  # all items, so need to do it manually since I want this functionality for our users
+  if(!is.null(ordered)){
+    if(ordered == TRUE){
+      ordered <- names(items)
+    }
+  }
+
+  if(is.null(k)){
+
+    ## determine number of folds based on power analysis
+    k <- findk(items = items, m = m, rmsea0 = rmsea0, rmseaA = rmseaA)
+  }
+
+  ## create folds
+  # returns list of row numbers for each training fold (i.e., the efa sample)
+  # contents y doesn't matter, just needs to be nrow(items) in length
+  trainfolds <- caret::createFolds(y = 1:nrow(items),
+                                   k = k, list = TRUE,
+                                   returnTrain = TRUE)
+
+  efa <- vector(mode = "list", length = k)
+  for(fold in 1:k){
+
+    ## run EFA - returns list of cfa syntax for 1:m factor models
+    efa[[fold]] <- k_efa(items = items[trainfolds[[fold]], ],
+                           extract.method = extract.method,
+                           rotation = rotation, ordered = ordered,
+                           missing = missing, ...)
+  }
+
+  ## Possible stopping point for examination of EFA results
+
+  ## removal of underidentified cfa syntax (syntax == "")
+
+  for(fold in 1:k){
+    ## run CFA
+
+  }
+
+
+
+
+}

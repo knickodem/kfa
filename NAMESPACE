@@ -1,0 +1,8 @@
+exportPattern("^[[:alpha:]]+")
+import(parameters)
+import(caret)
+import(GPArotation)
+import(semTools)
+import(lavaan)
+import(knitr)
+import(rmarkdown)
