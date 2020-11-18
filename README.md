@@ -1,2 +1,2 @@
 # kfa
-K-fold cross validation for factor analysis
+k-fold cross validation for factor analysis
