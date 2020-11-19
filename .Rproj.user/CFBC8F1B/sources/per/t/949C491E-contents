@@ -4,10 +4,10 @@
 
 # This function is intended to be run on each k fold
 
-k_efa <- function(items, extract.method, rotation, m, threshold, ordered, missing, ...){
+k_efa <- function(items, efa.method, rotation, m, threshold, ordered, missing, ...){
 
   ## Determine the optimal number of factors
-  if(extract.method == "consensus"){
+  if(efa.method == "consensus"){
 
     ## calculate correlation matrix - needed for n_factors()
     cor.lv <- lavaan::lavCor(items,
@@ -55,7 +55,7 @@ k_efa <- function(items, extract.method, rotation, m, threshold, ordered, missin
     efa.loadings <- list(get_std_loadings(unrotated, type = "std.all"))
 
 
-  } else if(extract.method == "lrt") {
+  } else if(efa.method == "lrt") {
 
     efa.loadings <- vector(mode = "list", length = m)
 

@@ -3,22 +3,22 @@
     "path": "~/GitHub/kfa/R/k_efa.R",
     "project_path": "R/k_efa.R",
     "type": "r_source",
-    "hash": "4128590454",
+    "hash": "3647641456",
     "contents": "",
     "dirty": false,
     "created": 1605729090474.0,
     "source_on_save": false,
-    "relative_order": 3,
+    "relative_order": 5,
     "properties": {
-        "cursorPosition": "6,65",
-        "scrollLine": "2"
+        "cursorPosition": "57,15",
+        "scrollLine": "0"
     },
     "folds": "",
-    "lastKnownWriteTime": 1605729652,
+    "lastKnownWriteTime": 1605810048,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1605729652447,
+    "last_content_update": 1605810048167,
     "read_only": false,
     "read_only_alternatives": []
 }
