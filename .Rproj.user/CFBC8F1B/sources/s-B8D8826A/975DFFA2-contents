@@ -18,7 +18,7 @@
 #' @param rmseaA numeric; RMSEA under the alternative hypothesis for the power analysis.
 #' @param m integer; maximum number of factors to extract. Default is 4 items per factor.
 #' @param ordered logical; Should items be treated as ordinal and the
-#' polychoric correlations used in the factor analysis? When FALSE (default)
+#' polychoric correlations used in the factor analysis? When \code{FALSE} (default)
 #' the Pearson correlation matrix is used. A character vector of item names is
 #' also accepted to prompt estimation of the polychoric correlation matrix.
 #' @param ... arguments to pass to \code{lavaan}. These may include ...
@@ -26,7 +26,7 @@
 kfold_fa <- function(items, efa.method, rotation = "oblimin",
                      k = NULL, rmsea0 = .05, rmseaA = .08,
                      m = floor(ncol(items) / 4), threshold = NA, # might not make threshold an argument
-                     ordered = NULL, missing = "listwise", ...){
+                     ordered = FALSE, missing = "listwise", ...){
 
   # The ordered = TRUE functionality in lavaan is not currently equivalent to listing
   # all items, so need to do it manually since I want this functionality for our users

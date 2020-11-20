@@ -16,7 +16,7 @@ set.seed(936639)
 # rmseaA = .08
 # m = floor(ncol(items) / 4)
 # threshold = NA # might not make threshold an argument
-# ordered = NULL
+# ordered = FALSE
 # missing = "listwise"
 
 tictoc::tic()
@@ -31,28 +31,26 @@ tictoc::toc()
 
 #### part of kfold_fa ####
 
-if(!is.null(ordered)){
-  if(ordered == TRUE){
-    ordered <- names(items)
-  }
+if(ordered == TRUE){
+  ordered <- names(items)
+} else if(ordered == FALSE){
+  ordered <- NULL
 }
 
 if(is.null(k)){
 
   ## determine number of folds based on power analysis
-  k <- findk(items = items, m = m, rmsea0 = rmsea0, rmseaA = rmseaA)
+  k <- findk(p = items, m = m, rmsea0 = rmsea0, rmseaA = rmseaA)
 }
 
 trainfolds <- caret::createFolds(y = 1:nrow(items),
                                  k = k, list = TRUE,
                                  returnTrain = TRUE)
 
-lrttest <- run_efa(items = items[trainfolds[[1]], ],
-                   extract.method = "lrt",
-                   rotation = "oblimin",
-                   ordered = ordered, missing = missing)
+######
 
-consensustest <- run_efa(items = items[trainfolds[[1]], ],
-                         extract.method = "consensus",
-                         rotation = "oblimin",
-                         ordered = ordered, missing = missing)
+## Testing standalone efa function
+efatest <- run_efa(items = items[trainfolds[[1]], ],
+                         rotation = "oblimin", m = 5,
+                         simple = TRUE, threshold = NA,
+                         ordered = TRUE, missing = "pairwise")

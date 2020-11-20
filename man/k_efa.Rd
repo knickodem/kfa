@@ -2,10 +2,32 @@
 % Please edit documentation in R/k_efa.R
 \name{k_efa}
 \alias{k_efa}
-\title{Conducts exploratory factor analysis}
+\title{k-fold exploratory factor analysis}
 \usage{
 k_efa(items, efa.method, rotation, m, threshold, ordered, missing, ...)
 }
+\arguments{
+\item{items}{dataframe of item responses}
+
+\item{efa.method}{character; How should the EFA models be determined?
+"sequence" sequentially runs 1 to *m* factor models.
+"consensus" calls \code{\link[parameters]{n_factors}} which identifies the
+optimal number of factors based the consensus of a variety of methods.}
+
+\item{rotation}{character; any rotation method listed in
+\code{\link[GPArotation]{rotations}} in the \code{GPArotation} package.}
+
+\item{m}{integer; maximum number of factors to extract.}
+
+\item{ordered}{passed to lavaan functions}
+
+\item{missing}{passed to lavaan functions}
+}
+\value{
+A list containing \code{lavaan} compatible CFA syntax.
+}
 \description{
-Conducts exploratory factor analysis
+For each k fold, the function conducts a sequence of EFAs and
+converts the resulting factor structure into \code{lavaan}
+compatible CFA syntax.
 }

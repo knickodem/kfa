@@ -3,22 +3,22 @@
     "path": "~/GitHub/kfa/R/findk.R",
     "project_path": "R/findk.R",
     "type": "r_source",
-    "hash": "3489498178",
+    "hash": "0",
     "contents": "",
     "dirty": false,
     "created": 1605807248689.0,
     "source_on_save": false,
     "relative_order": 3,
     "properties": {
-        "cursorPosition": "10,0",
-        "scrollLine": "0"
+        "cursorPosition": "13,49",
+        "scrollLine": "1"
     },
     "folds": "",
-    "lastKnownWriteTime": 1605811744,
+    "lastKnownWriteTime": 1605888625,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1605811744071,
+    "last_content_update": 1605888625407,
     "read_only": false,
     "read_only_alternatives": []
 }

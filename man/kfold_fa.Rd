@@ -13,7 +13,7 @@ kfold_fa(
   rmseaA = 0.08,
   m = floor(ncol(items)/4),
   threshold = NA,
-  ordered = NULL,
+  ordered = FALSE,
   missing = "listwise",
   ...
 )
@@ -37,7 +37,7 @@ The range for k is currently set to 2 to 10.}
 \item{m}{integer; maximum number of factors to extract. Default is 4 items per factor.}
 
 \item{ordered}{logical; Should items be treated as ordinal and the
-polychoric correlations used in the factor analysis? When FALSE (default)
+polychoric correlations used in the factor analysis? When \code{FALSE} (default)
 the Pearson correlation matrix is used. A character vector of item names is
 also accepted to prompt estimation of the polychoric correlation matrix.}
 

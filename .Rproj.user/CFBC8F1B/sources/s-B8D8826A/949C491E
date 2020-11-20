@@ -1,24 +1,24 @@
 {
-    "id": "525F1936",
-    "path": "~/GitHub/kfa/Tests/tests.R",
-    "project_path": "Tests/tests.R",
+    "id": "949C491E",
+    "path": "~/GitHub/kfa/R/k_efa.R",
+    "project_path": "R/k_efa.R",
     "type": "r_source",
-    "hash": "1889554280",
+    "hash": "0",
     "contents": "",
     "dirty": false,
-    "created": 1605728645381.0,
+    "created": 1605729090474.0,
     "source_on_save": false,
-    "relative_order": 1,
+    "relative_order": 5,
     "properties": {
-        "cursorPosition": "30,0",
+        "cursorPosition": "13,58",
         "scrollLine": "0"
     },
     "folds": "",
-    "lastKnownWriteTime": 1605729991,
+    "lastKnownWriteTime": 1605888633,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1605729991686,
+    "last_content_update": 1605888633197,
     "read_only": false,
     "read_only_alternatives": []
 }

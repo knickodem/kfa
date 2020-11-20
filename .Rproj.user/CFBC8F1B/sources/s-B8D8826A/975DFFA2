@@ -3,22 +3,22 @@
     "path": "~/GitHub/kfa/R/kfold_fa.R",
     "project_path": "R/kfold_fa.R",
     "type": "r_source",
-    "hash": "4008192667",
+    "hash": "0",
     "contents": "",
     "dirty": false,
     "created": 1605728890319.0,
     "source_on_save": false,
     "relative_order": 4,
     "properties": {
-        "cursorPosition": "22,3",
-        "scrollLine": "0"
+        "cursorPosition": "32,0",
+        "scrollLine": "22"
     },
     "folds": "",
-    "lastKnownWriteTime": 1605812916,
+    "lastKnownWriteTime": 1605885912,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1605812916572,
+    "last_content_update": 1605885912338,
     "read_only": false,
     "read_only_alternatives": []
 }

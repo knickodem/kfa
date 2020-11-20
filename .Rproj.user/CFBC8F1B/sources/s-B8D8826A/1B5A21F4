@@ -3,19 +3,22 @@
     "path": "~/GitHub/kfa/R/efa_cfa_syntax.R",
     "project_path": "R/efa_cfa_syntax.R",
     "type": "r_source",
-    "hash": "3345561752",
+    "hash": "0",
     "contents": "",
     "dirty": false,
     "created": 1605807246189.0,
     "source_on_save": false,
     "relative_order": 2,
-    "properties": {},
+    "properties": {
+        "cursorPosition": "14,73",
+        "scrollLine": "0"
+    },
     "folds": "",
-    "lastKnownWriteTime": 1605724510,
+    "lastKnownWriteTime": 1605888588,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1605724510,
+    "last_content_update": 1605888588086,
     "read_only": false,
     "read_only_alternatives": []
 }

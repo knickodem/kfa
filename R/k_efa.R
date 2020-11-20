@@ -1,8 +1,21 @@
-#' Conducts exploratory factor analysis
+#' k-fold exploratory factor analysis
 #'
+#' For each k fold, the function conducts a sequence of EFAs and
+#' converts the resulting factor structure into \code{lavaan}
+#' compatible CFA syntax.
 #'
-
-# This function is intended to be run on each k fold
+#' @param items dataframe of item responses
+#' @param efa.method character; How should the EFA models be determined?
+#' "sequence" sequentially runs 1 to *m* factor models.
+#' "consensus" calls \code{\link[parameters]{n_factors}} which identifies the
+#' optimal number of factors based the consensus of a variety of methods.
+#' @param rotation character; any rotation method listed in
+#' \code{\link[GPArotation]{rotations}} in the \code{GPArotation} package.
+#' @param m integer; maximum number of factors to extract.
+#' @param ordered passed to lavaan functions
+#' @param missing passed to lavaan functions
+#'
+#' @return A list containing \code{lavaan} compatible CFA syntax.
 
 k_efa <- function(items, efa.method, rotation, m, threshold, ordered, missing, ...){
 
@@ -17,15 +30,6 @@ k_efa <- function(items, efa.method, rotation, m, threshold, ordered, missing, .
                              cor.smooth = FALSE,
                              ...)
 
-    ## identify number of factors using up to 20 methods
-    # in package argument,
-    # "psych" runs the fit (4 methods) family: RMSEA, TLI, BIC, CRMS
-    # "nFactors" runs Bartlett (3), Bentler (1), CNG (1), Multiple Regression (3) and
-    # Scree (6) families of methods
-    # "EGAnet" runs the EGA (2) family: glasso and TMFG
-    # Need to decide which, if not all, methods we want to consider using for our criteria
-
-    ## How many factors should be extracted?
     # returns a data frame and summary information
     extractm <- parameters::n_factors(items,
                                       type = "FA",
@@ -110,13 +114,6 @@ k_efa <- function(items, efa.method, rotation, m, threshold, ordered, missing, .
                    threshold = threshold,
                    single.item = "")
     })
-
-
-
-  # efaout <- list(unrotated = unrotated, # best model as lavaan object
-  #             rotated = rotated,        # rotated parameters as GPArotation object
-  #             nf = nf,                  # number of factors in best model
-  #             extractm = extractm)      # summary of extraction results
 
   return(cfa.syntax)
 

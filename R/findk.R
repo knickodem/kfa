@@ -11,6 +11,8 @@
 #' @param rmsea0 numeric; RMSEA under the null hypothesis.
 #' @param rmseaA numeric; RMSEA under the alternative hypothesis.
 #'
+#' @return numeric indicating the number of folds
+#'
 
 # Ideally, need a better rationale for default rmsea0 and rmseaA.
 findk <- function(p, m, rmsea0 = .05, rmseaA = .08, ...){

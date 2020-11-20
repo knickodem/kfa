@@ -4,7 +4,16 @@
 \alias{run_efa}
 \title{Conducts exploratory factor analysis}
 \usage{
-run_efa(items, rotation, ordered, missing, ...)
+run_efa(
+  items,
+  rotation = "oblimin",
+  m = floor(ncol(items)/4),
+  simple = TRUE,
+  threshold = NA,
+  ordered = FALSE,
+  missing = "listwise",
+  ...
+)
 }
 \arguments{
 \item{items}{dataframe of item responses}
@@ -12,13 +21,22 @@ run_efa(items, rotation, ordered, missing, ...)
 \item{rotation}{character; any rotation method listed in \code{\link[GPArotation]{rotations}}
 in the \code{GPArotation} package. Default is "oblimin".}
 
-\item{ordered}{logical; Should variables be treated as ordinal and the polychoric correlations used in the factor analysis?
-  Default is FALSE where all variables are considered numeric and the Pearson correlation matrix is calculated.
-A character vector of variable names is also accepted to prompt estimation of the polychoric correlation matrix.}
+\item{m}{integer; maximum number of factors to extract. Default is 4 items per factor.}
 
-\item{missing}{passed to lavaan functions}
+\item{simple}{logical; Should the most simple structure be returned (default)?
+If \code{FALSE}, items can cross load on multiple factors.}
 
-\item{...}{other arguments to pass on to lavaan}
+\item{threshold}{numeric between 0 and 1 indicating the minimum (absolute) value
+of the loading for an item on a factor.}
+
+\item{ordered}{logical; Should items be treated as ordinal and the
+polychoric correlations used in the factor analysis? When \code{FALSE} (default)
+the Pearson correlation matrix is used. A character vector of item names is
+also accepted to prompt estimation of the polychoric correlation matrix.}
+
+\item{missing}{passed to \code{lavaan} functions}
+
+\item{...}{other arguments to pass on to \code{lavaan}}
 }
 \description{
 This function is intended for use on independent samples rather than integrated

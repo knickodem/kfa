@@ -16,6 +16,9 @@ where the number of items is determined via {\link[base]{ncol}}}
 
 \item{rmseaA}{numeric; RMSEA under the alternative hypothesis.}
 }
+\value{
+numeric indicating the number of folds
+}
 \description{
 This function is specifically for determining k in the context of factor analysis.
 Using change in RMSEA as the criterion for obtaining the best fitting factor
