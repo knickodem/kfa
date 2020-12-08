@@ -22,6 +22,11 @@
 #' the Pearson correlation matrix is used. A character vector of item names is
 #' also accepted to prompt estimation of the polychoric correlation matrix.
 #' @param ... arguments to pass to \code{lavaan}. These may include ...
+#'
+#' @details
+#' Deciding an appropriate *m* can be difficult, but is consequential for both the possible factor
+#' structures to examine and the computation time. To assist, researchers can use the
+#' \code{\link[parameters]{n_factors}} function in the \code{parameters} package.
 
 kfold_fa <- function(items, efa.method, rotation = "oblimin",
                      k = NULL, rmsea0 = .05, rmseaA = .08,
@@ -45,15 +50,15 @@ kfold_fa <- function(items, efa.method, rotation = "oblimin",
   ## create folds
   # returns list of row numbers for each training fold (i.e., the efa sample)
   # contents y doesn't matter, just needs to be nrow(items) in length
-  trainfolds <- caret::createFolds(y = 1:nrow(items),
+  testfolds <- caret::createFolds(y = 1:nrow(items),
                                    k = k, list = TRUE,
-                                   returnTrain = TRUE)
+                                   returnTrain = FALSE)
 
   efa <- vector(mode = "list", length = k)
   for(fold in 1:k){
 
     ## run EFA - returns list of cfa syntax for 1:m factor models
-    efa[[fold]] <- k_efa(items = items[trainfolds[[fold]], ],
+    efa[[fold]] <- k_efa(items = items[!c(testfolds[[fold]]), ],
                          efa.method = efa.method,
                          rotation = rotation,
                          m = m,

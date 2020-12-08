@@ -9,7 +9,7 @@
 #' "sequence" sequentially runs 1 to *m* factor models.
 #' "consensus" calls \code{\link[parameters]{n_factors}} which identifies the
 #' optimal number of factors based the consensus of a variety of methods.
-#' @param rotation character; any rotation method listed in
+#' @param rotation character (case-sensitive); any rotation method listed in
 #' \code{\link[GPArotation]{rotations}} in the \code{GPArotation} package.
 #' @param m integer; maximum number of factors to extract.
 #' @param ordered passed to lavaan functions
@@ -17,64 +17,48 @@
 #'
 #' @return A list containing \code{lavaan} compatible CFA syntax.
 
-k_efa <- function(items, efa.method, rotation, m, threshold, ordered, missing, ...){
+k_efa <- function(items, m, rotation, threshold,
+                  ordered, missing, estimator, ...){
 
-  ## Determine the optimal number of factors
-  if(efa.method == "consensus"){
+  ## calculate and extract sample statistics
+  sampstats <- lavaan::lavCor(items,
+                              ordered = ordered,
+                              missing = missing,
+                              output = "fit",
+                              cor.smooth = FALSE,
+                              ...)
 
-    ## calculate correlation matrix - needed for n_factors()
-    cor.lv <- lavaan::lavCor(items,
-                             ordered = ordered,
-                             missing = missing,
-                             output = "cor",
-                             cor.smooth = FALSE,
-                             ...)
+  sample.nobs <- lavaan::lavInspect(sampstats, "nobs")
+  sample.cov <- lavaan::lavInspect(sampstats, "sampstat")$cov
+  sample.mean <- lavaan::lavInspect(sampstats, "sampstat")$mean
+  sample.th <- lavaan::lavInspect(sampstats, "sampstat")$th
+  attr(sample.th, "th.idx") <- lavaan::lavInspect(sampstats, "th.idx")
+  WLS.V <- lavaan::lavInspect(sampstats, "wls.v")
+  NACOV <- lavaan::lavInspect(sampstats, "gamma")
 
-    # returns a data frame and summary information
-    extractm <- parameters::n_factors(items,
-                                      type = "FA",
-                                      rotation = rotation,
-                                      package = c("psych", "nFactors"),
-                                      cor = cor.lv,
-                                      safe = TRUE)
 
-    # the consensus for number of factors (ties go to smallest n)
-    nf <- attr(extractm, "n")
+  ## Running EFAs (no need to run 1-factor b/c we already know the structure)
+  efa.loadings <- vector(mode = "list", length = m)
 
-    #### Step 4 ####
-    ## running efa via lavaan
-    unrotated <- semTools::efaUnrotate(data = items,
-                                       nf = nf,
-                                       start = FALSE,
-                                       ordered = ordered,
-                                       missing = missing,
-                                       parameterization = "theta",
-                                       ...)
-    # parameterization only used with ordered items, ignored otherwise;
-    # "theta" seems to work better than "delta"
+  for(nf in 2:m){
 
-    ## will probably need some tryCatch statements here
+    ## FUNCTION FOR SPECIFYING EFA SYNTAX ##
+    efa.mod
+
+    unrotated <- lavaan::cfa(model = efa.mod,
+                             sample.cov = sample.cov,
+                             sample.nobs = sample.nobs,
+                             sample.mean = sample.mean,
+                             sample.th = sample.th,
+                             WLS.V = WLS.V,
+                             NACOV = NACOV,
+                             estimator = estimator,
+                             parameterization = "delta",
+                             se = "none",
+                             test = "none")
 
     # list of unrotated factor loadings
-    efa.loadings <- list(get_std_loadings(unrotated, type = "std.all"))
-
-
-  } else if(efa.method == "lrt") {
-
-    efa.loadings <- vector(mode = "list", length = m)
-
-    for(nf in 1:m){
-
-      unrotated <- semTools::efaUnrotate(data = items,
-                                         nf = nf,
-                                         start = FALSE,
-                                         ordered = ordered,
-                                         missing = missing,
-                                         parameterization = "theta")
-      # list of unrotated factor loadings
-      efa.loadings[[nf]] <- get_std_loadings(unrotated, type = "std.all")
-    }
-
+    efa.loadings[[nf]] <- get_std_loadings(unrotated, type = "std.all")
   }
 
   ## if chosen, applying rotation to standardized factor loadings for models where m > 1
@@ -84,10 +68,8 @@ k_efa <- function(items, efa.method, rotation, m, threshold, ordered, missing, .
                      "bentlerQ", "geominQ", "cfQ",
                      "infomaxQ", "bifactorQ")){
 
-    loadings <- lapply(efa.loadings, function(x){
-      if(ncol(x) > 1){
-        GPArotation::GPFoblq(x, method = rotation)$loadings
-      } else {x}
+    loadings <- lapply(efa.loadings[-1], function(x){
+      GPArotation::GPFoblq(x, method = rotation)$loadings
     })
 
     # orthogonal rotations
@@ -96,14 +78,12 @@ k_efa <- function(items, efa.method, rotation, m, threshold, ordered, missing, .
                             "geominT", "cfT", "infomaxT",
                             "mccammon", "bifactorT")){
 
-    loadings <- lapply(efa.loadings, function(x){
-      if(ncol(x) > 1){
-        GPArotation::GPForth(x, method = rotation)$loadings
-      } else {x}
+    loadings <- lapply(efa.loadings[-1], function(x){
+      GPArotation::GPForth(x, method = rotation)$loadings
     })
 
   } else {
-    loadings <- efa.loadings
+    loadings <- efa.loadings[-1]
     message("Reporting unrotated factor loadings")
   }
 
@@ -113,8 +93,10 @@ k_efa <- function(items, efa.method, rotation, m, threshold, ordered, missing, .
                    simple = TRUE,
                    threshold = threshold,
                    single.item = "")
-    })
+  })
 
+  onefac <- paste0("f1 =~ ", paste(names(items), collapse = " + "))
+  cfa.syntax <- list(onefac, cfa.syntax)
   return(cfa.syntax)
 
 }

@@ -7,54 +7,94 @@ items <- student[ ,grepl("^a11", names(student))]
 
 
 # ---- Using correlation matrix in lavaan -----------------
+test <- as.data.frame(lapply(items, as.ordered))
 
-## polychoric correlation matrix
+microbenchmark::microbenchmark(
+  ## polychoric correlation matrix
+  prelim = lavaan::lavCor(object = items,
+                          ordered = names(items),
+                          estimator = "DWLS",  # must specify estimator, otherwise defaults to none
+                          missing = "pairwise",
+                          output = "fit",
+                          cor.smooth = FALSE), # could include a cluster =  argument
+  poly = polycor::hetcor(data = as.data.frame(lapply(items,as.ordered)),
+                         use = "pairwise.complete.obs",
+                         std.err = FALSE), # could include a cluster =  argument
+  times = 20)
+
 prelim <- lavaan::lavCor(object = items,
-                         ordered = names(items),
-                         estimator = "DWLS",  # must specify estimator, otherwise defaults to none
-                         missing = "pairwise",
-                         output = "fit",
-                         cor.smooth = FALSE) # could include a cluster =  argument
+                        ordered = names(items),
+                        estimator = "DWLS",  # must specify estimator, otherwise defaults to none
+                        missing = "pairwise",
+                        meanstructure = TRUE,
+                        output = "fit",
+                        cor.smooth = FALSE)
+
+
+start <- lavaan::lavInspect(prelim, "start") #
+itrtns <- lavaan::lavInspect(prelim, "iterations")
 
 nobs <- lavaan::lavInspect(prelim, "nobs")
-start <- lavaan::lavInspect(prelim, "start") #
 wlsv <- lavaan::lavInspect(prelim, "wls.v")
 nacov <- lavaan::lavInspect(prelim, "gamma")
-cormat <- lavaan::lavInspect(prelim, "cor.ov") # same as lavaan::lavInspect(prelim, "sampstat")$cov
-itrtns <- lavaan::lavInspect(prelim, "iterations")
+cormat <- lavaan::lavInspect(prelim, "sampstat")$cov # same as lavaan::lavInspect(prelim, "cor.ov")
+means <- lavaan::lavInspect(prelim, "sampstat")$mean
 th <- lavaan::lavInspect(prelim, "sampstat")$th # same values as lavaan::lavInspect(prelim, "est")$tau
-tau <- lavaan::lavInspect(prelim, "est")$tau
+attr(th, "th.idx") <- lavaan::lavInspect(prelim, "th.idx")
 
 
 ## fit efa with sample statistics
-# keep getting errors
 matonly <- lavaan::cfa(model = st.mod,
                        sample.cov = cormat,
                        sample.nobs = nobs,
+                       sample.mean = means,
+                       sample.th = th,
                        WLS.V = wlsv,
                        NACOV = nacov,
                        estimator = "DWLS",
                        parameterization = "delta",
                        se = "none")
 
-lavaan::summary(matonly)
+## fit with full dataset
+dat <- lavaan::cfa(model = st.mod,
+                  data = items,
+                  estimator = "DWLS",
+                  missing = "pairwise",
+                  ordered = names(items),
+                  parameterization = "delta",
+                  se = "none")
+
+## Do the matrix/sample stats and data method produce the same results
+all.equal(lavaan::parameterestimates(matonly, se = FALSE, zstat = FALSE, pvalue = FALSE, ci = FALSE),
+          lavaan::parameterestimates(dat, se = FALSE, zstat = FALSE, pvalue = FALSE, ci = FALSE))
+
+# check <- dplyr::full_join(lavaan::parameterestimates(matonly, se = FALSE, zstat = FALSE, pvalue = FALSE, ci = FALSE),
+#           lavaan::parameterestimates(dat, se = FALSE, zstat = FALSE, pvalue = FALSE, ci = FALSE),
+#           by = c("lhs", "op", "rhs", "label"), suffix = c(".mat", ".dat"))
+
+
 
 #### Comparing time difference when cor matrix is provided or not ####
-## mat is slightly faster; mean = 11.8 vs. 12.1
-# not sure if the correlation matrix is actually used or recalculated
+# expr       min       lq     mean   median       uq      max neval
+# mat  7.232165 17.84711 17.84960 18.65208 19.65406 29.44586    20
+# dat 13.979109 32.33991 32.04155 34.46950 36.70216 51.01137    20
+
 inputtype <- microbenchmark::microbenchmark(
-  mat = lavaan::cfa(model = st.mod,   # st.mod defined in line 96 from model in line 77
-                    data = items,
+  mat = lavaan::cfa(model = st.mod,
                     sample.cov = cormat,
                     sample.nobs = nobs,
-                    # estimator = "DWLS",
-                    ordered = names(items),
+                    sample.mean = means,
+                    sample.th = th,
+                    WLS.V = wlsv,
+                    NACOV = nacov,
+                    estimator = "DWLS",
                     parameterization = "delta",
                     se = "none",
                     test = "none"),
   dat = lavaan::cfa(model = st.mod,
                     data = items,
-                    # estimator = "DWLS",
+                    estimator = "DWLS",
+                    missing = "pairwise",
                     ordered = names(items),
                     parameterization = "delta",
                     se = "none",
@@ -86,6 +126,7 @@ st.mat = semTools::efaUnrotate(data = items,
                                parameterization = "theta",
                                se = "none",
                                test = "none")
+st.mod <- lavaan::lavInspect(st.mat, "call")$model
 
 ## semTools with only raw data input
 st.dat = semTools::efaUnrotate(data = items,
@@ -96,7 +137,7 @@ st.dat = semTools::efaUnrotate(data = items,
                                se = "none",
                                test = "none")
 
-st.mod <- lavaan::lavInspect(st.mat, "call")$model
+
 
 ## direct with polychoric correlation
 lv.mat <- lavaan::cfa(model = st.mod,
@@ -152,29 +193,51 @@ all.equal(lavaan::lavInspect(lv.mat, "sampstat")$th, th) # yes
 ## Model from regsem
 rs.mod <- regsem::efaModel(3, names(items))
 rs <- lavaan::cfa(model = rs.mod,
-                  data = items,
-                  ordered = names(items),
-                  parameterization = "theta",
+                  sample.cov = cormat,
+                  sample.nobs = nobs,
+                  sample.mean = means,
+                  sample.th = th,
+                  WLS.V = wlsv,
+                  NACOV = nacov,
+                  estimator = "DWLS",
+                  parameterization = "delta",
                   se = "none",
                   test = "none")
 
+## Do the regsem and semTools syntax produce the same results
+all.equal(get_std_loadings(matonly), get_std_loadings(rs)) # nope; loadings are the same on each factor for rs
+lapply(list(matonly, rs),function(x) lavaan::lavInspect(x, "iterations"))
 
-all.equal(get_std_loadings(lv.dat), get_std_loadings(rs)) # nope
-lapply(list(lv.dat, rs),function(x) lavaan::lavInspect(x, "iterations"))
+pfa <- psych::fa(r = cormat, nfactors = 3, n.obs = nobs, rotate = "none", covar = FALSE, fm = "wls")
+
+## rs.mod is substantially fastor
+# expr      min       lq      mean   median       uq       max neval
+# rs 1.017891 1.060982  1.426087 1.121872  1.39415  2.671816    20
+# st 7.143214 7.405637 10.612499 7.824584 16.39990 18.224163    20
 
 rs.v.st <- microbenchmark::microbenchmark(
   rs = lavaan::cfa(model = rs.mod,
-                   data = items,
-                   ordered = names(items),
+                   sample.cov = cormat,
+                   sample.nobs = nobs,
+                   sample.mean = means,
+                   sample.th = th,
+                   WLS.V = wlsv,
+                   NACOV = nacov,
+                   estimator = "DWLS",
                    parameterization = "delta",
                    se = "none",
                    test = "none"),
   st = lavaan::cfa(model = st.mod,
-                    data = items,
-                    ordered = names(items),
-                    parameterization = "delta",
-                    se = "none",
-                    test = "none"),
+                   sample.cov = cormat,
+                   sample.nobs = nobs,
+                   sample.mean = means,
+                   sample.th = th,
+                   WLS.V = wlsv,
+                   NACOV = nacov,
+                   estimator = "DWLS",
+                   parameterization = "delta",
+                   se = "none",
+                   test = "none"),
 
   times = 20)
 
