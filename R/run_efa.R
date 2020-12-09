@@ -3,14 +3,18 @@
 #' This function is intended for use on independent samples rather than integrated
 #' with k-fold cross-validation.
 #'
-#' @param items dataframe of item responses
-#' @param rotation character; any rotation method listed in \code{\link[GPArotation]{rotations}}
-#' in the \code{GPArotation} package. Default is "oblimin".
+#' @param variables dataframe of variables to factor analyze
+#' @param rotation character (case-sensitive); any rotation method listed in
+#' \code{\link[GPArotation]{rotations}} in the \code{GPArotation} package.
+#' Default is "oblimin".
 #' @param m integer; maximum number of factors to extract. Default is 4 items per factor.
-#' @param threshold numeric between 0 and 1 indicating the minimum (absolute) value
-#' of the loading for an item on a factor.
 #' @param simple logical; Should the most simple structure be returned (default)?
 #' If \code{FALSE}, items can cross load on multiple factors.
+#' @param threshold numeric between 0 and 1 indicating the minimum (absolute) value
+#' of the loading for an item on a factor.
+#' @param single.item character indicating how single-item factors should be treated.
+#' Use "keep" to keep them in the model when generating the CFA syntax, "drop"
+#' to remove them, or "" indicating the CFA syntax should not be generated for this model.
 #' @param ordered logical; Should items be treated as ordinal and the
 #' polychoric correlations used in the factor analysis? When \code{FALSE} (default)
 #' the Pearson correlation matrix is used. A character vector of item names is
@@ -18,31 +22,45 @@
 #' @param missing passed to \code{lavaan} functions
 #' @param ... other arguments to pass on to \code{lavaan}
 
-run_efa <- function(items, rotation = "oblimin", m = floor(ncol(items) / 4),
-                    simple = TRUE, threshold = NA,
-                    ordered = FALSE, missing = "listwise", ...){
+run_efa <- function(variables, m = floor(ncol(items) / 4), rotation = "oblimin",
+                    simple = TRUE, threshold = NA, single.item = c("keep","drop", ""),
+                    ordered = FALSE, estimator = NULL, missing = "listwise", ...){
 
   if(ordered == TRUE){
-    ordered <- names(items)
+    ordered <- names(variables)
+    if(is.null(estimator)){
+      estimator <- "DWLS"
+    }
   } else if(ordered == FALSE){
     ordered <- NULL
+    if(is.null(estimator)){
+      estimator <- "ML"
+    }
   }
 
-  ## identify optimal number of factors using up to 20 methods
-  # calculate correlation matrix to pass to n_factors()
-  cor.lv <- lavaan::lavCor(items,
-                           ordered = ordered,
-                           missing = missing,
-                           output = "cor",
-                           cor.smooth = FALSE,
-                           ...)
+  ## calculate and extract sample statistics
+  sampstats <- lavaan::lavCor(variables,
+                              ordered = ordered,
+                              estimator = estimator,
+                              missing = missing,
+                              output = "fit",
+                              cor.smooth = FALSE,
+                              ...)
+
+  sample.nobs <- lavaan::lavInspect(sampstats, "nobs")
+  sample.cov <- lavaan::lavInspect(sampstats, "sampstat")$cov
+  sample.mean <- lavaan::lavInspect(sampstats, "sampstat")$mean
+  sample.th <- lavaan::lavInspect(sampstats, "sampstat")$th
+  attr(sample.th, "th.idx") <- lavaan::lavInspect(sampstats, "th.idx")
+  WLS.V <- lavaan::lavInspect(sampstats, "wls.v")
+  NACOV <- lavaan::lavInspect(sampstats, "gamma")
 
   # returns a data frame and summary information
-  nfactors <- parameters::n_factors(x = items,
+  nfactors <- parameters::n_factors(x = variables,
                                     type = "FA",
                                     rotation = rotation,
                                     package = c("psych", "nFactors"),
-                                    cor = cor.lv,
+                                    cor = sample.cov,
                                     safe = TRUE)
 
 
@@ -56,16 +74,25 @@ run_efa <- function(items, rotation = "oblimin", m = floor(ncol(items) / 4),
       unrotated.a <- unrotated
     }
 
-    unrotated <- semTools::efaUnrotate(data = items,
-                                       nf = nf,
-                                       start = FALSE,
-                                       ordered = ordered,
-                                       missing = missing,
-                                       parameterization = "theta",
-                                       ...)
+    ## write efa syntax
+    efa.mod <- write_efa(nf = nf, vnames = names(variables))
+
+    unrotated <- lavaan::cfa(model = efa.mod,
+                             sample.cov = sample.cov,
+                             sample.nobs = sample.nobs,
+                             sample.mean = sample.mean,
+                             sample.th = sample.th,
+                             WLS.V = WLS.V,
+                             NACOV = NACOV,
+                             std.lv = TRUE,
+                             orthogonal = TRUE,
+                             estimator = estimator,
+                             parameterization = "delta",
+                             se = "none",
+                             test = "none")
 
     # list of unrotated factor loadings
-    efa.loadings[[nf]] <- get_std_loadings(unrotated, type = "std.all")
+    efa.loadings[[nf]] <- lavaan::lavInspect(unrotated, "est")$lambda
 
     if(nf > 1){
       ## compare models
@@ -116,13 +143,13 @@ run_efa <- function(items, rotation = "oblimin", m = floor(ncol(items) / 4),
     efa_cfa_syntax(loadings = x,
                    simple = simple,
                    threshold = threshold,
-                   single.item = "")
+                   single.item = single.item)
   })
 
   efaout <- list(syntax = cfa.syntax,
                  mod.compare = mod.compare, # data.frame of model comparisons results
-                 loadings = loadings,          # list of rotated loadings as GPArotation object
-                 nfactors = nfactors)          # data.frame of consensus factor extraction
+                 loadings = loadings,       # list of rotated loadings as GPArotation object
+                 nfactors = nfactors)       # data.frame of consensus factor extraction
 
   return(efaout)
 

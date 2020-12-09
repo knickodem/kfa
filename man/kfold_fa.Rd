@@ -5,26 +5,20 @@
 \title{Conducts k fold cross-validation for factor analysis.}
 \usage{
 kfold_fa(
-  items,
-  efa.method,
-  rotation = "oblimin",
+  variables,
   k = NULL,
   rmsea0 = 0.05,
   rmseaA = 0.08,
   m = floor(ncol(items)/4),
-  threshold = NA,
+  rotation = "oblimin",
   ordered = FALSE,
+  estimator = NULL,
   missing = "listwise",
   ...
 )
 }
 \arguments{
-\item{items}{dataframe of item responses}
-
-\item{efa.method}{character; How should the EFA models be determined?
-"sequence" sequentially runs 1 to *m* factor models.
-"consensus" calls \code{\link[parameters]{n_factors}} which identifies the
-optimal number of factors based the consensus of a variety of methods.}
+\item{variables}{dataframe of variables to factor analyze}
 
 \item{k}{integer; number of folds in which to split the data.
 Default is NULL which determines k via power analysis.
@@ -36,10 +30,19 @@ The range for k is currently set to 2 to 10.}
 
 \item{m}{integer; maximum number of factors to extract. Default is 4 items per factor.}
 
+\item{rotation}{character (case-sensitive); any rotation method listed in
+\code{\link[GPArotation]{rotations}} in the \code{GPArotation} package.
+Default is "oblimin".}
+
 \item{ordered}{logical; Should items be treated as ordinal and the
 polychoric correlations used in the factor analysis? When \code{FALSE} (default)
 the Pearson correlation matrix is used. A character vector of item names is
 also accepted to prompt estimation of the polychoric correlation matrix.}
+
+\item{estimator}{if \code{ordered} = FALSE, the default is "ML". If
+\code{ordered} = TRUE, the default is "DWLS". See \code{lavaan::lavaan} for other options.}
+
+\item{missing}{default is "listwise". See \code{lavaan::lavaan} for other options.}
 
 \item{...}{arguments to pass to \code{lavaan}. These may include ...}
 }
@@ -49,4 +52,9 @@ EFAs are run on the training data and the simple structure each model
 is transformed into \code{lavaan}-compatible CFA syntax. The CFAs are then run
 on the test data with model comparison results summarized in a rmarkdown
 produced report.
+}
+\details{
+Deciding an appropriate *m* can be difficult, but is consequential for both the
+possible factor structures to examine and the computation time. To assist, researchers
+can use \code{\link[parameters]{n_factors}} in the \code{parameters} package.
 }

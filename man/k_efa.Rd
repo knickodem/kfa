@@ -4,22 +4,19 @@
 \alias{k_efa}
 \title{k-fold exploratory factor analysis}
 \usage{
-k_efa(items, efa.method, rotation, m, threshold, ordered, missing, ...)
+k_efa(variables, m, rotation, ordered, estimator, missing, ...)
 }
 \arguments{
-\item{items}{dataframe of item responses}
-
-\item{efa.method}{character; How should the EFA models be determined?
-"sequence" sequentially runs 1 to *m* factor models.
-"consensus" calls \code{\link[parameters]{n_factors}} which identifies the
-optimal number of factors based the consensus of a variety of methods.}
-
-\item{rotation}{character; any rotation method listed in
-\code{\link[GPArotation]{rotations}} in the \code{GPArotation} package.}
+\item{variables}{dataframe of variables to factor analyze}
 
 \item{m}{integer; maximum number of factors to extract.}
 
+\item{rotation}{character (case-sensitive); any rotation method listed in
+\code{\link[GPArotation]{rotations}} in the \code{GPArotation} package.}
+
 \item{ordered}{passed to lavaan functions}
+
+\item{estimator}{passed to lavaan functions}
 
 \item{missing}{passed to lavaan functions}
 }

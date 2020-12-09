@@ -24,12 +24,12 @@ efa_cfa_syntax <- function(loadings, simple = TRUE, threshold = NA,
   # item and factor names
   if(is.null(dimnames(loadings))){
 
-    inames <- paste0("i", 1:dim(loadings)[[1]]) # item
+    vnames <- paste0("v", 1:dim(loadings)[[1]]) # variable
     fnames <- paste0("f", 1:dim(loadings)[[2]]) # factor
 
   } else {
 
-    inames <- dimnames(loadings)[[1]] # item
+    vnames <- dimnames(loadings)[[1]] # variable
     fnames <- dimnames(loadings)[[2]] # factor
   }
 
@@ -37,16 +37,15 @@ efa_cfa_syntax <- function(loadings, simple = TRUE, threshold = NA,
     # largest (absolute) loading for each item
     maxload <- apply(abs(loadings), 1, max)
   } else {
-    maxload <- c(rep(NA, length(inames)))
+    maxload <- c(rep(NA, length(vnames)))
   }
 
   # obtaining simple structure matrix with NAs elsewhere
   loadings.max <- loadings
-  for(i in 1:length(inames)){
-    thresh <- max(maxload[[i]], threshold, na.rm = TRUE)
+  for(v in 1:length(vnames)){
 
-    loadings.max[i, ][abs(loadings.max[i, ]) < thresh] <- NA
-
+    thresh <- max(maxload[[v]], threshold, na.rm = TRUE)
+    loadings.max[v, ][abs(loadings.max[v, ]) < thresh] <- NA
   }
 
   # returns vector with each element being the lavaan syntax identifying the factor
@@ -54,7 +53,7 @@ efa_cfa_syntax <- function(loadings, simple = TRUE, threshold = NA,
   for(fn in 1:length(fnames)){
     cfa.syntax <- c(cfa.syntax,
                     paste0(fnames[[fn]], " =~ ",
-                           paste(inames[!is.na(loadings.max[,fn])],
+                           paste(vnames[!is.na(loadings.max[,fn])],
                                  collapse = " + ")))
   }
 
@@ -88,4 +87,19 @@ efa_cfa_syntax <- function(loadings, simple = TRUE, threshold = NA,
 
   return(cfa.syntax)
 
+}
+
+
+#' @rdname efa_cfa_syntax
+#' @param nf integer; number of factors
+#' @param vnames character vector; names of variables to include in the efa
+
+write_efa <- function(nf, vnames){
+
+  syntax <- character(0)
+  for (f in seq_along(vnames)) {
+    syntax <- c(syntax, paste0("f", f, " =~ ", paste(vnames[f:length(vnames)], collapse = " + "), "\n"))
+    if (f == nf) break
+  }
+  syntax
 }

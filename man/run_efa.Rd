@@ -5,29 +5,36 @@
 \title{Conducts exploratory factor analysis}
 \usage{
 run_efa(
-  items,
-  rotation = "oblimin",
+  variables,
   m = floor(ncol(items)/4),
+  rotation = "oblimin",
   simple = TRUE,
   threshold = NA,
+  single.item = c("keep", "drop", ""),
   ordered = FALSE,
+  estimator = NULL,
   missing = "listwise",
   ...
 )
 }
 \arguments{
-\item{items}{dataframe of item responses}
-
-\item{rotation}{character; any rotation method listed in \code{\link[GPArotation]{rotations}}
-in the \code{GPArotation} package. Default is "oblimin".}
+\item{variables}{dataframe of variables to factor analyze}
 
 \item{m}{integer; maximum number of factors to extract. Default is 4 items per factor.}
+
+\item{rotation}{character (case-sensitive); any rotation method listed in
+\code{\link[GPArotation]{rotations}} in the \code{GPArotation} package.
+Default is "oblimin".}
 
 \item{simple}{logical; Should the most simple structure be returned (default)?
 If \code{FALSE}, items can cross load on multiple factors.}
 
 \item{threshold}{numeric between 0 and 1 indicating the minimum (absolute) value
 of the loading for an item on a factor.}
+
+\item{single.item}{character indicating how single-item factors should be treated.
+Use "keep" to keep them in the model when generating the CFA syntax, "drop"
+to remove them, or "" indicating the CFA syntax should not be generated for this model.}
 
 \item{ordered}{logical; Should items be treated as ordinal and the
 polychoric correlations used in the factor analysis? When \code{FALSE} (default)

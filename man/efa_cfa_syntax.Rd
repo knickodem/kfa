@@ -2,6 +2,7 @@
 % Please edit documentation in R/efa_cfa_syntax.R
 \name{efa_cfa_syntax}
 \alias{efa_cfa_syntax}
+\alias{write_efa}
 \title{Converts EFA results into CFA syntax}
 \usage{
 efa_cfa_syntax(
@@ -10,6 +11,8 @@ efa_cfa_syntax(
   threshold = NA,
   single.item = c("keep", "drop", "")
 )
+
+write_efa(nf, vnames)
 }
 \arguments{
 \item{loadings}{matrix of factor loadings}
@@ -23,6 +26,10 @@ of the loading for an item on a factor.}
 \item{single.item}{character indicating how single-item factors should be treated.
 Use "keep" to keep them in the model when generating the CFA syntax, "drop"
 to remove them, or "" indicating the CFA syntax should not be generated for this model.}
+
+\item{nf}{integer; number of factors}
+
+\item{vnames}{character vector; names of variables to include in the efa}
 }
 \value{
 character. Use \code{cat} to best examine the returned syntax.

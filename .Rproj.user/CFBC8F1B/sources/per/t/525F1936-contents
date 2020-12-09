@@ -5,6 +5,31 @@ student <- read.csv("C:/Users/kylenick/University of North Carolina at Chapel Hi
 # extract items
 items <- student[ ,grepl("^a11", names(student))]
 
+tictoc::tic()
+kefa <- k_efa(variables = items,
+              m = 5,
+              rotation = "oblimin",
+              ordered = names(items),
+              estimator = "DWLS",
+              missing = "pairwise")
+tictoc::toc() # ~10 sec
+
+
+tictoc::tic()
+## set seed to get the same folds
+set.seed(936639)
+
+ktest <- kfold_fa(variables = items,
+                  k = NULL,
+                  m = 5,
+                  rotation = "oblimin",
+                  ordered = TRUE,
+                  estimator = "DWLS",
+                  missing = "pairwise")
+tictoc::toc() # < 100 seconds
+
+lapply(ktest, length)
+lapply(ktest, function(x) lavaan::fitmeasures(x[[1]], c("cfi", "rmsea")))
 
 # ---- Using correlation matrix in lavaan -----------------
 test <- as.data.frame(lapply(items, as.ordered))
@@ -19,7 +44,7 @@ microbenchmark::microbenchmark(
                           cor.smooth = FALSE), # could include a cluster =  argument
   poly = polycor::hetcor(data = as.data.frame(lapply(items,as.ordered)),
                          use = "pairwise.complete.obs",
-                         std.err = FALSE), # could include a cluster =  argument
+                         std.err = FALSE),
   times = 20)
 
 prelim <- lavaan::lavCor(object = items,
@@ -41,6 +66,31 @@ cormat <- lavaan::lavInspect(prelim, "sampstat")$cov # same as lavaan::lavInspec
 means <- lavaan::lavInspect(prelim, "sampstat")$mean
 th <- lavaan::lavInspect(prelim, "sampstat")$th # same values as lavaan::lavInspect(prelim, "est")$tau
 attr(th, "th.idx") <- lavaan::lavInspect(prelim, "th.idx")
+
+
+
+
+efa.mod <- write_efa(3, names(items))
+
+modtest <- lavaan::cfa(model = efa.mod,
+                       sample.cov = cormat,
+                       sample.nobs = nobs,
+                       sample.mean = means,
+                       sample.th = th,
+                       WLS.V = wlsv,
+                       NACOV = nacov,
+                       std.lv = TRUE,
+                       orthogonal = TRUE,
+                       estimator = "DWLS",
+                       parameterization = "delta",
+                       se = "none")
+
+
+lavaan::summary(modtest, standardized = TRUE)
+modtestload <- lavaan::lavInspect(modtest, "est")$lambda
+
+
+fatest <- psych::fa(cormat, 3, n.obs = nobs, rotate = "none")
 
 
 ## fit efa with sample statistics
@@ -128,67 +178,6 @@ st.mat = semTools::efaUnrotate(data = items,
                                test = "none")
 st.mod <- lavaan::lavInspect(st.mat, "call")$model
 
-## semTools with only raw data input
-st.dat = semTools::efaUnrotate(data = items,
-                               nf = 3,
-                               start = FALSE,
-                               ordered = names(items),
-                               parameterization = "theta",
-                               se = "none",
-                               test = "none")
-
-
-
-## direct with polychoric correlation
-lv.mat <- lavaan::cfa(model = st.mod,
-                     data = items,
-                     sample.cov = cormat,
-                     sample.nobs = nobs,
-                     ordered = names(items),
-                     parameterization = "theta",
-                     se = "none",
-                     test = "none")
-
-## direct with only raw data input
-lv.dat <- lavaan::cfa(model = st.mod,
-                     data = items,
-                     ordered = names(items),
-                     parameterization = "theta",
-                     se = "none",
-                     test = "none")
-
-## comparing model features and results
-get_std_loadings(st.mat) # in k_efa.R
-get_std_loadings(st.dat)
-get_std_loadings(lv.mat)
-get_std_loadings(lv.dat)
-
-lapply(list(st.mat, st.dat, lv.mat, lv.dat),
-       function(x) lavaan::lavInspect(x, "categorical"))
-lapply(list(st.mat, st.dat, lv.mat, lv.dat),
-       function(x) lavaan::lavInspect(x, "parameterization"))
-lapply(list(st.mat, st.dat, lv.mat, lv.dat),
-       function(x) lavaan::lavInspect(x, "iterations")) # delta takes fewer
-lapply(list(st.mat, st.dat, lv.mat, lv.dat),
-       function(x) lavaan::lavInspect(x, "options")$missing)
-lapply(list(st.mat, st.dat, lv.mat, lv.dat),
-       function(x) lavaan::lavInspect(x, "nobs"))
-# listwise deletion used even when the pairwise nobs was specified
-lapply(list(st.mat, st.dat, lv.mat, lv.dat),
-       function(x) lavaan::lavInspect(x, "est"))
-
-lapply(list(st.mat, st.dat, lv.mat, lv.dat), lavaan::parTable)
-
-# Are all specified options the same
-all.equal(lavaan::lavInspect(lv.mat, "options"), lavaan::lavInspect(lv.dat, "options"))
-all.equal(lavaan::lavInspect(lv.mat, "options"), lavaan::lavInspect(st.mat, "options"))
-
-# Threshold estimates
-all.equal(lavaan::lavInspect(lv.mat, "est")$tau, lavaan::lavInspect(lv.dat, "est")$tau) # yes
-all.equal(lavaan::lavInspect(lv.mat, "est")$tau, lavaan::lavInspect(st.mat, "est")$tau) # yes
-all.equal(lavaan::lavInspect(lv.mat, "sampstat")$th, th) # yes
-
-
 # ----- Comparing model defined by semTools to model defined by regsem ------------
 ## Model from regsem
 rs.mod <- regsem::efaModel(3, names(items))
@@ -269,18 +258,6 @@ lr.dat <- lavaan::lavaan(model = test,
                            se = "none")
 
 lavaan::lavInspect(test.dat, "partable")
-
-
-# write_efa <- function(nf, varNames){
-#
-# syntax <- character(0)
-# for (i in seq_along(varNames)) {
-#   syntax <- c(syntax, paste0("fac_", i, " =~ ", paste(varNames[i:length(varNames)], collapse = " + ")))
-#   if (i == nf) break
-# }
-# syntax
-# }
-
 
 
 
