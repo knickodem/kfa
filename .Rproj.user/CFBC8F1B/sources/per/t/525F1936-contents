@@ -1,25 +1,39 @@
-#### kfa package tests ####
+###################################
+#                                 #
+#        kfa package tests        #
+#                                 #
+###################################
 
 ## Import data
-student <- read.csv("C:/Users/kylenick/University of North Carolina at Chapel Hill/Halpin, Peter Francis - UNC_stat_projets/EFA&CFA/scaledim/student_survey-latest.csv")
-# extract items
-items <- student[ ,grepl("^a11", names(student))]
-
-tictoc::tic()
-kefa <- k_efa(variables = items,
-              m = 5,
-              rotation = "oblimin",
-              ordered = names(items),
-              estimator = "DWLS",
-              missing = "pairwise")
-tictoc::toc() # ~10 sec
+shortfile <- c("C:/Users/kylenick/University of North Carolina at Chapel Hill/Halpin, Peter Francis - UNC_stat_projets/EFA&CFA/")
 
 
-tictoc::tic()
+student <- read.csv(paste0(shortfile, "scaledim/student_survey-latest.csv"))
+teacher <- read.csv(paste0(shortfile, "scaledim/teacher_survey-latest.csv"))
+principal <- read.csv(paste0(shortfile, "scaledim/principal_survey-latest.csv"))
+coach <- read.csv(paste0(shortfile, "scaledim/coach_survey-latest.csv"))
+
+## item map
+itemmaps <- lapply(c("Coach_survey", "Teacher Survey",
+                     "Principal Survey", "Student Survey"), function(x){
+                   readxl::read_excel(paste0(shortfile, "Item construct map_2020_10_25.xlsx"),
+                                      sheet = x)})
+names(itemmaps) <- c("coach", "teacher", "principal", "student")
+
+## items for analysis
+studentdf <- student[ ,names(student) %in% na.omit(itemmaps$student$`Variable Name`)]
+teacherdf <- teacher[ ,names(teacher) %in% na.omit(itemmaps$teacher$`Variable Name`)]
+principaldf <- principal[ ,names(principal) %in% na.omit(itemmaps$principal$`Variable Name`)]
+coachdf <- coach[ ,names(coach) %in% na.omit(itemmaps$coach$`Variable Name`)]
+
+
+
+# ---- test full kfold_fa funtion ----------------
+
 ## set seed to get the same folds
 set.seed(936639)
-
-ktest <- kfold_fa(variables = items,
+tictoc::tic()
+kstudent <- kfold_fa(variables = studentdf,
                   k = NULL,
                   m = 5,
                   rotation = "oblimin",
@@ -31,7 +45,57 @@ tictoc::toc() # < 100 seconds
 lapply(ktest, length)
 lapply(ktest, function(x) lavaan::fitmeasures(x[[1]], c("cfi", "rmsea")))
 
+
+tictoc::tic()
+kteacher <- kfold_fa(variables = teacherdf,
+                     k = NULL,
+                     m = 10,
+                     rotation = "oblimin",
+                     ordered = TRUE,
+                     estimator = "DWLS",
+                     missing = "pairwise")
+tictoc::toc() #
+
+# tictoc::tic()
+# kprincipal <- kfold_fa(variables = principaldf,
+#                      k = NULL,
+#                      m = 5,
+#                      rotation = "oblimin",
+#                      ordered = TRUE,
+#                      estimator = "DWLS",
+#                      missing = "pairwise")
+# tictoc::toc() #
+
+tictoc::tic()
+kcoach <- kfold_fa(variables = coachdf,
+                     k = NULL,
+                     m = 10,
+                     rotation = "oblimin",
+                     ordered = TRUE,
+                     estimator = "DWLS",
+                     missing = "pairwise")
+tictoc::toc() #
+
+##############################################
+
+# ----  Power analysis ---------------
+
+df <- ((62 - 5)^2 - (62 + 5)) / 2
+semTools::findRMSEAsamplesize(rmsea0 = .05, rmseaA = .08, df = df)
+
+findRMSEAsamplesizenested(rmsea0A = .05, rmsea0B = NULL, rmsea1A,
+                          rmsea1B = NULL, dfA, dfB, power = 0.8, alpha = 0.05, group = 1)
+
 # ---- Using correlation matrix in lavaan -----------------
+tictoc::tic()
+kefa <- k_efa(variables = items,
+              m = 5,
+              rotation = "oblimin",
+              ordered = names(items),
+              estimator = "DWLS",
+              missing = "pairwise")
+tictoc::toc() # ~10 sec
+
 test <- as.data.frame(lapply(items, as.ordered))
 
 microbenchmark::microbenchmark(

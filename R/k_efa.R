@@ -95,7 +95,7 @@ k_efa <- function(variables, m, rotation,
   })
 
   ## adding the 1-factor model as first element in cfa syntax list
-  onefac <- paste0("f1 =~ ", paste(names(items), collapse = " + "))
+  onefac <- paste0("f1 =~ ", paste(names(variables), collapse = " + "))
   cfa.syntax <- c(list(onefac), cfa.syntax)
 
   return(cfa.syntax)

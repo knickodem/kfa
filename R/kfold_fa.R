@@ -52,7 +52,7 @@ kfold_fa <- function(variables,
   if(is.null(k)){
 
     ## determine number of folds based on power analysis
-    k <- findk(p = variables, m = m, rmsea0 = rmsea0, rmseaA = rmseaA)
+    k <- findk(variables = variables, m = m, rmsea0 = rmsea0, rmseaA = rmseaA)
   }
 
   ## create folds
@@ -120,6 +120,9 @@ kfold_fa <- function(variables,
       }
 
     }
+
+    ## Extract information for report
+    # for(c in 1:length(cfa)){}
 
     kfa[[fold]] <- cfa
 

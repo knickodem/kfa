@@ -15,10 +15,12 @@
 #'
 
 # Ideally, need a better rationale for default rmsea0 and rmseaA.
-findk <- function(p, m, rmsea0 = .05, rmseaA = .08, ...){
+findk <- function(variables, m, rmsea0 = .05, rmseaA = .08, ...){
 
-  if(is.data.frame(p)){
-    p <- ncol(p)
+  if(is.data.frame(variables)){
+    p <- ncol(variables)
+  } else{
+    stop("variables must be a dataframe (for now).")
   }
 
   df <- ((p - m)^2 - (p + m)) / 2
@@ -26,7 +28,7 @@ findk <- function(p, m, rmsea0 = .05, rmseaA = .08, ...){
   samp <- semTools::findRMSEAsamplesize(rmsea0 = rmsea0, rmseaA = rmseaA, df = df, ...)
   # defaults are power = .8, alpha = .05, and group = 1 unless changed via ...
 
-  k <- floor(nrow(items) / samp)
+  k <- floor(nrow(variables) / samp)
   if(k < 2){
     stop("Power analysis indicates the sample size is too small for
          k-fold cross validation. Adjust assumptions or manually create a single
