@@ -33,7 +33,7 @@ coachdf <- coach[ ,names(coach) %in% na.omit(itemmaps$coach$`Variable Name`)]
 ## set seed to get the same folds
 set.seed(936639)
 tictoc::tic()
-kstudent <- kfold_fa(variables = studentdf,
+kstudent <- kfa(variables = studentdf,
                   k = NULL,
                   m = 5,
                   rotation = "oblimin",
@@ -42,9 +42,51 @@ kstudent <- kfold_fa(variables = studentdf,
                   missing = "pairwise")
 tictoc::toc() # < 100 seconds
 
-lapply(ktest, length)
-lapply(ktest, function(x) lavaan::fitmeasures(x[[1]], c("cfi", "rmsea")))
+max(unlist(lapply(kstudent, length)))
+fits <- lapply(kstudent[[1]], function(x) lavaan::fitmeasures(x, c("cfi", "rmsea", "rmsea.ci.lower", "rmsea.ci.upper")))
+check <- cbind(data.frame(Model = 1: length(fits)),
+               as.data.frame(Reduce(rbind, fits)))
 
+kfa_report(kstudent, report.title = "K-fold Factor Analysis - Lebenon Students",
+           file.name = "kfa_students")
+
+kfits <- vector("list", length = 10)
+for(f in 1:10){
+
+  fits <- lapply(kstudent[[f]], function(x) {
+    lavaan::fitmeasures(x, c("cfi", "rmsea", "rmsea.ci.lower", "rmsea.ci.upper"))
+  })
+
+  fitsdf <- cbind(data.frame(Model = 1:length(fits)),
+                  as.data.frame(Reduce(rbind, fits)))
+  row.names(fitsdf) <- NULL
+
+  kfits[[f]] <- fitsdf
+}
+
+fittest <- lapply(kfits, function(x) x[x$rmsea == min(x$rmsea),])
+fittest2 <- as.data.frame(Reduce(rbind,fittest))
+fittest <- as.data.frame(table(fittest2$Model))
+names(fittest) <- c("model", "folds")
+
+for(i in 1){
+  lapply(kstudent, function(x){
+    semPlot::semPaths(x[[i]], what = "std", whatLabels = "no",
+                      intercepts = FALSE, residuals = FALSE,
+                      thresholds = FALSE, reorder = FALSE)
+    })
+}
+
+
+semPlot::semPaths(kstudent[[1]][[2]], what = "std", whatLabels = "no",
+                  intercepts = FALSE, residuals = FALSE,
+                  thresholds = FALSE, reorder = FALSE)
+
+flextest <- kfa::flextab_format(kfits[[1]])
+
+dimnames(lavaan::lavInspect(kstudent[[1]][[1]], "sampstat")$cov)[[1]]
+
+lavaan::summary(kstudent[[1]][[1]], fit.measures = TRUE)
 
 tictoc::tic()
 kteacher <- kfold_fa(variables = teacherdf,

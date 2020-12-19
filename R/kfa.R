@@ -1,10 +1,9 @@
-#' Conducts k fold cross-validation for factor analysis.
+#' Conducts k-fold cross validation for factor analysis.
 #'
 #' The function splits the data into k folds. For each fold,
 #' EFAs are run on the training data and the simple structure each model
 #' is transformed into \code{lavaan}-compatible CFA syntax. The CFAs are then run
-#' on the test data with model comparison results summarized in a rmarkdown
-#' produced report.
+#' on the test data.
 #'
 #' @param variables dataframe of variables to factor analyze
 #' @param k integer; number of folds in which to split the data.
@@ -30,7 +29,7 @@
 #' possible factor structures to examine and the computation time. To assist, researchers
 #' can use \code{\link[parameters]{n_factors}} in the \code{parameters} package.
 
-kfold_fa <- function(variables,
+kfa <- function(variables,
                      k = NULL, rmsea0 = .05, rmseaA = .08,
                      m = floor(ncol(items) / 4), rotation = "oblimin",
                      ordered = FALSE, estimator = NULL, missing = "listwise", ...){
@@ -120,9 +119,6 @@ kfold_fa <- function(variables,
       }
 
     }
-
-    ## Extract information for report
-    # for(c in 1:length(cfa)){}
 
     kfa[[fold]] <- cfa
 

@@ -4,17 +4,17 @@
 \alias{findk}
 \title{Determine k for k-fold cross-validation}
 \usage{
-findk(p, m, rmsea0 = 0.05, rmseaA = 0.08, ...)
+findk(variables, m, rmsea0 = 0.05, rmseaA = 0.08, ...)
 }
 \arguments{
-\item{p}{integer specifying the number of items or \code{data.frame}
-where the number of items is determined via {\link[base]{ncol}}}
-
 \item{m}{integer; maximum number of factors to extract. Default is 4 items per factor.}
 
 \item{rmsea0}{numeric; RMSEA under the null hypothesis.}
 
 \item{rmseaA}{numeric; RMSEA under the alternative hypothesis.}
+
+\item{p}{integer specifying the number of items or \code{data.frame}
+where the number of items is determined via {\link[base]{ncol}}}
 }
 \value{
 numeric indicating the number of folds

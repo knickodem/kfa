@@ -1,0 +1,73 @@
+---
+output:
+   html_document:
+      toc: TRUE
+      toc_depth: 2
+      always_allow_html: TRUE
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+# knitr::opts_chunk$set(options(knitr.kable.NA = ''))
+
+```
+
+---
+title: "`r report.title`"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+---
+
+# Analysis Summary
+
+**# of folds:** `r k`
+
+**# of variables:** `r nvars`
+
+**Maximum # of factors extracted:** `r maxfac`
+
+**Factor model with the lowest RMSEA across `r k` folds**
+
+```{r lowmod, ft.align = "left", results='asis'}
+lowmod.flex <- flextable::flextable(lowmod)
+lowmod.flex <- flextable::align(lowmod.flex, align = "center", part = "all")
+lowmod.flex <- flextable::autofit(lowmod.flex)
+knit_print(lowmod.flex)
+```
+
+
+
+# Model Fit Summary
+
+```{r fits, ft.align = "left", results='asis'}
+for(f in 1:length(kfits)){
+  
+  cat("### Fold", f)
+  cat("\n\n")
+  fit.flex <- flextab_format(kfits[[f]], bold = TRUE, digits = 2)
+  cat(knit_print(fit.flex))
+  cat("\n\n")
+  
+}
+  
+```
+
+
+# Model Structure
+
+```{r structure, results = 'asis'}
+
+for(i in 1:maxfac){
+  cat("## Model", i)
+  cat("\n\n")
+  for(f in 1:length(kfa)){
+    cat("### Fold", f)
+    cat("\n\n")
+      semPlot::semPaths(kfa[[f]][[i]], what = "std", whatLabels = "no",
+                      intercepts = FALSE, residuals = FALSE,
+                      thresholds = FALSE, reorder = FALSE)
+      cat("\n\n")
+}
+}
+
+```
+
