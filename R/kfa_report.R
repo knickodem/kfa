@@ -13,13 +13,15 @@
 
 kfa_report <- function(kfa, report.title = NULL, file.name = NULL){
 
-  ## Analysis Summary Info
+  #### Analysis Summary Info ####
   k <- length(kfa)
-  vnames <- dimnames(lavaan::lavInspect(kfa[[1]][[1]], "sampstat")$cov)
-  nvars <- length(vnames[[1]])
+  nobs <- sum(unlist(lapply(kfa, function(x) lavaan::lavInspect(x[[1]], "nobs"))))
+  vnames <- dimnames(lavaan::lavInspect(kfa[[1]][[1]], "sampstat")$cov)[[1]]
+  nvars <- length(vnames)
   maxfac <- max(unlist(lapply(kfa, length)))
 
-  ## Fit information
+  #### Fit information  ####
+  ## Gathering fit - dataframe for each fold
   kfits <- vector("list", length = k)
   for(f in 1:k){
 
@@ -28,21 +30,71 @@ kfa_report <- function(kfa, report.title = NULL, file.name = NULL){
                                "rmsea", "rmsea.ci.lower", "rmsea.ci.upper"))
       })
 
-    fits.df <- cbind(data.frame(model = as.character(1:length(fits))),
+    fits.df <- cbind(data.frame(factors = as.character(1:length(fits))),
                    as.data.frame(Reduce(rbind, fits)))
     row.names(fits.df) <- NULL
 
     kfits[[f]] <- fits.df
   }
 
-  ## Model with the lowest RMSEA across folds
+  ## summarizing fit statistics by factor (currently based on RMSEA)
+  bdf <- as.data.frame(Reduce(rbind, kfits))
+  aggfit <- data.frame(factors = 1:maxfac,
+                       mean = tapply(bdf$rmsea, bdf$factors, mean),
+                       min = tapply(bdf$rmsea, bdf$factors, min),
+                       max = tapply(bdf$rmsea, bdf$factors, max))
+
+  # Model with the lowest RMSEA across folds
   lowmod <- lapply(kfits, function(x) x[x$rmsea == min(x$rmsea),])
   lowmod.df <- as.data.frame(Reduce(rbind,lowmod))
-  lowmod <- as.data.frame(table(lowmod.df$model))
-  names(lowmod) <- c("model", "folds")
+  lowmod <- as.data.frame(table(lowmod.df$factors))
+  names(lowmod) <- c("factors", "low_in_fold")
 
-  ## Naming output file and running report
+  # joining into single table
+  aggfit <- merge(x = aggfit, y = lowmod, by = "factors", all.x = TRUE)
+  aggfit$low_in_fold <- ifelse(is.na(aggfit$low_in_fold), 0, aggfit$low_in_fold)
 
+
+  #### Structures ####
+
+  ## loadings
+  klambdas <- vector("list", maxfac)
+  for(m in 1:maxfac){
+    lambdas <- data.frame()
+    for(s in 1:k){
+      loads <- subset(lavaan::standardizedSolution(kfa[[s]][[m]], "std.lv",
+                                                   se = FALSE, zstat = FALSE,
+                                                   pvalue = FALSE, ci = FALSE),
+                      op == "=~")
+      # loads$factors <- m
+      # loads$fold <- s
+      lambdas <- rbind(lambdas, loads)
+    }
+
+    klambdas[[m]] <- data.frame(variable = vnames,
+                             mean = tapply(lambdas$est.std, lambdas$rhs, mean),
+                             min = tapply(lambdas$est.std, lambdas$rhs, min),
+                             max = tapply(lambdas$est.std, lambdas$rhs, max))
+    # row.names(agglambdas) <- NULL
+    # klambdas[[m]] <- agglambdas
+  }
+
+  ## factor correlations
+  kcorrs <- vector("list", maxfac)
+  kcorrs[[1]] <- NULL
+  for(m in 2:maxfac){
+    cor.lv <- vector("list", k)
+    for(s in 1:k){
+      cor.lv[[s]] <- lavaan::lavInspect(kfa[[s]][[m]], "cor.lv")
+    }
+
+    aggcorrs <- Reduce(`+`, cor.lv) / length(cor.lv)
+    aggcorrs <- cbind(data.frame(rn = row.names(aggcorrs)), aggcorrs)
+    kcorrs[[m]] <- aggcorrs
+
+  }
+
+  #### Naming output file and running report ####
   if(is.null(report.title)){
     report.title <- "K-Fold Factor Analysis"
   }
@@ -60,7 +112,7 @@ kfa_report <- function(kfa, report.title = NULL, file.name = NULL){
 }
 
 
-flextab_format <- function(df, bold = TRUE, digits = 2){
+flextab_format <- function(df, bold.type = "none", digits = 2){
 
   numericcols <- which(unlist(lapply(df, is.numeric)))
 
@@ -68,8 +120,10 @@ flextab_format <- function(df, bold = TRUE, digits = 2){
   ftab <- colformat_num(ftab, j = numericcols, digits = digits)
   ftab <- align(ftab, i = NULL, j = NULL, align = "center", part = "all")
 
-  if(bold == TRUE){
+  if(bold.type == "rmsea"){
     ftab <- bold(ftab, i = ~rmsea == min(rmsea), part =  "body")
+  } else if(bold.type == "lambda"){
+    ftab <- bold(ftab, i = ~mean < .30, part = "body")
   }
 
   ftab <- autofit(ftab)

@@ -23,15 +23,19 @@ date: "`r format(Sys.Date(), '%B %d, %Y')`"
 
 **# of variables:** `r nvars`
 
+**# of observations:** `r nobs`
+
 **Maximum # of factors extracted:** `r maxfac`
 
-**Factor model with the lowest RMSEA across `r k` folds**
+**RMSEA across folds by factor model**
 
 ```{r lowmod, ft.align = "left", results='asis'}
-lowmod.flex <- flextable::flextable(lowmod)
-lowmod.flex <- flextable::align(lowmod.flex, align = "center", part = "all")
-lowmod.flex <- flextable::autofit(lowmod.flex)
-knit_print(lowmod.flex)
+aggfit.flex <- flextable::flextable(aggfit)
+aggfit.flex <- colformat_num(aggfit.flex, j = 2:4, digits = 2)
+aggfit.flex <- flextable::align(aggfit.flex, align = "center", part = "all")
+aggfit.flex <- flextable::set_header_labels(aggfit.flex, low_in_fold = "lowest in fold")
+aggfit.flex <- flextable::autofit(aggfit.flex)
+knit_print(aggfit.flex)
 ```
 
 
@@ -43,7 +47,7 @@ for(f in 1:length(kfits)){
   
   cat("### Fold", f)
   cat("\n\n")
-  fit.flex <- flextab_format(kfits[[f]], bold = TRUE, digits = 2)
+  fit.flex <- flextab_format(kfits[[f]], bold.type = "rmsea", digits = 2)
   cat(knit_print(fit.flex))
   cat("\n\n")
   
@@ -56,17 +60,33 @@ for(f in 1:length(kfits)){
 
 ```{r structure, results = 'asis'}
 
-for(i in 1:maxfac){
-  cat("## Model", i)
+for(m in 1:maxfac){
+  cat("## Factors:", m)
   cat("\n\n")
+  cat("### Standardized Loading Across Folds")
+  cat("\n\n")
+  lambda.flex <- flextab_format(klambdas[[m]], bold.type = "lambda", digits = 2)
+  cat(knit_print(lambda.flex))
+  cat("\n\n")
+  if(m > 1){
+  cat("### Mean Factor Correlations")
+  cat("\n\n")
+  corr.flex <- flextab_format(kcorrs[[m]], bold.type = "none", digits = 2)
+  corr.flex <- compose(corr.flex, i = 1, j = 1, value = as_paragraph(""), part = "header")
+  cat(knit_print(corr.flex))
+  cat("\n\n")
+  }
   for(f in 1:length(kfa)){
     cat("### Fold", f)
     cat("\n\n")
-      semPlot::semPaths(kfa[[f]][[i]], what = "std", whatLabels = "no",
+    cat(efa_cfa_syntax(lavaan::lavInspect(kfa[[f]][[m]], "est")$lambda))
+    cat("\n\n")
+      semPlot::semPaths(kfa[[f]][[m]], what = "std", whatLabels = "no",
                       intercepts = FALSE, residuals = FALSE,
-                      thresholds = FALSE, reorder = FALSE)
+                      thresholds = FALSE, reorder = FALSE,
+                      manifests = vnames)
       cat("\n\n")
-}
+  }
 }
 
 ```

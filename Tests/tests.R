@@ -25,10 +25,11 @@ studentdf <- student[ ,names(student) %in% na.omit(itemmaps$student$`Variable Na
 teacherdf <- teacher[ ,names(teacher) %in% na.omit(itemmaps$teacher$`Variable Name`)]
 principaldf <- principal[ ,names(principal) %in% na.omit(itemmaps$principal$`Variable Name`)]
 coachdf <- coach[ ,names(coach) %in% na.omit(itemmaps$coach$`Variable Name`)]
+studentdf2 <- studentdf[!(names(studentdf) %in% c("a1118x", "a1120x", "a1121x"))]
 
 
 
-# ---- test full kfold_fa funtion ----------------
+# ---- test full kfold_fa function ----------------
 
 ## set seed to get the same folds
 set.seed(936639)
@@ -40,34 +41,98 @@ kstudent <- kfa(variables = studentdf,
                   ordered = TRUE,
                   estimator = "DWLS",
                   missing = "pairwise")
-tictoc::toc() # < 100 seconds
+tictoc::toc() # ~ 100 seconds
 
-max(unlist(lapply(kstudent, length)))
-fits <- lapply(kstudent[[1]], function(x) lavaan::fitmeasures(x, c("cfi", "rmsea", "rmsea.ci.lower", "rmsea.ci.upper")))
-check <- cbind(data.frame(Model = 1: length(fits)),
-               as.data.frame(Reduce(rbind, fits)))
-
+# Run report
 kfa_report(kstudent, report.title = "K-fold Factor Analysis - Lebenon Students",
            file.name = "kfa_students")
 
-kfits <- vector("list", length = 10)
-for(f in 1:10){
+
+#### Model Fit ####
+k <- 10
+kfits <- vector("list", length = k)
+for(f in 1:k){
 
   fits <- lapply(kstudent[[f]], function(x) {
-    lavaan::fitmeasures(x, c("cfi", "rmsea", "rmsea.ci.lower", "rmsea.ci.upper"))
+    lavaan::fitmeasures(x, c("chisq", "df", "cfi",
+                             "rmsea", "rmsea.ci.lower", "rmsea.ci.upper"))
   })
 
-  fitsdf <- cbind(data.frame(Model = 1:length(fits)),
-                  as.data.frame(Reduce(rbind, fits)))
-  row.names(fitsdf) <- NULL
+  fits.df <- cbind(data.frame(factors = as.character(1:length(fits))),
+                   as.data.frame(Reduce(rbind, fits)))
+  row.names(fits.df) <- NULL
 
-  kfits[[f]] <- fitsdf
+  kfits[[f]] <- fits.df
 }
 
-fittest <- lapply(kfits, function(x) x[x$rmsea == min(x$rmsea),])
-fittest2 <- as.data.frame(Reduce(rbind,fittest))
-fittest <- as.data.frame(table(fittest2$Model))
-names(fittest) <- c("model", "folds")
+bdf <- as.data.frame(Reduce(rbind, kfits))
+aggfit <- data.frame(factors = 1:4,
+                       mean = tapply(bdf$rmsea, bdf$factors, mean),
+                       min = tapply(bdf$rmsea, bdf$factors, min),
+                       max = tapply(bdf$rmsea, bdf$factors, max))
+
+lowmod <- lapply(kfits, function(x) x[x$rmsea == min(x$rmsea),])
+lowmod.df <- as.data.frame(Reduce(rbind,lowmod))
+lowmod <- as.data.frame(table(lowmod.df$factors))
+names(lowmod) <- c("factors", "low_in_fold")
+
+
+merge(x = aggfit, y = lowmod, by = "factors", all.x = TRUE)
+
+
+#### Model Structure ####
+# All items are included in the 1 factor model; only differences in loadings will occur across folds
+structures <- vector("list", length = k)
+for(s in 1:k){
+  structures[[s]] <- efa_cfa_syntax(lavaan::lavInspect(kstudent[[1]][[2]], "est")$lambda)
+}
+structuredf <- cbind(data.frame(fold = 1:10),
+                     as.data.frame(Reduce(rbind, structures)))
+
+unique.structures <- unique(structuredf$V1)
+
+test <- lapply(unique.structures, function(x) structuredf[structuredf$V1 == x,]$fold)
+
+alllambda <- vector("list", 4)
+for(m in 1:4){
+  lambdas <- data.frame()
+  for(s in 1:k){
+    loads <- subset(lavaan::standardizedSolution(kstudent[[s]][[m]], "std.lv",
+                                                 se = FALSE, zstat = FALSE,
+                                                 pvalue = FALSE, ci = FALSE),
+                    op == "=~")
+    # loads$factors <- m
+    # loads$fold <- s
+    lambdas <- rbind(lambdas, loads)
+  }
+
+  agglambdas <- data.frame(variable = vn,
+                           mean = tapply(lambdas$est.std, lambdas$rhs, mean),
+                           min = tapply(lambdas$est.std, lambdas$rhs, min),
+                           max = tapply(lambdas$est.std, lambdas$rhs, max))
+  row.names(agglambdas) <- NULL
+  alllambda[[m]] <- agglambdas
+}
+
+# could do this within structure so the output of the inner loop is a df and output of outer loop is list of dfs
+
+alllvcor <- vector("list", 3)
+for(m in 2:4){
+  cor.lv <- vector("list", k)
+  for(s in 1:k){
+    cor.lv[[s]] <- lavaan::lavInspect(kstudent[[s]][[m]], "cor.lv")
+  }
+
+  alllvcor[[m]] <- Reduce(`+`, cor.lv) / length(cor.lv)
+
+}
+
+cortest <- vector("list", k)
+for(s in 1:k){
+  cortest[[s]] <- lavaan::lavInspect(kstudent[[s]][[2]], "cor.lv")
+}
+
+
 
 for(i in 1){
   lapply(kstudent, function(x){
@@ -77,10 +142,11 @@ for(i in 1){
     })
 }
 
-
-semPlot::semPaths(kstudent[[1]][[2]], what = "std", whatLabels = "no",
+vn <- dimnames(lavaan::lavInspect(kstudent[[1]][[1]], "sampstat")$cov)[[1]]
+semPlot::semPaths(kstudent[[1]][[3]], what = "std", whatLabels = "no",
                   intercepts = FALSE, residuals = FALSE,
-                  thresholds = FALSE, reorder = FALSE)
+                  thresholds = FALSE, reorder = FALSE,
+                  manifests = vn)
 
 flextest <- kfa::flextab_format(kfits[[1]])
 
