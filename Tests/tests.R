@@ -82,12 +82,34 @@ merge(x = aggfit, y = lowmod, by = "factors", all.x = TRUE)
 
 #### Model Structure ####
 # All items are included in the 1 factor model; only differences in loadings will occur across folds
+allstructures <- vector("list", length = 4)
+allstructures[[1]][[1]] <- list(structure = efa_cfa_syntax(lavaan::lavInspect(kstudent[[1]][[1]], "est")$lambda),
+                                 folds = 1:k)
+for(m in 2:4){
 structures <- vector("list", length = k)
-for(s in 1:k){
-  structures[[s]] <- efa_cfa_syntax(lavaan::lavInspect(kstudent[[1]][[2]], "est")$lambda)
+for(f in 1:k){
+  structures[[f]] <- efa_cfa_syntax(lavaan::lavInspect(kstudent[[f]][[m]], "est")$lambda)
 }
-structuredf <- cbind(data.frame(fold = 1:10),
-                     as.data.frame(Reduce(rbind, structures)))
+us <- unique(unlist(structures, use.names = FALSE))
+
+slist <- vector("list", length = length(us))
+for(u in seq_along(us)){
+
+  folds <- which(unlist(lapply(structures, function(x) x == us[[u]])))
+
+  slist[[u]] <- list(structure = us[[u]],
+                   folds = which(unlist(lapply(structures, function(x) x == us[[u]]))))
+}
+
+allstructures[[m]] <- slist
+}
+paste(allstructures[[1]][[1]]$folds, collapse = ", ")
+
+for(s in allstructures[[4]][[1]]$folds){
+
+  print(s)
+}
+
 
 unique.structures <- unique(structuredf$V1)
 
@@ -127,6 +149,10 @@ for(m in 2:4){
 
 }
 
+coretest <- Reduce(`+`, cor.lv) / length(cor.lv)
+coretest[upper.tri(coretest, diag = FALSE)] <- NA
+
+
 cortest <- vector("list", k)
 for(s in 1:k){
   cortest[[s]] <- lavaan::lavInspect(kstudent[[s]][[2]], "cor.lv")
@@ -134,38 +160,62 @@ for(s in 1:k){
 
 
 
-for(i in 1){
-  lapply(kstudent, function(x){
-    semPlot::semPaths(x[[i]], what = "std", whatLabels = "no",
-                      intercepts = FALSE, residuals = FALSE,
-                      thresholds = FALSE, reorder = FALSE)
-    })
-}
+
+
+#### Plotting ####
+palette.colors(n = 10, "Set 1")
+
 
 vn <- dimnames(lavaan::lavInspect(kstudent[[1]][[1]], "sampstat")$cov)[[1]]
-semPlot::semPaths(kstudent[[1]][[3]], what = "std", whatLabels = "no",
-                  intercepts = FALSE, residuals = FALSE,
-                  thresholds = FALSE, reorder = FALSE,
-                  manifests = vn)
+curiousplot <- semPlot::semPaths(kstudent[[1]][[3]], what = "std", whatLabels = "no",
+                                 layout = "tree", negDashed = TRUE,
+                  intercepts = FALSE, residuals = FALSE, thresholds = FALSE,
+                  color = list(lat = palette.colors(n = 4, palette = "Okabe-Ito",
+                                                    recycle = TRUE)[-1]),
+                  cut = .3, posCol = c("#BF0000","#000000"), fade = FALSE,
+                  # edge.color = , # could create custom function to utilize this argument
+                  weighted = TRUE, esize = 5,
+                  manifests = vn, reorder = FALSE)
 
-flextest <- kfa::flextab_format(kfits[[1]])
+plot.settings <- list(what = "std", whatLabels = "no",
+                      layout = "tree", negDashed = TRUE,
+                      intercepts = FALSE, residuals = FALSE, thresholds = FALSE,
+                      color = list(lat = palette.colors(n = 4, palette = "Okabe-Ito",
+                                                        recycle = TRUE)[-1]),
+                      cut = .3, posCol = c("#BF0000","#000000"), fade = FALSE,
+                      # edge.color = , # could create custom function to utilize this argument
+                      weighted = TRUE, esize = 5,
+                      manifests = vn, reorder = FALSE)
 
-dimnames(lavaan::lavInspect(kstudent[[1]][[1]], "sampstat")$cov)[[1]]
+do.call(semPlot::semPaths, args = c(list(object = kstudent[[1]][[3]]), plot.settings))
 
-lavaan::summary(kstudent[[1]][[1]], fit.measures = TRUE)
+## Not sure how to arrange plots into a grid yet
+# arranging packages (cowplot, gridExtra) use grob objects rather than qgraph objects
+# cowplot::as_grob nor qgraph::as.ggraph currently do the conversion
+qgraph::as.ggraph(curiousplot)
+
+
+
+
+
 
 tictoc::tic()
-kteacher <- kfold_fa(variables = teacherdf,
-                     k = NULL,
-                     m = 10,
-                     rotation = "oblimin",
-                     ordered = TRUE,
-                     estimator = "DWLS",
-                     missing = "pairwise")
+set.seed(231220)
+kteacher <- kfa(variables = teacherdf,
+                k = 5,
+                m = 10,
+                rotation = "oblimin",
+                ordered = TRUE,
+                estimator = "DWLS",
+                missing = "pairwise")
 tictoc::toc() #
 
+# Run report
+kfa_report(kteachers, report.title = "K-fold Factor Analysis - Lebenon Teachers",
+           file.name = "kfa_teachers")
+
 # tictoc::tic()
-# kprincipal <- kfold_fa(variables = principaldf,
+# kprincipal <- kfa(variables = principaldf,
 #                      k = NULL,
 #                      m = 5,
 #                      rotation = "oblimin",
@@ -175,13 +225,13 @@ tictoc::toc() #
 # tictoc::toc() #
 
 tictoc::tic()
-kcoach <- kfold_fa(variables = coachdf,
-                     k = NULL,
-                     m = 10,
-                     rotation = "oblimin",
-                     ordered = TRUE,
-                     estimator = "DWLS",
-                     missing = "pairwise")
+kcoach <- kfa(variables = coachdf,
+              k = NULL,
+              m = 10,
+              rotation = "oblimin",
+              ordered = TRUE,
+              estimator = "DWLS",
+              missing = "pairwise")
 tictoc::toc() #
 
 ##############################################

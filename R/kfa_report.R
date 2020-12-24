@@ -4,14 +4,15 @@
 #'
 #' @param kfa an object returned from \code{kfa} or otherwise defined list of
 #' lists where the inner list consists of \code{lavaan} objects.
-#' @param instrument.name character; name given to the set of variables used in the
-#' factor analysis and printed in the title of the report.
-#' @param file.name character;  file name to create on disk. The default is
-#' "kfa - \code{instrument.name}".
+#' @param report.title title of the report
+#' @param file.name character; file name to create on disk.
+#' @param cut numeric; standardized factor loadings below this value are emphasized in
+#' tables and figures.
 #'
 #' @return html report generated via rmarkdown
 
-kfa_report <- function(kfa, report.title = NULL, file.name = NULL){
+kfa_report <- function(kfa, report.title = "K-Fold Factor Analysis",
+                       file.name = NULL, cut = .3){
 
   #### Analysis Summary Info ####
   k <- length(kfa)
@@ -57,6 +58,30 @@ kfa_report <- function(kfa, report.title = NULL, file.name = NULL){
 
   #### Structures ####
 
+  ##
+  kstructures <- vector("list", length = maxfac)
+  kstructures[[1]][[1]] <- list(structure = efa_cfa_syntax(lavaan::lavInspect(kfa[[1]][[1]], "est")$lambda),
+                                   folds = 1:k)
+  for(m in 2:maxfac){
+    structures <- vector("list", length = k)
+    for(f in 1:k){
+      structures[[f]] <- efa_cfa_syntax(lavaan::lavInspect(kfa[[f]][[m]], "est")$lambda)
+    }
+
+    us <- unique(unlist(structures, use.names = FALSE))
+
+    slist <- vector("list", length = length(us))
+    for(u in seq_along(us)){
+
+      folds <- which(unlist(lapply(structures, function(x) x == us[[u]])))
+
+      slist[[u]] <- list(structure = us[[u]],
+                         folds = which(unlist(lapply(structures, function(x) x == us[[u]]))))
+    }
+
+    kstructures[[m]] <- slist
+  }
+
   ## loadings
   klambdas <- vector("list", maxfac)
   for(m in 1:maxfac){
@@ -89,15 +114,14 @@ kfa_report <- function(kfa, report.title = NULL, file.name = NULL){
     }
 
     aggcorrs <- Reduce(`+`, cor.lv) / length(cor.lv)
+    aggcorrs[upper.tri(aggcorrs, diag = FALSE)] <- NA
     aggcorrs <- cbind(data.frame(rn = row.names(aggcorrs)), aggcorrs)
     kcorrs[[m]] <- aggcorrs
 
   }
 
+
   #### Naming output file and running report ####
-  if(is.null(report.title)){
-    report.title <- "K-Fold Factor Analysis"
-  }
   template <- system.file("rmd", "kfa-report.Rmd", package = "kfa")
   dir <- getwd()
 
@@ -112,7 +136,7 @@ kfa_report <- function(kfa, report.title = NULL, file.name = NULL){
 }
 
 
-flextab_format <- function(df, bold.type = "none", digits = 2){
+flextab_format <- function(df, bold.type = "none", cut = .3, digits = 2){
 
   numericcols <- which(unlist(lapply(df, is.numeric)))
 
@@ -123,7 +147,8 @@ flextab_format <- function(df, bold.type = "none", digits = 2){
   if(bold.type == "rmsea"){
     ftab <- bold(ftab, i = ~rmsea == min(rmsea), part =  "body")
   } else if(bold.type == "lambda"){
-    ftab <- bold(ftab, i = ~mean < .30, part = "body")
+    ftab <- bold(ftab, i = ~mean < .3, part = "body")
+    # error occurs when .3 is replaced by cut; not sure why
   }
 
   ftab <- autofit(ftab)

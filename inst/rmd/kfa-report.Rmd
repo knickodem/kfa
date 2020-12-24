@@ -58,14 +58,15 @@ for(f in 1:length(kfits)){
 
 # Model Structure
 
-```{r structure, results = 'asis'}
+```{r structure, ft.align = "left", results = 'asis', fig.height = 4}
 
 for(m in 1:maxfac){
   cat("## Factors:", m)
   cat("\n\n")
   cat("### Standardized Loading Across Folds")
   cat("\n\n")
-  lambda.flex <- flextab_format(klambdas[[m]], bold.type = "lambda", digits = 2)
+  lambda.flex <- flextab_format(klambdas[[m]], bold.type = "lambda",
+                                cut = cut, digits = 2)
   cat(knit_print(lambda.flex))
   cat("\n\n")
   if(m > 1){
@@ -76,17 +77,28 @@ for(m in 1:maxfac){
   cat(knit_print(corr.flex))
   cat("\n\n")
   }
-  for(f in 1:length(kfa)){
-    cat("### Fold", f)
+  for(s in seq_along(kstructures[[m]])){
+    cat("### Factor Structure", s)
     cat("\n\n")
-    cat(efa_cfa_syntax(lavaan::lavInspect(kfa[[f]][[m]], "est")$lambda))
+    cat("**In Folds:", paste(kstructures[[m]][[s]]$folds, collapse = ", "), "**")
     cat("\n\n")
-      semPlot::semPaths(kfa[[f]][[m]], what = "std", whatLabels = "no",
-                      intercepts = FALSE, residuals = FALSE,
-                      thresholds = FALSE, reorder = FALSE,
-                      manifests = vnames)
+    cat(gsub("\n", "\n\n", kstructures[[m]][[s]]$structure))
+    cat("\n\n")
+    for(f in kstructures[[m]][[s]]$folds){
+    cat("#### Fold", f)
+    cat("\n\n")
+    # do.call(semPlot::semPaths, args = c(list(object = kfa[[f]][[m]]), plot.settings))
+    semPlot::semPaths(kfa[[f]][[m]], what = "std", whatLabels = "no", layout = "tree",
+                        intercepts = FALSE, residuals = FALSE, thresholds = FALSE,
+                        color = list(lat = palette.colors(n = m + 1, palette = "Okabe-Ito",
+                                                          recycle = TRUE)[-1]),
+                        cut = cut, posCol = c("#BF0000","#000000"), fade = FALSE,
+                        # edge.color = , # could create custom function to utilize this argument
+                        weighted = TRUE, negDashed = TRUE, esize = 5,
+                        manifests = vnames, reorder = FALSE)
       cat("\n\n")
   }
+ }
 }
 
 ```
