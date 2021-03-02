@@ -14,10 +14,10 @@ findk(variables, m, rmsea0 = 0.05, rmseaA = 0.08, ...)
 \item{rmseaA}{numeric; RMSEA under the alternative hypothesis.}
 
 \item{p}{integer specifying the number of items or \code{data.frame}
-where the number of items is determined via {\link[base]{ncol}}}
+where the number of items is determined via \code{\link[base]{ncol}}}
 }
 \value{
-numeric indicating the number of folds
+integer indicating the number of folds
 }
 \description{
 This function is specifically for determining k in the context of factor analysis.

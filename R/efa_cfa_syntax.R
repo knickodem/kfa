@@ -1,7 +1,6 @@
 #' Converts EFA results into CFA syntax
 #'
-#' Uses the matrix of loadings from an EFA to generate \code{lavaan} compatible
-#' CFA syntax.
+#' Uses the matrix of loadings from an EFA to generate \code{lavaan} compatible CFA syntax.
 #'
 #' @param loadings matrix of factor loadings
 #' @param simple logical; Should the simple structure be returned (default)?
@@ -10,12 +9,14 @@
 #' of the loading for an item on a factor.
 #' @param single.item character indicating how single-item factors should be treated.
 #' Use "keep" to keep them in the model when generating the CFA syntax, "drop"
-#' to remove them, or "" indicating the CFA syntax should not be generated for this model.
+#' to remove them, or "none" indicating the CFA syntax should not be generated for this model.
 #'
 #' @return character. Use \code{cat} to best examine the returned syntax.
+#'
+#' @export
 
 efa_cfa_syntax <- function(loadings, simple = TRUE, threshold = NA,
-                           single.item = c("keep","drop", "")){
+                           single.item = c("keep","drop", "none")){
 
   if(simple == FALSE & is.na(threshold)){
     stop("threshold must be supplied when simple = FALSE")
@@ -73,7 +74,7 @@ efa_cfa_syntax <- function(loadings, simple = TRUE, threshold = NA,
                                                             fixed = TRUE)) > 0]
     cfa.syntax <- paste(cfa.syntax, collapse = "\n")
 
-  } else if(single.item == ""){
+  } else if(single.item == "none"){
 
     # check if they exist
     if(all(nchar(cfa.syntax) - nchar(gsub("+", "", cfa.syntax,fixed = TRUE)) > 0) == TRUE){

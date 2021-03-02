@@ -9,7 +9,7 @@ efa_cfa_syntax(
   loadings,
   simple = TRUE,
   threshold = NA,
-  single.item = c("keep", "drop", "")
+  single.item = c("keep", "drop", "none")
 )
 
 write_efa(nf, vnames)
@@ -25,7 +25,7 @@ of the loading for an item on a factor.}
 
 \item{single.item}{character indicating how single-item factors should be treated.
 Use "keep" to keep them in the model when generating the CFA syntax, "drop"
-to remove them, or "" indicating the CFA syntax should not be generated for this model.}
+to remove them, or "none" indicating the CFA syntax should not be generated for this model.}
 
 \item{nf}{integer; number of factors}
 
@@ -35,6 +35,5 @@ to remove them, or "" indicating the CFA syntax should not be generated for this
 character. Use \code{cat} to best examine the returned syntax.
 }
 \description{
-Uses the matrix of loadings from an EFA to generate \code{lavaan} compatible
-CFA syntax.
+Uses the matrix of loadings from an EFA to generate \code{lavaan} compatible CFA syntax.
 }

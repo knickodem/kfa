@@ -6,12 +6,12 @@
 #' size, maximum number of possible factors, and RMSEA values.
 #'
 #' @param p integer specifying the number of items or \code{data.frame}
-#' where the number of items is determined via {\link[base]{ncol}}
+#' where the number of items is determined via \code{\link[base]{ncol}}
 #' @param m integer; maximum number of factors to extract. Default is 4 items per factor.
 #' @param rmsea0 numeric; RMSEA under the null hypothesis.
 #' @param rmseaA numeric; RMSEA under the alternative hypothesis.
 #'
-#' @return numeric indicating the number of folds
+#' @return integer indicating the number of folds
 #'
 
 # Ideally, need a better rationale for default rmsea0 and rmseaA.

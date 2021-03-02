@@ -7,6 +7,10 @@ Maintainer: Kyle Nickodem <kyle.nickodem@gmail.com>
 Description: Utilities for examining the dimensionality of an instrument.
     The package explores possible factor structures for a set of items and
 	helps identify an optimal and replicable structure via k-fold cross validation.
+Depends:
+    R (>= 3.6)
+Imports:
+  flextable (>= 0.6.3),
 License: GPL3
 Encoding: UTF-8
 LazyData: true

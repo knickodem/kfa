@@ -4,7 +4,45 @@
 #                                 #
 ###################################
 
-## Import data
+#### Using Dorothy Data ####
+schclimate <- haven::read_sav("C:/Users/kylenick/OneDrive - University of North Carolina at Chapel Hill/Dorothy//00 School Climate W1-W4 cleaned/SPSS/sources_school_climate_w1_2021-1-27.sav")
+names(schclimate) <- gsub("_W1", "", names(schclimate))
+
+## Possible Scales
+StudentInterveneVars <- paste("STUDENTS_INTERVENE", 1:7, sep = "_")
+StaffInterveneVars <- paste("STAFF_INTERVENE", 1:7, sep = "_")
+YouInterveneVars <- paste("YOU_INTERVENE", 1:7, sep = "_")
+SchCom2BullyVars <- paste("SCHOOL_COMMITMENT_BULLYING", 1:6, sep = "_")
+SchCom2SHVars <- paste("SCHOOL_COMMITMENT_SEX_HARR", 1:6, sep = "_")
+SchCom2MHVars <- paste("SCHOOL_COMMITMENT_MT_HEALTH", 1:6, sep = "_")
+SchClimateVars <- paste("POSITIVE_PERCEP_SCHOOL_CLIMATE", 1:11, sep = "_")
+SchAggressionVars <- paste("AGGRESSION_PROBLEM_AT_SCHOOL", 1:7, sep = "_")
+
+SchoolScales <- list(StudentInterveneVars, StaffInterveneVars, YouInterveneVars,
+                     SchCom2BullyVars, SchCom2SHVars, SchCom2MHVars,
+                     SchAggressionVars, SchClimateVars)
+names(SchoolScales) <- c("Student_Intervene", "Staff_Intervene", "You_Intervene",
+                         "School_Commitment_to_Bullying", "School_Commitment_to_SH",
+                         "School_Commitment_to_Mental_Health", "School_Aggression_Problems",
+                         "Positive_School_Climate")
+
+
+set.seed(210106)
+tictoc::tic()
+kexp2 <- kfa(variables = exposurew2,
+             k = NULL,
+             m = 4,
+             rotation = "oblimin",
+             ordered = TRUE,
+             estimator = "DWLS",
+             missing = "pairwise")
+tictoc::toc() # ~ 22 seconds
+
+# Run report
+kfa_report(kexp2, report.title = "Exposure Wave 2: K-fold Factor Analysis",
+           file.name = "kfa_exposure_W2")
+
+#### Import data ####
 shortfile <- c("C:/Users/kylenick/University of North Carolina at Chapel Hill/Halpin, Peter Francis - UNC_stat_projets/EFA&CFA/")
 
 
@@ -43,120 +81,42 @@ kstudent <- kfa(variables = studentdf,
                   missing = "pairwise")
 tictoc::toc() # ~ 100 seconds
 
+fcors <- agg_lv_cor(kstudent)
+loads <- agg_loadings(kstudent)
+struct <- f_structure(kstudent)
+fit <- k_model_fit(kstudent)
+fittab <- agg_model_fit(fit)
 # Run report
-kfa_report(kstudent, report.title = "K-fold Factor Analysis - Lebenon Students",
-           file.name = "kfa_students")
+kfa_report(kstudent, file.name = "kfa_students",
+           report.format = "html_document",
+           report.title = "K-fold Factor Analysis - Lebenon Students")
 
+k <- 5
+m <- 5
+rotation = "oblimin"
+ordered = TRUE
+estimator = "DWLS"
+missing = "pairwise"
+testfolds <- caret::createFolds(y = 1:nrow(studentdf),
+                                k = k, list = TRUE,
+                                returnTrain = FALSE)
 
-#### Model Fit ####
-k <- 10
-kfits <- vector("list", length = k)
-for(f in 1:k){
+testefa <- mclapply(1:k, function(fold){
+  k_efa(training = studentdf[!c(row.names(studentdf) %in% testfolds[[fold]]), ],
+        m = 5,
+        rotation = rotation,
+        ordered = ordered,
+        estimator = estimator,
+        missing = missing)
+})
 
-  fits <- lapply(kstudent[[f]], function(x) {
-    lavaan::fitmeasures(x, c("chisq", "df", "cfi",
-                             "rmsea", "rmsea.ci.lower", "rmsea.ci.upper"))
-  })
-
-  fits.df <- cbind(data.frame(factors = as.character(1:length(fits))),
-                   as.data.frame(Reduce(rbind, fits)))
-  row.names(fits.df) <- NULL
-
-  kfits[[f]] <- fits.df
-}
-
-bdf <- as.data.frame(Reduce(rbind, kfits))
-aggfit <- data.frame(factors = 1:4,
-                       mean = tapply(bdf$rmsea, bdf$factors, mean),
-                       min = tapply(bdf$rmsea, bdf$factors, min),
-                       max = tapply(bdf$rmsea, bdf$factors, max))
-
-lowmod <- lapply(kfits, function(x) x[x$rmsea == min(x$rmsea),])
-lowmod.df <- as.data.frame(Reduce(rbind,lowmod))
-lowmod <- as.data.frame(table(lowmod.df$factors))
-names(lowmod) <- c("factors", "low_in_fold")
-
-
-merge(x = aggfit, y = lowmod, by = "factors", all.x = TRUE)
-
-
-#### Model Structure ####
-# All items are included in the 1 factor model; only differences in loadings will occur across folds
-allstructures <- vector("list", length = 4)
-allstructures[[1]][[1]] <- list(structure = efa_cfa_syntax(lavaan::lavInspect(kstudent[[1]][[1]], "est")$lambda),
-                                 folds = 1:k)
-for(m in 2:4){
-structures <- vector("list", length = k)
-for(f in 1:k){
-  structures[[f]] <- efa_cfa_syntax(lavaan::lavInspect(kstudent[[f]][[m]], "est")$lambda)
-}
-us <- unique(unlist(structures, use.names = FALSE))
-
-slist <- vector("list", length = length(us))
-for(u in seq_along(us)){
-
-  folds <- which(unlist(lapply(structures, function(x) x == us[[u]])))
-
-  slist[[u]] <- list(structure = us[[u]],
-                   folds = which(unlist(lapply(structures, function(x) x == us[[u]]))))
-}
-
-allstructures[[m]] <- slist
-}
-paste(allstructures[[1]][[1]]$folds, collapse = ", ")
-
-for(s in allstructures[[4]][[1]]$folds){
-
-  print(s)
-}
-
-
-unique.structures <- unique(structuredf$V1)
-
-test <- lapply(unique.structures, function(x) structuredf[structuredf$V1 == x,]$fold)
-
-alllambda <- vector("list", 4)
-for(m in 1:4){
-  lambdas <- data.frame()
-  for(s in 1:k){
-    loads <- subset(lavaan::standardizedSolution(kstudent[[s]][[m]], "std.lv",
-                                                 se = FALSE, zstat = FALSE,
-                                                 pvalue = FALSE, ci = FALSE),
-                    op == "=~")
-    # loads$factors <- m
-    # loads$fold <- s
-    lambdas <- rbind(lambdas, loads)
-  }
-
-  agglambdas <- data.frame(variable = vn,
-                           mean = tapply(lambdas$est.std, lambdas$rhs, mean),
-                           min = tapply(lambdas$est.std, lambdas$rhs, min),
-                           max = tapply(lambdas$est.std, lambdas$rhs, max))
-  row.names(agglambdas) <- NULL
-  alllambda[[m]] <- agglambdas
-}
-
-# could do this within structure so the output of the inner loop is a df and output of outer loop is list of dfs
-
-alllvcor <- vector("list", 3)
-for(m in 2:4){
-  cor.lv <- vector("list", k)
-  for(s in 1:k){
-    cor.lv[[s]] <- lavaan::lavInspect(kstudent[[s]][[m]], "cor.lv")
-  }
-
-  alllvcor[[m]] <- Reduce(`+`, cor.lv) / length(cor.lv)
-
-}
-
-coretest <- Reduce(`+`, cor.lv) / length(cor.lv)
-coretest[upper.tri(coretest, diag = FALSE)] <- NA
-
-
-cortest <- vector("list", k)
-for(s in 1:k){
-  cortest[[s]] <- lavaan::lavInspect(kstudent[[s]][[2]], "cor.lv")
-}
+traincfa <- mclapply(1:k, function(fold){
+  k_cfa(efa = testefa[[fold]],
+        testset = studentdf[testfolds[[fold]], ],
+        ordered = ordered,
+        estimator = estimator,
+        missing = missing)
+})
 
 
 

@@ -1,16 +1,15 @@
 #' k-fold exploratory factor analysis
 #'
-#' For each k fold, the function conducts a sequence of EFAs and
-#' converts the resulting factor structure into \code{lavaan}
-#' compatible CFA syntax.
+#' Conducts a sequence of EFAs and converts the resulting factor structure into \code{lavaan} compatible CFA syntax.
 #'
-#' @param variables dataframe of variables to factor analyze
-#' @param m integer; maximum number of factors to extract.
+#' @param variables a \code{data.frame} of variables to factor analyze.
+#' @param m an integer; maximum number of factors to extract.
 #' @param rotation character (case-sensitive); any rotation method listed in
 #' \code{\link[GPArotation]{rotations}} in the \code{GPArotation} package.
-#' @param ordered passed to lavaan functions
-#' @param estimator passed to lavaan functions
-#' @param missing passed to lavaan functions
+#' @param ordered passed to \code{lavaan} functions. See \code{\link[lavaan]{lavCor}}.
+#' @param estimator passed to \code{lavaan} functions. See \code{\link[lavaan]{lavCor}}.
+#' @param missing passed to \code{lavaan} functions. See \code{\link[lavaan]{lavCor}}.
+#' @param ... other arguments passed to \code{lavaan} functions. See \code{\link[lavaan]{lavOptions}}.
 #'
 #' @return A list containing \code{lavaan} compatible CFA syntax.
 
@@ -18,7 +17,7 @@ k_efa <- function(variables, m, rotation,
                   ordered, estimator, missing, ...){
 
   ## calculate and extract sample statistics
-  sampstats <- lavaan::lavCor(variables,
+  sampstats <- lavaan::lavCor(object = variables,
                               ordered = ordered,
                               estimator = estimator,
                               missing = missing,

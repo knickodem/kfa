@@ -8,7 +8,15 @@ output:
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = FALSE)
+flextable::set_flextable_defaults(fonts_ignore = TRUE)
 # knitr::opts_chunk$set(options(knitr.kable.NA = ''))
+
+plot.settings <- list(what = "std", whatLabels = "no", layout = "tree",
+                        intercepts = FALSE, residuals = FALSE, thresholds = FALSE,
+                        cut = cut, posCol = c("#BF0000","#000000"), fade = FALSE,
+                        # edge.color = , # could create custom function to utilize this argument
+                        weighted = TRUE, negDashed = TRUE, esize = 5,
+                        manifests = vnames, reorder = FALSE)
 
 ```
 
@@ -30,12 +38,12 @@ date: "`r format(Sys.Date(), '%B %d, %Y')`"
 **RMSEA across folds by factor model**
 
 ```{r lowmod, ft.align = "left", results='asis'}
-aggfit.flex <- flextable::flextable(aggfit)
-aggfit.flex <- colformat_num(aggfit.flex, j = 2:4, digits = 2)
-aggfit.flex <- flextable::align(aggfit.flex, align = "center", part = "all")
-aggfit.flex <- flextable::set_header_labels(aggfit.flex, low_in_fold = "lowest in fold")
-aggfit.flex <- flextable::autofit(aggfit.flex)
-knit_print(aggfit.flex)
+fit.flex <- flextable::flextable(fit.table)
+fit.flex <- colformat_double(fit.flex, j = 2:4, digits = 2)
+fit.flex <- flextable::align(fit.flex, align = "center", part = "all")
+fit.flex <- flextable::set_header_labels(fit.flex, num_folds_lowest = "num folds lowest")
+fit.flex <- flextable::autofit(fit.flex)
+knit_print(fit.flex)
 ```
 
 
@@ -87,15 +95,18 @@ for(m in 1:maxfac){
     for(f in kstructures[[m]][[s]]$folds){
     cat("#### Fold", f)
     cat("\n\n")
-    # do.call(semPlot::semPaths, args = c(list(object = kfa[[f]][[m]]), plot.settings))
-    semPlot::semPaths(kfa[[f]][[m]], what = "std", whatLabels = "no", layout = "tree",
-                        intercepts = FALSE, residuals = FALSE, thresholds = FALSE,
-                        color = list(lat = palette.colors(n = m + 1, palette = "Okabe-Ito",
-                                                          recycle = TRUE)[-1]),
-                        cut = cut, posCol = c("#BF0000","#000000"), fade = FALSE,
-                        # edge.color = , # could create custom function to utilize this argument
-                        weighted = TRUE, negDashed = TRUE, esize = 5,
-                        manifests = vnames, reorder = FALSE)
+    do.call(semPlot::semPaths, args = c(list(object = kfa[[f]][[m]],
+                                             color = list(lat = palette.colors(n = m + 1, palette = "Okabe-Ito",
+                                                          recycle = TRUE)[-1])),
+                                        plot.settings))
+    # semPlot::semPaths(object = kfa[[f]][[m]], what = "std", whatLabels = "no", layout = "tree",
+    #                     intercepts = FALSE, residuals = FALSE, thresholds = FALSE,
+    #                     color = list(lat = palette.colors(n = m + 1, palette = "Okabe-Ito",
+    #                                                       recycle = TRUE)[-1]),
+    #                     cut = cut, posCol = c("#BF0000","#000000"), fade = FALSE,
+    #                     # edge.color = , # could create custom function to utilize this argument
+    #                     weighted = TRUE, negDashed = TRUE, esize = 5,
+    #                     manifests = vnames, reorder = FALSE)
       cat("\n\n")
   }
  }

@@ -2,25 +2,23 @@
 % Please edit documentation in R/kfa_report.R
 \name{kfa_report}
 \alias{kfa_report}
-\alias{flextab_format}
 \title{Creates summary report from a k-fold factor analysis}
 \usage{
 kfa_report(
   kfa,
-  report.title = "K-Fold Factor Analysis",
-  file.name = NULL,
+  file.name,
+  report.format = "html_document",
+  report.title = file.name,
   cut = 0.3
 )
-
-flextab_format(df, bold.type = "none", cut = 0.3, digits = 2)
 }
 \arguments{
 \item{kfa}{an object returned from \code{kfa} or otherwise defined list of
 lists where the inner list consists of \code{lavaan} objects.}
 
-\item{report.title}{title of the report}
-
 \item{file.name}{character; file name to create on disk.}
+
+\item{report.title}{title of the report}
 
 \item{cut}{numeric; standardized factor loadings below this value are emphasized in
 tables and figures.}

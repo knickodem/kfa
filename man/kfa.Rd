@@ -12,17 +12,15 @@ kfa(
   m = floor(ncol(items)/4),
   rotation = "oblimin",
   ordered = FALSE,
-  estimator = NULL,
+  estimator = "default",
   missing = "listwise",
   ...
 )
 }
 \arguments{
-\item{variables}{dataframe of variables to factor analyze}
+\item{variables}{a \code{data.frame} of variables to factor analyze}
 
-\item{k}{integer; number of folds in which to split the data.
-Default is NULL which determines k via power analysis.
-The range for k is currently set to 2 to 10.}
+\item{k}{an integer between 2 and 10; number of folds in which to split the data. Default is NULL which determines k via power analysis.}
 
 \item{rmsea0}{numeric; RMSEA under the null hypothesis for the power analysis.}
 
@@ -31,20 +29,22 @@ The range for k is currently set to 2 to 10.}
 \item{m}{integer; maximum number of factors to extract. Default is 4 items per factor.}
 
 \item{rotation}{character (case-sensitive); any rotation method listed in
-\code{\link[GPArotation]{rotations}} in the \code{GPArotation} package.
-Default is "oblimin".}
+\code{\link[GPArotation]{rotations}} in the \code{GPArotation} package. Default is "oblimin".}
 
 \item{ordered}{logical; Should items be treated as ordinal and the
 polychoric correlations used in the factor analysis? When \code{FALSE} (default)
 the Pearson correlation matrix is used. A character vector of item names is
 also accepted to prompt estimation of the polychoric correlation matrix.}
 
-\item{estimator}{if \code{ordered} = FALSE, the default is "ML". If
-\code{ordered} = TRUE, the default is "DWLS". See \code{lavaan::lavaan} for other options.}
+\item{estimator}{if \code{ordered = FALSE}, the default is "ML". If
+\code{ordered = TRUE}, the default is "DWLS". See \code{\link[lavaan]{lavaan}} for other options.}
 
-\item{missing}{default is "listwise". See \code{lavaan::lavaan} for other options.}
+\item{missing}{default is "listwise". See \code{\link[lavaan]{lavaan}} for other options.}
 
-\item{...}{arguments to pass to \code{lavaan}. These may include ...}
+\item{...}{other arguments passed to \code{lavaan} functions. See \code{\link[lavaan]{lavOptions}}.}
+}
+\value{
+a \code{list} of \code{lists} with each outer element being a k-fold and each inner element a \code{lavaan} object
 }
 \description{
 The function splits the data into k folds. For each fold,

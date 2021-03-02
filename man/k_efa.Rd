@@ -7,24 +7,24 @@
 k_efa(variables, m, rotation, ordered, estimator, missing, ...)
 }
 \arguments{
-\item{variables}{dataframe of variables to factor analyze}
+\item{variables}{a \code{data.frame} of variables to factor analyze.}
 
-\item{m}{integer; maximum number of factors to extract.}
+\item{m}{an integer; maximum number of factors to extract.}
 
 \item{rotation}{character (case-sensitive); any rotation method listed in
 \code{\link[GPArotation]{rotations}} in the \code{GPArotation} package.}
 
-\item{ordered}{passed to lavaan functions}
+\item{ordered}{passed to \code{lavaan} functions. See \code{\link[lavaan]{lavCor}}.}
 
-\item{estimator}{passed to lavaan functions}
+\item{estimator}{passed to \code{lavaan} functions. See \code{\link[lavaan]{lavCor}}.}
 
-\item{missing}{passed to lavaan functions}
+\item{missing}{passed to \code{lavaan} functions. See \code{\link[lavaan]{lavCor}}.}
+
+\item{...}{other arguments passed to \code{lavaan} functions. See \code{\link[lavaan]{lavOptions}}.}
 }
 \value{
 A list containing \code{lavaan} compatible CFA syntax.
 }
 \description{
-For each k fold, the function conducts a sequence of EFAs and
-converts the resulting factor structure into \code{lavaan}
-compatible CFA syntax.
+Conducts a sequence of EFAs and converts the resulting factor structure into \code{lavaan} compatible CFA syntax.
 }
