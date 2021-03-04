@@ -90,7 +90,7 @@ k_efa <- function(variables, m, rotation,
     efa_cfa_syntax(loadings = x,
                    simple = TRUE,
                    threshold = NA,
-                   single.item = "")
+                   single.item = "none")
   })
 
   ## adding the 1-factor model as first element in cfa syntax list

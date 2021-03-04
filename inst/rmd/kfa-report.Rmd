@@ -39,13 +39,12 @@ date: "`r format(Sys.Date(), '%B %d, %Y')`"
 
 ```{r lowmod, ft.align = "left", results='asis'}
 fit.flex <- flextable::flextable(fit.table)
-fit.flex <- colformat_double(fit.flex, j = 2:4, digits = 2)
+fit.flex <- flextable::colformat_double(fit.flex, j = 2:4, digits = 2)
 fit.flex <- flextable::align(fit.flex, align = "center", part = "all")
 fit.flex <- flextable::set_header_labels(fit.flex, num_folds_lowest = "num folds lowest")
 fit.flex <- flextable::autofit(fit.flex)
 knit_print(fit.flex)
 ```
-
 
 
 # Model Fit Summary
@@ -66,7 +65,7 @@ for(f in 1:length(kfits)){
 
 # Model Structure
 
-```{r structure, ft.align = "left", results = 'asis', fig.height = 4}
+```{r structure, ft.align = "left", results = 'asis', warning = FALSE, message = FALSE, fig.height = 8, fig.width = 12}
 
 for(m in 1:maxfac){
   cat("## Factors:", m)
@@ -81,7 +80,7 @@ for(m in 1:maxfac){
   cat("### Mean Factor Correlations")
   cat("\n\n")
   corr.flex <- flextab_format(kcorrs[[m]], bold.type = "none", digits = 2)
-  corr.flex <- compose(corr.flex, i = 1, j = 1, value = as_paragraph(""), part = "header")
+  corr.flex <- flextable::compose(corr.flex, i = 1, j = 1, value = flextable::as_paragraph(""), part = "header")
   cat(knit_print(corr.flex))
   cat("\n\n")
   }
@@ -92,13 +91,16 @@ for(m in 1:maxfac){
     cat("\n\n")
     cat(gsub("\n", "\n\n", kstructures[[m]][[s]]$structure))
     cat("\n\n")
+    l <- length(kstructures[[m]][[s]]$folds)
+    plotmat <- matrix(1:l, nrow = ifelse(l < 4, 1, 2), byrow = TRUE)
+    graphics::layout(plotmat)
     for(f in kstructures[[m]][[s]]$folds){
-    cat("#### Fold", f)
-    cat("\n\n")
     do.call(semPlot::semPaths, args = c(list(object = kfa[[f]][[m]],
                                              color = list(lat = palette.colors(n = m + 1, palette = "Okabe-Ito",
-                                                          recycle = TRUE)[-1])),
+                                                          recycle = TRUE)[-1]),
+                                             title = FALSE),
                                         plot.settings))
+      title(paste("Fold:", f), adj = 0, line = 0)
     # semPlot::semPaths(object = kfa[[f]][[m]], what = "std", whatLabels = "no", layout = "tree",
     #                     intercepts = FALSE, residuals = FALSE, thresholds = FALSE,
     #                     color = list(lat = palette.colors(n = m + 1, palette = "Okabe-Ito",

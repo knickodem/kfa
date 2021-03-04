@@ -64,7 +64,7 @@ kfa <- function(variables,
   }
 
   ## Run EFAs and return lavaan syntax for CFAs - uses all available cores (except for windows os)
-  efa <- mclapply(1:k, function(fold){
+  efa <- parallel::mclapply(1:k, function(fold){
     k_efa(variables = variables[!c(row.names(variables) %in% testfolds[[fold]]), ],
           m = m,
           rotation = rotation,
@@ -75,7 +75,7 @@ kfa <- function(variables,
   })
 
   ## Run CFAs
-  cfa <- mclapply(1:k, function(fold){
+  cfa <- parallel::mclapply(1:k, function(fold){
     k_cfa(efa = efa[[fold]],
           variables = variables[testfolds[[fold]], ],
           ordered = ordered,

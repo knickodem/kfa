@@ -10,7 +10,16 @@ Description: Utilities for examining the dimensionality of an instrument.
 Depends:
     R (>= 3.6)
 Imports:
+  caret,
   flextable (>= 0.6.3),
+  GPArotation,
+  knitr,
+  lavaan,
+  parallel,
+  parameters,
+  rmarkdown,
+  semPlot,
+  semTools
 License: GPL3
 Encoding: UTF-8
 LazyData: true

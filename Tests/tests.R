@@ -42,6 +42,8 @@ tictoc::toc() # ~ 22 seconds
 kfa_report(kexp2, report.title = "Exposure Wave 2: K-fold Factor Analysis",
            file.name = "kfa_exposure_W2")
 
+#############################################
+
 #### Import data ####
 shortfile <- c("C:/Users/kylenick/University of North Carolina at Chapel Hill/Halpin, Peter Francis - UNC_stat_projets/EFA&CFA/")
 
@@ -81,11 +83,6 @@ kstudent <- kfa(variables = studentdf,
                   missing = "pairwise")
 tictoc::toc() # ~ 100 seconds
 
-fcors <- agg_lv_cor(kstudent)
-loads <- agg_loadings(kstudent)
-struct <- f_structure(kstudent)
-fit <- k_model_fit(kstudent)
-fittab <- agg_model_fit(fit)
 # Run report
 kfa_report(kstudent, file.name = "kfa_students",
            report.format = "html_document",
@@ -124,9 +121,30 @@ traincfa <- mclapply(1:k, function(fold){
 
 #### Plotting ####
 palette.colors(n = 10, "Set 1")
+cut <- .3
+graphics::layout
+vnames <- dimnames(lavaan::lavInspect(kstudent[[1]][[1]], "sampstat")$cov)[[1]]
+plot.settings <- list(what = "std", whatLabels = "no", layout = "tree",
+                      intercepts = FALSE, residuals = FALSE, thresholds = FALSE,
+                      cut = cut, posCol = c("#BF0000","#000000"), fade = FALSE,
+                      # edge.color = , # could create custom function to utilize this argument
+                      weighted = TRUE, negDashed = TRUE, esize = 5,
+                      manifests = vnames, reorder = FALSE)
+kstructures <- model_structure(kstudent)
+l <- length(kstructures[[1]][[1]]$folds)
+plotmat <- matrix(1:l, nrow = 2)
+graphics::layout(plotmat)
+for(f in 1:l){
+do.call(semPlot::semPaths, args = c(list(object = kstudent[[f]][[1]],
+                                         color = list(lat = palette.colors(n = 1 + 1, palette = "Okabe-Ito",
+                                                                           recycle = TRUE)[-1]),
+                                         title = FALSE),
+                                    plot.settings))
+title(paste("Fold:", f), adj = 0, line = 0)
+}
 
 
-vn <- dimnames(lavaan::lavInspect(kstudent[[1]][[1]], "sampstat")$cov)[[1]]
+
 curiousplot <- semPlot::semPaths(kstudent[[1]][[3]], what = "std", whatLabels = "no",
                                  layout = "tree", negDashed = TRUE,
                   intercepts = FALSE, residuals = FALSE, thresholds = FALSE,
