@@ -60,11 +60,21 @@ kfa <- function(variables,
   testfolds <- caret::createFolds(y = 1:nrow(variables),
                                   k = k, list = TRUE,
                                   returnTrain = FALSE)
+
   if(.Platform$OS.type == "windows"){
+    cluster.type <- "PSOCK"
+  } else{
+    cluster.type <- "FORK"
   }
 
+  cores <- parallel::detectCores() - 1
+  clusters <- parallel::makeCluster(cores, type = cluster.type)
+  doParallel::registerDoParallel(clusters)
+
+  print(paste("Using", getDoParWorkers(), "cores for parallelization."))
+
   ## Run EFAs and return lavaan syntax for CFAs - uses all available cores (except for windows os)
-  efa <- parallel::mclapply(1:k, function(fold){
+  efa <- foreach::foreach(fold = 1:k) %dopar% { # use %do% if we offer a parallel = FALSE option
     k_efa(variables = variables[!c(row.names(variables) %in% testfolds[[fold]]), ],
           m = m,
           rotation = rotation,
@@ -72,17 +82,18 @@ kfa <- function(variables,
           estimator = estimator,
           missing = missing,
           ...)
-  })
+  }
 
   ## Run CFAs
-  cfa <- parallel::mclapply(1:k, function(fold){
+  cfa <- foreach::foreach(fold = 1:k) %dopar% {
     k_cfa(efa = efa[[fold]],
           variables = variables[testfolds[[fold]], ],
           ordered = ordered,
           estimator = estimator,
           missing = missing,
           ...)
-  })
+  }
+  parallel::stopCluster(clusters)
 
   return(cfa)
 }

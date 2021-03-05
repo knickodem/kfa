@@ -83,6 +83,18 @@ kstudent <- kfa(variables = studentdf,
                   missing = "pairwise")
 tictoc::toc() # ~ 100 seconds
 
+set.seed(936639)
+tictoc::tic()
+kstudent.par <- temp_kfa(variables = studentdf,
+                k = NULL,
+                m = 5,
+                parallel = FALSE,
+                rotation = "oblimin",
+                ordered = TRUE,
+                estimator = "DWLS",
+                missing = "pairwise")
+tictoc::toc() # ~ 50 seconds
+
 # Run report
 kfa_report(kstudent, file.name = "kfa_students",
            report.format = "html_document",
