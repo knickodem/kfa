@@ -4,13 +4,17 @@
 \alias{k_model_fit}
 \title{Extract model fit}
 \usage{
-k_model_fit(kfa)
+k_model_fit(kfa, index = c("chisq", "cfi", "rmsea"), by.fold = TRUE)
 }
 \arguments{
 \item{kfa}{An object returned from \code{\link[kfa]{kfa}}}
+
+\item{index}{One or more fit indices to summarize in the report. The degrees of freedom are always reported. Default are "chisq", "cfi", and "rmsea".}
+
+\item{by.fold}{Should each element in the returned lists be a fold (default) or a factor model?}
 }
 \value{
-\code{data.frame} of average model fit for each factor model
+\code{list} of data.frames with average model fit for each factor model
 }
 \description{
 Model fit indices extracted from k-folds

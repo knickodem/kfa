@@ -10,7 +10,7 @@ model_structure(kfa)
 \item{kfa}{An object returned from \code{\link[kfa]{kfa}}}
 }
 \value{
-For each factor quantity, a \code{list} containing \code{lavaan} syntax specifying the factor structure and the folds where the structure was identified
+A \code{list} containing \code{lavaan} syntax specifying the factor structure and the folds where the structure was identified
 }
 \description{
 Extract unique factor structures across the k-folds

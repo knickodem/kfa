@@ -4,17 +4,18 @@
 \alias{agg_model_fit}
 \title{Summary table of model fit}
 \usage{
-agg_model_fit(k.fits, index = "rmsea")
+agg_model_fit(kfits, index = c("chisq", "cfi", "rmsea"), digits = 2)
 }
 \arguments{
-\item{k.fits}{An object returned from \code{\link[kfa]{k_model_fit}}}
+\item{kfits}{An object returned from \code{\link[kfa]{k_model_fit}} when \code{by.folds = TRUE}}
+
+\item{index}{One or more fit indices to summarize in the report. The degrees of freedom are always reported. Default are "chisq", "cfi", and "rmsea".}
+
+\item{digits}{integer; number of decimal places to display in the report.}
 }
 \value{
-For each factor quantity, a \code{list} containing \code{lavaan} syntax specifying the factor structure and the folds where the structure was identified
+\code{data.frame} of aggregated model fit statistics
 }
 \description{
-Summary table of average model fit from the k-folds
-}
-\details{
-Only RMSEA is currently summarized
+Summary table of model fit aggregated over k-folds
 }

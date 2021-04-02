@@ -7,6 +7,8 @@
 findk(variables, m, rmsea0 = 0.05, rmseaA = 0.08, ...)
 }
 \arguments{
+\item{variables}{a \code{data.frame} (or convertible to a \code{data.frame}) of variables to factor analyze}
+
 \item{m}{integer; maximum number of factors to extract. Default is 4 items per factor.}
 
 \item{rmsea0}{numeric; RMSEA under the null hypothesis.}
@@ -14,7 +16,7 @@ findk(variables, m, rmsea0 = 0.05, rmseaA = 0.08, ...)
 \item{rmseaA}{numeric; RMSEA under the alternative hypothesis.}
 
 \item{p}{integer specifying the number of items or \code{data.frame}
-where the number of items is determined via \code{\link[base]{ncol}}}
+where the number of items is determined via \code{ncol}}
 }
 \value{
 integer indicating the number of folds

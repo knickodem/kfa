@@ -1,11 +1,11 @@
 #' Conducts k-fold cross validation for factor analysis.
 #'
-#' The function splits the data into k folds. For each fold,
+#' The function splits the data into *k* folds. For each fold,
 #' EFAs are run on the training data and the simple structure each model
 #' is transformed into \code{lavaan}-compatible CFA syntax. The CFAs are then run
 #' on the test data.
 #'
-#' @param variables a \code{data.frame} of variables to factor analyze
+#' @param variables a \code{data.frame} (or convertible to a \code{data.frame}) of variables to factor analyze
 #' @param k an integer between 2 and 10; number of folds in which to split the data. Default is NULL which determines k via power analysis.
 #' @param rmsea0 numeric; RMSEA under the null hypothesis for the power analysis.
 #' @param rmseaA numeric; RMSEA under the alternative hypothesis for the power analysis.
@@ -23,10 +23,10 @@
 #'
 #' @details
 #' Deciding an appropriate *m* can be difficult, but is consequential for both the
-#' possible factor structures to examine and the computation time. To assist, researchers
-#' can use \code{\link[parameters]{n_factors}} in the \code{parameters} package.
+#' possible factor structures to examine and the computation time.
+#' The \code{\link[parameters]{n_factors}} in the \code{parameters} package can assist with this decision.
 #'
-#' @return a \code{list} of \code{lists} with each outer element being a k-fold and each inner element a \code{lavaan} object
+#' @return A \code{list} of \code{lists} with *k* outer elements for each fold and *m* inner elements containing a \code{lavaan} object.
 #'
 #' @export
 
@@ -34,6 +34,8 @@ kfa <- function(variables,
                 k = NULL, rmsea0 = .05, rmseaA = .08,
                 m = floor(ncol(items) / 4), rotation = "oblimin",
                 ordered = FALSE, estimator = "default", missing = "listwise", ...){
+
+  variables <- as.data.frame(variables)
 
   # The ordered = TRUE functionality in lavaan is not currently equivalent to listing
   # all items, so need to do it manually since I want this functionality for our users
@@ -71,7 +73,7 @@ kfa <- function(variables,
   clusters <- parallel::makeCluster(cores, type = cluster.type)
   doParallel::registerDoParallel(clusters)
 
-  print(paste("Using", getDoParWorkers(), "cores for parallelization."))
+  print(paste("Using", foreach::getDoParWorkers(), "cores for parallelization."))
 
   ## Run EFAs and return lavaan syntax for CFAs - uses all available cores (except for windows os)
   efa <- foreach::foreach(fold = 1:k) %dopar% { # use %do% if we offer a parallel = FALSE option

@@ -18,7 +18,7 @@ kfa(
 )
 }
 \arguments{
-\item{variables}{a \code{data.frame} of variables to factor analyze}
+\item{variables}{a \code{data.frame} (or convertible to a \code{data.frame}) of variables to factor analyze}
 
 \item{k}{an integer between 2 and 10; number of folds in which to split the data. Default is NULL which determines k via power analysis.}
 
@@ -44,16 +44,16 @@ also accepted to prompt estimation of the polychoric correlation matrix.}
 \item{...}{other arguments passed to \code{lavaan} functions. See \code{\link[lavaan]{lavOptions}}.}
 }
 \value{
-a \code{list} of \code{lists} with each outer element being a k-fold and each inner element a \code{lavaan} object
+A \code{list} of \code{lists} with *k* outer elements for each fold and *m* inner elements containing a \code{lavaan} object.
 }
 \description{
-The function splits the data into k folds. For each fold,
+The function splits the data into *k* folds. For each fold,
 EFAs are run on the training data and the simple structure each model
 is transformed into \code{lavaan}-compatible CFA syntax. The CFAs are then run
 on the test data.
 }
 \details{
 Deciding an appropriate *m* can be difficult, but is consequential for both the
-possible factor structures to examine and the computation time. To assist, researchers
-can use \code{\link[parameters]{n_factors}} in the \code{parameters} package.
+possible factor structures to examine and the computation time.
+The \code{\link[parameters]{n_factors}} in the \code{parameters} package can assist with this decision.
 }

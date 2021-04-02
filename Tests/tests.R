@@ -4,46 +4,6 @@
 #                                 #
 ###################################
 
-#### Using Dorothy Data ####
-schclimate <- haven::read_sav("C:/Users/kylenick/OneDrive - University of North Carolina at Chapel Hill/Dorothy//00 School Climate W1-W4 cleaned/SPSS/sources_school_climate_w1_2021-1-27.sav")
-names(schclimate) <- gsub("_W1", "", names(schclimate))
-
-## Possible Scales
-StudentInterveneVars <- paste("STUDENTS_INTERVENE", 1:7, sep = "_")
-StaffInterveneVars <- paste("STAFF_INTERVENE", 1:7, sep = "_")
-YouInterveneVars <- paste("YOU_INTERVENE", 1:7, sep = "_")
-SchCom2BullyVars <- paste("SCHOOL_COMMITMENT_BULLYING", 1:6, sep = "_")
-SchCom2SHVars <- paste("SCHOOL_COMMITMENT_SEX_HARR", 1:6, sep = "_")
-SchCom2MHVars <- paste("SCHOOL_COMMITMENT_MT_HEALTH", 1:6, sep = "_")
-SchClimateVars <- paste("POSITIVE_PERCEP_SCHOOL_CLIMATE", 1:11, sep = "_")
-SchAggressionVars <- paste("AGGRESSION_PROBLEM_AT_SCHOOL", 1:7, sep = "_")
-
-SchoolScales <- list(StudentInterveneVars, StaffInterveneVars, YouInterveneVars,
-                     SchCom2BullyVars, SchCom2SHVars, SchCom2MHVars,
-                     SchAggressionVars, SchClimateVars)
-names(SchoolScales) <- c("Student_Intervene", "Staff_Intervene", "You_Intervene",
-                         "School_Commitment_to_Bullying", "School_Commitment_to_SH",
-                         "School_Commitment_to_Mental_Health", "School_Aggression_Problems",
-                         "Positive_School_Climate")
-
-
-set.seed(210106)
-tictoc::tic()
-kexp2 <- kfa(variables = exposurew2,
-             k = NULL,
-             m = 4,
-             rotation = "oblimin",
-             ordered = TRUE,
-             estimator = "DWLS",
-             missing = "pairwise")
-tictoc::toc() # ~ 22 seconds
-
-# Run report
-kfa_report(kexp2, report.title = "Exposure Wave 2: K-fold Factor Analysis",
-           file.name = "kfa_exposure_W2")
-
-#############################################
-
 #### Import data ####
 shortfile <- c("C:/Users/kylenick/University of North Carolina at Chapel Hill/Halpin, Peter Francis - UNC_stat_projets/EFA&CFA/")
 
@@ -81,23 +41,39 @@ kstudent <- kfa(variables = studentdf,
                   ordered = TRUE,
                   estimator = "DWLS",
                   missing = "pairwise")
-tictoc::toc() # ~ 100 seconds
+tictoc::toc() # ~ 60 seconds
 
-set.seed(936639)
-tictoc::tic()
-kstudent.par <- temp_kfa(variables = studentdf,
-                k = NULL,
-                m = 5,
-                parallel = FALSE,
-                rotation = "oblimin",
-                ordered = TRUE,
-                estimator = "DWLS",
-                missing = "pairwise")
-tictoc::toc() # ~ 50 seconds
+krels <- agg_reliability(kstudent)
+
+kfits <- k_model_fit(kstudent)
+mfits <- k_model_fit(kstudent, by.fold = FALSE)
+get_appendix(mfits)
+
+fit.table <- agg_model_fit(kfits, index = c("cfi", "rmsea"))
+
+
+fit.map <- data.frame(col_keys = names(fit.table),
+                      top = c("factors", "df", rep(index, each = 2)),
+                      bottom = c("factors", "df", rep(c("mean", "range"), times = length(index))))
+border <- officer::fp_border(width = 2)
+
+fit.flex <- flextable::flextable(fit.table)
+fit.flex <- flextable::colformat_double(fit.flex, j = -c(1,2), digits = 2)
+fit.flex <- flextable::set_header_df(fit.flex, mapping = fit.map)
+fit.flex <- flextable::merge_h(fit.flex, part = "header")
+fit.flex <- flextable::merge_v(fit.flex, j = c("factors", "df"), part = "header")
+fit.flex <- flextable::fix_border_issues(fit.flex)
+fit.flex <- flextable::border_inner_h(fit.flex, border = border, part = "header")
+fit.flex <- flextable::hline_top(fit.flex, border = border, part = "all")
+# fit.flex <- flextable::theme_vanilla(fit.flex)
+fit.flex <- flextable::align(fit.flex, align = "center", part = "all")
+fit.flex <- flextable::autofit(fit.flex)
+
+# fit.flex <- flextable::set_header_labels(fit.flex, best_in_fold = "best in fold")
 
 # Run report
 kfa_report(kstudent, file.name = "kfa_students",
-           report.format = "html_document",
+           report.format = "word_document",
            report.title = "K-fold Factor Analysis - Lebenon Students")
 
 k <- 5

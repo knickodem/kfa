@@ -9,22 +9,29 @@ kfa_report(
   file.name,
   report.format = "html_document",
   report.title = file.name,
-  cut = 0.3
+  index = c("chisq", "cfi", "rmsea"),
+  cut = 0.3,
+  digits = 2
 )
 }
 \arguments{
-\item{kfa}{an object returned from \code{kfa} or otherwise defined list of
+\item{kfa}{An object returned from \code{kfa} or otherwise defined list of
 lists where the inner list consists of \code{lavaan} objects.}
 
-\item{file.name}{character; file name to create on disk.}
+\item{file.name}{Character; file name to create on disk.}
 
-\item{report.title}{title of the report}
+\item{report.format}{File format of the report. Default is HTML ("html_document"). See \code{\link[rmarkdown]{render}} for other options.}
 
-\item{cut}{numeric; standardized factor loadings below this value are emphasized in
-tables and figures.}
+\item{report.title}{Title of the report}
+
+\item{index}{One or more fit indices to summarize in the report. The degrees of freedom are always reported. Default are "chisq", "cfi", and "rmsea".}
+
+\item{cut}{numeric; standardized factor loadings below this value are emphasized in tables and figures.}
+
+\item{digits}{integer; number of decimal places to display in the report.}
 }
 \value{
-html report generated via rmarkdown
+a summary report of factor structure and model fit within and between folds
 }
 \description{
 Generates a report summarizing the factor analytic results over k-folds.

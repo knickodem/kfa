@@ -4,6 +4,9 @@ output:
       toc: TRUE
       toc_depth: 2
       always_allow_html: TRUE
+   word_document:
+      toc: TRUE
+      toc_depth: 2
 ---
 
 ```{r setup, include = FALSE}
@@ -33,33 +36,36 @@ date: "`r format(Sys.Date(), '%B %d, %Y')`"
 
 **# of observations:** `r nobs`
 
-**Maximum # of factors extracted:** `r maxfac`
+**Maximum # of factors extracted:** `r m`
 
-**RMSEA across folds by factor model**
+**Fit across folds by factor model**
 
-```{r lowmod, ft.align = "left", results='asis'}
+```{r model fit, ft.align = "left", results='asis'}
+index <- index[index != "df"] 
+fit.map <- data.frame(col_keys = names(fit.table),
+                      top = c("factors", "df", rep(index, each = 2)),
+                      bottom = c("factors", "df", rep(c("mean", "range"), times = length(index))))
+border <- officer::fp_border(width = 2)
+
 fit.flex <- flextable::flextable(fit.table)
-fit.flex <- flextable::colformat_double(fit.flex, j = 2:4, digits = 2)
+fit.flex <- flextable::colformat_double(fit.flex, j = -c(1,2), digits = 2)
+fit.flex <- flextable::set_header_df(fit.flex, mapping = fit.map)
+fit.flex <- flextable::merge_h(fit.flex, part = "header")
+fit.flex <- flextable::merge_v(fit.flex, j = c("factors", "df"), part = "header")
+fit.flex <- flextable::fix_border_issues(fit.flex)
+fit.flex <- flextable::border_inner_h(fit.flex, border = border, part = "header")
+fit.flex <- flextable::hline_top(fit.flex, border = border, part = "all")
+# fit.flex <- flextable::theme_vanilla(fit.flex)
 fit.flex <- flextable::align(fit.flex, align = "center", part = "all")
-fit.flex <- flextable::set_header_labels(fit.flex, num_folds_lowest = "num folds lowest")
 fit.flex <- flextable::autofit(fit.flex)
 knit_print(fit.flex)
 ```
 
+**Best model in each fold by fit index**
 
-# Model Fit Summary
-
-```{r fits, ft.align = "left", results='asis'}
-for(f in 1:length(kfits)){
-  
-  cat("### Fold", f)
-  cat("\n\n")
-  fit.flex <- flextab_format(kfits[[f]], bold.type = "rmsea", digits = 2)
-  cat(knit_print(fit.flex))
-  cat("\n\n")
-  
-}
-  
+```{r best model, ft.align = "left", results='asis'}
+best.flex <- flextab_format(best.model, bold.type = "none", digits = digits)
+knit_print(best.flex)
 ```
 
 
@@ -70,22 +76,31 @@ for(f in 1:length(kfits)){
 for(m in 1:maxfac){
   cat("## Factors:", m)
   cat("\n\n")
-  cat("### Standardized Loading Across Folds")
+  cat("### Across Folds Measures")
+  cat("\n\n")
+  cat("**Standardized Loading Across Folds**")
   cat("\n\n")
   lambda.flex <- flextab_format(klambdas[[m]], bold.type = "lambda",
-                                cut = cut, digits = 2)
+                                cut = cut, digits = digits)
   cat(knit_print(lambda.flex))
   cat("\n\n")
   if(m > 1){
-  cat("### Mean Factor Correlations")
+  cat("**Mean Factor Correlations**")
   cat("\n\n")
-  corr.flex <- flextab_format(kcorrs[[m]], bold.type = "none", digits = 2)
+  corr.flex <- flextab_format(kcorrs[[m]], bold.type = "none", digits = digits)
   corr.flex <- flextable::compose(corr.flex, i = 1, j = 1, value = flextable::as_paragraph(""), part = "header")
   cat(knit_print(corr.flex))
   cat("\n\n")
   }
+  cat("**Mean Scale Reliabilities**")
+  cat("\n\n")
+  rel.flex <- flextab_format(as.data.frame(krels[[m]]), bold.type = "none", digits = digits)
+  cat(knit_print(rel.flex))
+  cat("\n\n")
+  cat("### Within Fold Information")
+  cat("\n\n")
   for(s in seq_along(kstructures[[m]])){
-    cat("### Factor Structure", s)
+    cat("**Factor Structure", s, "**")
     cat("\n\n")
     cat("**In Folds:", paste(kstructures[[m]][[s]]$folds, collapse = ", "), "**")
     cat("\n\n")
@@ -116,3 +131,26 @@ for(m in 1:maxfac){
 
 ```
 
+
+# Appendix - Within Fold Model Fit
+
+```{r appendix, ft.align = "left", results='asis'}
+index <- index[index != "df"] 
+fit.map <- data.frame(col_keys = names(fit.table),
+                      top = c("factors", "df", rep(index, each = 2)),
+                      bottom = c("factors", "df", rep(c("mean", "range"), times = length(index))))
+border <- officer::fp_border(width = 2)
+
+fit.flex <- flextable::flextable(fit.table)
+fit.flex <- flextable::colformat_double(fit.flex, j = -c(1,2), digits = 2)
+fit.flex <- flextable::set_header_df(fit.flex, mapping = fit.map)
+fit.flex <- flextable::merge_h(fit.flex, part = "header")
+fit.flex <- flextable::merge_v(fit.flex, j = c("factors", "df"), part = "header")
+fit.flex <- flextable::fix_border_issues(fit.flex)
+fit.flex <- flextable::border_inner_h(fit.flex, border = border, part = "header")
+fit.flex <- flextable::hline_top(fit.flex, border = border, part = "all")
+# fit.flex <- flextable::theme_vanilla(fit.flex)
+fit.flex <- flextable::align(fit.flex, align = "center", part = "all")
+fit.flex <- flextable::autofit(fit.flex)
+knit_print(fit.flex)
+```

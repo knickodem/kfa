@@ -5,8 +5,9 @@
 #' analytic model, the function determines the number of folds based on the sample
 #' size, maximum number of possible factors, and RMSEA values.
 #'
+#' @param variables a \code{data.frame} (or convertible to a \code{data.frame}) of variables to factor analyze
 #' @param p integer specifying the number of items or \code{data.frame}
-#' where the number of items is determined via \code{\link[base]{ncol}}
+#' where the number of items is determined via \code{ncol}
 #' @param m integer; maximum number of factors to extract. Default is 4 items per factor.
 #' @param rmsea0 numeric; RMSEA under the null hypothesis.
 #' @param rmseaA numeric; RMSEA under the alternative hypothesis.
@@ -17,12 +18,8 @@
 # Ideally, need a better rationale for default rmsea0 and rmseaA.
 findk <- function(variables, m, rmsea0 = .05, rmseaA = .08, ...){
 
-  if(is.data.frame(variables)){
-    p <- ncol(variables)
-  } else{
-    stop("variables must be a dataframe (for now).")
-  }
-
+  variables <- as.data.frame(variables)
+  p <- ncol(variables)
   df <- ((p - m)^2 - (p + m)) / 2
 
   samp <- semTools::findRMSEAsamplesize(rmsea0 = rmsea0, rmseaA = rmseaA, df = df, ...)
