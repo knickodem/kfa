@@ -26,7 +26,7 @@ lists where the inner list consists of \code{lavaan} objects.}
 
 \item{index}{One or more fit indices to summarize in the report. The degrees of freedom are always reported. Default are "chisq", "cfi", and "rmsea".}
 
-\item{cut}{numeric; standardized factor loadings below this value are emphasized in tables and figures.}
+\item{cut}{numeric; standardized factor loadings below this value are bolded in tables.}
 
 \item{digits}{integer; number of decimal places to display in the report.}
 }

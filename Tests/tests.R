@@ -43,33 +43,12 @@ kstudent <- kfa(variables = studentdf,
                   missing = "pairwise")
 tictoc::toc() # ~ 60 seconds
 
-krels <- agg_reliability(kstudent)
-
-kfits <- k_model_fit(kstudent)
 mfits <- k_model_fit(kstudent, by.fold = FALSE)
-get_appendix(mfits)
+test <- get_appendix(mfits)
+appendix <- flextab_format(test, digits = 2)
+appendix <- flextable::font(appendix, fontname = "Times New Roman", part = "all")
+appendix <- flextable::padding(appendix, padding = 3, part = "all")
 
-fit.table <- agg_model_fit(kfits, index = c("cfi", "rmsea"))
-
-
-fit.map <- data.frame(col_keys = names(fit.table),
-                      top = c("factors", "df", rep(index, each = 2)),
-                      bottom = c("factors", "df", rep(c("mean", "range"), times = length(index))))
-border <- officer::fp_border(width = 2)
-
-fit.flex <- flextable::flextable(fit.table)
-fit.flex <- flextable::colformat_double(fit.flex, j = -c(1,2), digits = 2)
-fit.flex <- flextable::set_header_df(fit.flex, mapping = fit.map)
-fit.flex <- flextable::merge_h(fit.flex, part = "header")
-fit.flex <- flextable::merge_v(fit.flex, j = c("factors", "df"), part = "header")
-fit.flex <- flextable::fix_border_issues(fit.flex)
-fit.flex <- flextable::border_inner_h(fit.flex, border = border, part = "header")
-fit.flex <- flextable::hline_top(fit.flex, border = border, part = "all")
-# fit.flex <- flextable::theme_vanilla(fit.flex)
-fit.flex <- flextable::align(fit.flex, align = "center", part = "all")
-fit.flex <- flextable::autofit(fit.flex)
-
-# fit.flex <- flextable::set_header_labels(fit.flex, best_in_fold = "best in fold")
 
 # Run report
 kfa_report(kstudent, file.name = "kfa_students",

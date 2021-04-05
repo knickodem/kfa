@@ -4,12 +4,12 @@
 \alias{get_appendix}
 \title{Appendix of model fit}
 \usage{
-get_appendix(mfits, index = c("chisq", "cfi", "rmsea"))
+get_appendix(mfits, index = "all")
 }
 \arguments{
 \item{mfits}{An object returned from \code{\link[kfa]{k_model_fit}} when \code{by.folds = FALSE}}
 
-\item{index}{One or more fit indices to summarize in the report. The degrees of freedom are always reported. Default are "chisq", "cfi", and "rmsea".}
+\item{index}{One or more fit indices to include in the appendix table. Default is \code{"all"} indices present in \code{mfits}. The degrees of freedom are always reported.}
 }
 \value{
 \code{data.frame} of model fit by fold, factor model, and fit index

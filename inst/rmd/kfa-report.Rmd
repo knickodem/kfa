@@ -7,6 +7,7 @@ output:
    word_document:
       toc: TRUE
       toc_depth: 2
+      reference_docx: kfa_word_template.docx
 ---
 
 ```{r setup, include = FALSE}
@@ -20,6 +21,7 @@ plot.settings <- list(what = "std", whatLabels = "no", layout = "tree",
                         # edge.color = , # could create custom function to utilize this argument
                         weighted = TRUE, negDashed = TRUE, esize = 5,
                         manifests = vnames, reorder = FALSE)
+border <- officer::fp_border(width = 2) # manual horizontal flextable border width
 
 ```
 
@@ -28,7 +30,7 @@ title: "`r report.title`"
 date: "`r format(Sys.Date(), '%B %d, %Y')`"
 ---
 
-# Analysis Summary
+# Fold and Sample Summary
 
 **# of folds:** `r k`
 
@@ -38,6 +40,8 @@ date: "`r format(Sys.Date(), '%B %d, %Y')`"
 
 **Maximum # of factors extracted:** `r m`
 
+# Model Fit Summary
+
 **Fit across folds by factor model**
 
 ```{r model fit, ft.align = "left", results='asis'}
@@ -45,19 +49,19 @@ index <- index[index != "df"]
 fit.map <- data.frame(col_keys = names(fit.table),
                       top = c("factors", "df", rep(index, each = 2)),
                       bottom = c("factors", "df", rep(c("mean", "range"), times = length(index))))
-border <- officer::fp_border(width = 2)
 
 fit.flex <- flextable::flextable(fit.table)
-fit.flex <- flextable::colformat_double(fit.flex, j = -c(1,2), digits = 2)
-fit.flex <- flextable::set_header_df(fit.flex, mapping = fit.map)
-fit.flex <- flextable::merge_h(fit.flex, part = "header")
-fit.flex <- flextable::merge_v(fit.flex, j = c("factors", "df"), part = "header")
-fit.flex <- flextable::fix_border_issues(fit.flex)
-fit.flex <- flextable::border_inner_h(fit.flex, border = border, part = "header")
-fit.flex <- flextable::hline_top(fit.flex, border = border, part = "all")
-# fit.flex <- flextable::theme_vanilla(fit.flex)
-fit.flex <- flextable::align(fit.flex, align = "center", part = "all")
-fit.flex <- flextable::autofit(fit.flex)
+fit.flex <- flextable::colformat_double(fit.flex, j = -c(1,2), digits = digits)
+fit.flex <- two_level_flex(fit.flex, mapping = fit.map, vert.cols = c("factors", "df"), border = border)
+# fit.flex <- flextable::set_header_df(fit.flex, mapping = fit.map)
+# fit.flex <- flextable::merge_h(fit.flex, part = "header")
+# fit.flex <- flextable::merge_v(fit.flex, j = c("factors", "df"), part = "header")
+# fit.flex <- flextable::fix_border_issues(fit.flex)
+# fit.flex <- flextable::border_inner_h(fit.flex, border = border, part = "header")
+# fit.flex <- flextable::hline_top(fit.flex, border = border, part = "all")
+# # fit.flex <- flextable::theme_vanilla(fit.flex)
+# fit.flex <- flextable::align(fit.flex, align = "center", part = "all")
+# fit.flex <- flextable::autofit(fit.flex)
 knit_print(fit.flex)
 ```
 
@@ -69,49 +73,49 @@ knit_print(best.flex)
 ```
 
 
-# Model Structure
+# Model Structures
 
 ```{r structure, ft.align = "left", results = 'asis', warning = FALSE, message = FALSE, fig.height = 8, fig.width = 12}
 
-for(m in 1:maxfac){
-  cat("## Factors:", m)
+for(n in 1:m){
+  cat("## Factors:", n)
   cat("\n\n")
   cat("### Across Folds Measures")
   cat("\n\n")
   cat("**Standardized Loading Across Folds**")
   cat("\n\n")
-  lambda.flex <- flextab_format(klambdas[[m]], bold.type = "lambda",
+  lambda.flex <- flextab_format(klambdas[[n]], bold.type = "lambda",
                                 cut = cut, digits = digits)
   cat(knit_print(lambda.flex))
   cat("\n\n")
-  if(m > 1){
+  if(n > 1){
   cat("**Mean Factor Correlations**")
   cat("\n\n")
-  corr.flex <- flextab_format(kcorrs[[m]], bold.type = "none", digits = digits)
+  corr.flex <- flextab_format(kcorrs[[n]], bold.type = "none", digits = digits)
   corr.flex <- flextable::compose(corr.flex, i = 1, j = 1, value = flextable::as_paragraph(""), part = "header")
   cat(knit_print(corr.flex))
   cat("\n\n")
   }
   cat("**Mean Scale Reliabilities**")
   cat("\n\n")
-  rel.flex <- flextab_format(as.data.frame(krels[[m]]), bold.type = "none", digits = digits)
+  rel.flex <- flextab_format(as.data.frame(krels[[n]]), bold.type = "none", digits = digits)
   cat(knit_print(rel.flex))
   cat("\n\n")
   cat("### Within Fold Information")
   cat("\n\n")
-  for(s in seq_along(kstructures[[m]])){
-    cat("**Factor Structure", s, "**")
+  for(s in seq_along(kstructures[[n]])){
+    cat("**Factor Structure Option", s, "**")
     cat("\n\n")
-    cat("**In Folds:", paste(kstructures[[m]][[s]]$folds, collapse = ", "), "**")
+    cat("**In Folds:", paste(kstructures[[n]][[s]]$folds, collapse = ", "), "**")
     cat("\n\n")
-    cat(gsub("\n", "\n\n", kstructures[[m]][[s]]$structure))
+    cat(gsub("\n", "\n\n", kstructures[[n]][[s]]$structure))
     cat("\n\n")
-    l <- length(kstructures[[m]][[s]]$folds)
+    l <- length(kstructures[[n]][[s]]$folds)
     plotmat <- matrix(1:l, nrow = ifelse(l < 4, 1, 2), byrow = TRUE)
     graphics::layout(plotmat)
-    for(f in kstructures[[m]][[s]]$folds){
-    do.call(semPlot::semPaths, args = c(list(object = kfa[[f]][[m]],
-                                             color = list(lat = palette.colors(n = m + 1, palette = "Okabe-Ito",
+    for(f in kstructures[[n]][[s]]$folds){
+    do.call(semPlot::semPaths, args = c(list(object = kfa[[f]][[n]],
+                                             color = list(lat = palette.colors(n = n + 1, palette = "Okabe-Ito",
                                                           recycle = TRUE)[-1]),
                                              title = FALSE),
                                         plot.settings))
@@ -135,22 +139,22 @@ for(m in 1:maxfac){
 # Appendix - Within Fold Model Fit
 
 ```{r appendix, ft.align = "left", results='asis'}
-index <- index[index != "df"] 
-fit.map <- data.frame(col_keys = names(fit.table),
-                      top = c("factors", "df", rep(index, each = 2)),
-                      bottom = c("factors", "df", rep(c("mean", "range"), times = length(index))))
-border <- officer::fp_border(width = 2)
+index <- if(sum(grepl("df", index)) == 0) c("df", index) else index
+appendix.map <- data.frame(col_keys = names(appendix),
+                      top = c("fold", rep(paste(1:m, "factor", sep = "-"), each = length(index))),
+                      bottom = c("fold", rep(index, times = m)))
 
-fit.flex <- flextable::flextable(fit.table)
-fit.flex <- flextable::colformat_double(fit.flex, j = -c(1,2), digits = 2)
-fit.flex <- flextable::set_header_df(fit.flex, mapping = fit.map)
-fit.flex <- flextable::merge_h(fit.flex, part = "header")
-fit.flex <- flextable::merge_v(fit.flex, j = c("factors", "df"), part = "header")
-fit.flex <- flextable::fix_border_issues(fit.flex)
-fit.flex <- flextable::border_inner_h(fit.flex, border = border, part = "header")
-fit.flex <- flextable::hline_top(fit.flex, border = border, part = "all")
-# fit.flex <- flextable::theme_vanilla(fit.flex)
-fit.flex <- flextable::align(fit.flex, align = "center", part = "all")
-fit.flex <- flextable::autofit(fit.flex)
-knit_print(fit.flex)
+appendix.flex <- flextable::flextable(appendix)
+appendix.flex <- flextable::colformat_double(appendix.flex, j = -c(1), digits = digits)
+appendix.flex <- two_level_flex(appendix.flex, mapping = appendix.map, vert.cols = c("fold"), border = border)
+# appendix.flex <- flextable::set_header_df(appendix.flex, mapping = appendix.map)
+# appendix.flex <- flextable::merge_h(appendix.flex, part = "header")
+# appendix.flex <- flextable::merge_v(appendix.flex, j = c("fold"), part = "header")
+# appendix.flex <- flextable::fix_border_issues(appendix.flex)
+# appendix.flex <- flextable::border_inner_h(appendix.flex, border = border, part = "header")
+# appendix.flex <- flextable::hline_top(appendix.flex, border = border, part = "all")
+# # appendix.flex <- flextable::theme_vanilla(appendix.flex)
+# appendix.flex <- flextable::align(appendix.flex, align = "center", part = "all")
+# appendix.flex <- flextable::autofit(appendix.flex)
+knit_print(appendix.flex)
 ```

@@ -45,7 +45,7 @@ agg_fac_cor <- function(kfa){
   k <- length(kfa)
   m <- max(unlist(lapply(kfa, length)))
 
-  kcorrs <- vector("list", maxfac)
+  kcorrs <- vector("list", m)
   kcorrs[[1]] <- NULL  # Currently assumes the first element is a 1 factor model; need a more robust check
   for(n in 2:m){
     cor.lv <- vector("list", k)
@@ -79,7 +79,7 @@ agg_reliability <- function(kfa){
   for(n in 1:m){
     rels <- vector("list", k)
     for(f in 1:k){
-      rels[[f]] <- semTools::reliability(kfa[[f]][[n]])[c(1,4),]
+      rels[[f]] <- suppressMessages(semTools::reliability(kfa[[f]][[n]])[c(1,4),])
     }
     krels[[n]] <- Reduce(`+`, rels) / length(rels)
     if(n == 1){
@@ -105,7 +105,7 @@ k_model_fit <- function(kfa, index = c("chisq", "cfi", "rmsea"), by.fold = TRUE)
 
   k <- length(kfa) # number of folds
   m <- max(unlist(lapply(kfa, length))) # number of models per fold
-  index <- ifelse(grepl("df", index), index, c("df", index))
+  index <- if(sum(grepl("df", index)) == 0) c("df", index) else index
 
   ## extract fit for every model in each fold
   fits <- vector("list", length = k)
@@ -155,19 +155,19 @@ agg_model_fit <- function(kfits, index = c("chisq", "cfi", "rmsea"), digits = 2)
   # }
 
   index <- index[index != "df"] # df is added automatically so don't need to loop through it
-  maxfac <- max(unlist(lapply(kfits, nrow)))
+  m <- max(unlist(lapply(kfits, nrow)))
 
   bdf <- as.data.frame(Reduce(rbind, kfits))
 
-  fit <- data.frame(factors = 1:maxfac,
+  fit <- data.frame(factors = 1:m,
                     df = tapply(bdf[["df"]], bdf$factors, mean))
   for(i in index){
 
-    agg <- data.frame(factors = 1:maxfac,
+    agg <- data.frame(factors = 1:m,
                       mean = tapply(bdf[[i]], bdf$factors, mean),
                       range = paste(format(round(tapply(bdf[[i]], bdf$factors, min), digits = digits), nsmall = digits), "-",
                                     format(round(tapply(bdf[[i]], bdf$factors, max), digits = digits), nsmall = digits)))
-    # hist = tapply(bdf[[index]], bdf$factors, function(x) skimr::skim(x)[["numeric.hist"]])
+                      # hist = tapply(bdf[[index]], bdf$factors, function(x) skimr::skim(x)[["numeric.hist"]])
     names(agg) <- c("factors", paste(c("mean", "range"), i, sep = "."))
 
 
@@ -219,15 +219,19 @@ best_model <- function(kfits, index = c("chisq", "cfi", "rmsea")){
 #' Comprehensive model fit table
 #'
 #' @param mfits An object returned from \code{\link[kfa]{k_model_fit}} when \code{by.folds = FALSE}
-#' @param index One or more fit indices to summarize in the report. The degrees of freedom are always reported. Default are "chisq", "cfi", and "rmsea".
+#' @param index One or more fit indices to include in the appendix table. Default is \code{"all"} indices present in \code{mfits}. The degrees of freedom are always reported.
 #'
 #' @return \code{data.frame} of model fit by fold, factor model, and fit index
 
-get_appendix <- function(mfits, index = c("chisq", "cfi", "rmsea")){
+get_appendix <- function(mfits, index = "all"){
 
   k <- max(unlist(lapply(mfits, nrow))) # number of folds
   m <- length(mfits) # number of models per fold
-  index <- index[index != "df"]
+  if(length(index) == 1){
+    if(index == "all"){
+      index <- names(mfits[[1]])[!(names(mfits[[1]]) %in% c("fold", "df"))]
+    }
+  }
 
   appendix <- mapply(appendix_prep, fits = mfits, suffix = 1:m, MoreArgs = list(index = index), SIMPLIFY = FALSE)
   appendix.df <- appendix[[1]]
@@ -240,6 +244,16 @@ get_appendix <- function(mfits, index = c("chisq", "cfi", "rmsea")){
 
   return(appendix.df)
 }
+
+#' Internal appendix function
+#'
+#' Prepare model fit results for appendix table
+#'
+#' @param fits An element from the list object returned from \code{\link[kfa]{k_model_fit}} when \code{by.folds = FALSE}
+#' @param index One or more fit indices to include in the appendix table. Default is \code{"all"} indices present in \code{fits}. The degrees of freedom are always reported.
+#' @param suffix character to append to column names
+#'
+#' @return \code{data.frame} of model fit by fold, factor model, and fit index
 
 appendix_prep <- function(fits, index, suffix){
 
