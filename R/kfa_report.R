@@ -14,6 +14,7 @@
 #' @return a summary report of factor structure and model fit within and between folds
 
 kfa_report <- function(kfa, file.name, report.format = "html_document", report.title = file.name,
+                       word.template = NULL,
                        index = c("chisq", "cfi", "rmsea"), cut = .3, digits = 2){
 
   ## analysis summary info
@@ -22,7 +23,6 @@ kfa_report <- function(kfa, file.name, report.format = "html_document", report.t
   nobs <- sum(unlist(lapply(kfa, function(x) lavaan::lavInspect(x[[1]], "nobs"))))
   vnames <- dimnames(lavaan::lavInspect(kfa[[1]][[1]], "sampstat")$cov)[[1]]
   nvars <- length(vnames)
-
 
   #### Model Fit ####
   ## summarizing fit statistics by fold

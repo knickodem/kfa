@@ -43,11 +43,42 @@ kstudent <- kfa(variables = studentdf,
                   missing = "pairwise")
 tictoc::toc() # ~ 60 seconds
 
-mfits <- k_model_fit(kstudent, by.fold = FALSE)
-test <- get_appendix(mfits)
-appendix <- flextab_format(test, digits = 2)
-appendix <- flextable::font(appendix, fontname = "Times New Roman", part = "all")
-appendix <- flextable::padding(appendix, padding = 3, part = "all")
+kstructures <- model_structure(kstudent)
+
+
+
+k <- length(kstudent)
+m <- max(unlist(lapply(kstudent, length)))
+vnames <- dimnames(lavaan::lavInspect(kstudent[[1]][[1]], "sampstat")$cov)[[1]]
+
+klambdas <- vector("list", m)
+for(n in 1:m){
+  lambdas <- data.frame()
+  for(f in 1:k){
+    loads <- subset(lavaan::standardizedSolution(kstudent[[f]][[n]], "std.lv",
+                                                 se = TRUE, zstat = FALSE,
+                                                 pvalue = FALSE, ci = FALSE),
+                    op == "=~")
+    lambdas <- rbind(lambdas, loads)
+  }
+
+  klambdas[[n]] <- lambdas
+  # klambdas[[n]] <- data.frame(variable = vnames,
+  #                             mean = tapply(lambdas$est.std, lambdas$rhs, mean),
+  #                             min = tapply(lambdas$est.std, lambdas$rhs, min),
+  #                             max = tapply(lambdas$est.std, lambdas$rhs, max))
+}
+
+
+nobs <- round(median(unlist(lapply(kstudent, function(x) lavaan::lavInspect(x[[1]], "nobs")))),0)
+vnames <- dimnames(lavaan::lavInspect(kstudent[[1]][[1]], "sampstat")$cov)[[1]]
+
+
+for(i in vnames){
+mice::pool.scalar(klambdas[[1]][klambdas[[1]]$rhs == "a1101x", ]$est.std, klambdas[[1]][klambdas[[1]]$rhs == "a1101x", ]$se^2, n = nobs)
+}
+
+
 
 
 # Run report

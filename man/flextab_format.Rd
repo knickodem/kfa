@@ -4,7 +4,7 @@
 \alias{flextab_format}
 \title{Default flextable format}
 \usage{
-flextab_format(df, bold.type = "none", cut = 0.3, digits = digits)
+flextab_format(df, bold.type = "none", cut = 0.3, digits = 2)
 }
 \arguments{
 \item{df}{a \code{data.frame}}

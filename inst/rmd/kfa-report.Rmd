@@ -135,6 +135,7 @@ for(n in 1:m){
 
 ```
 
+\newpage
 
 # Appendix - Within Fold Model Fit
 
@@ -147,14 +148,5 @@ appendix.map <- data.frame(col_keys = names(appendix),
 appendix.flex <- flextable::flextable(appendix)
 appendix.flex <- flextable::colformat_double(appendix.flex, j = -c(1), digits = digits)
 appendix.flex <- two_level_flex(appendix.flex, mapping = appendix.map, vert.cols = c("fold"), border = border)
-# appendix.flex <- flextable::set_header_df(appendix.flex, mapping = appendix.map)
-# appendix.flex <- flextable::merge_h(appendix.flex, part = "header")
-# appendix.flex <- flextable::merge_v(appendix.flex, j = c("fold"), part = "header")
-# appendix.flex <- flextable::fix_border_issues(appendix.flex)
-# appendix.flex <- flextable::border_inner_h(appendix.flex, border = border, part = "header")
-# appendix.flex <- flextable::hline_top(appendix.flex, border = border, part = "all")
-# # appendix.flex <- flextable::theme_vanilla(appendix.flex)
-# appendix.flex <- flextable::align(appendix.flex, align = "center", part = "all")
-# appendix.flex <- flextable::autofit(appendix.flex)
 knit_print(appendix.flex)
 ```

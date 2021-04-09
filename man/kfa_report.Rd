@@ -9,6 +9,7 @@ kfa_report(
   file.name,
   report.format = "html_document",
   report.title = file.name,
+  word.template = NULL,
   index = c("chisq", "cfi", "rmsea"),
   cut = 0.3,
   digits = 2

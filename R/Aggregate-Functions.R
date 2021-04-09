@@ -32,6 +32,51 @@ agg_loadings <- function(kfa){
 }
 
 
+#' Aggregate parameter and stability
+#'
+#' Internal function for aggregating a parameter over k-folds following Rubin's (1987) rules and calculating the stability of the parameter.
+#'
+#' @param est vector of parameter estimates
+#' @param var vector of variances for \code{est}
+#' @param n number of observations per fold
+#' @param alpha type I error rate for one-sided test
+#' @param output.var include all variance components in the output
+#'
+#' @details
+#' The stability index is calculated as 1 - bv / tv where bv is the between fold variance and tv is the total pooled variance.
+#'
+#' @return a single row \code{data.frame}
+
+agg_param <- function(est, var, n, alpha = .05, output.var = FALSE){
+
+  k <- length(est)
+  bar <- mean(est)
+  wv <- mean(var)
+  bv <- var(est)
+  tv <- wv + (1 + k)*bv/k
+  stability <- 1 - bv / tv
+
+  # degrees of freedom
+  rd <- (1 + 1/k) * bv/tv
+  df <- (k - 1) / rd^2
+  dfadj <- (n + 1) / (n + 3) * n * (1 - rd)
+  df <- df * dfadj / (df + dfadj)
+
+  # confidence interval
+  tcrit <- qt(alpha, df)
+  ci.lo <- bar - sqrt(tv) * tcrit
+  ci.hi <- bar + sqrt(tv) * tcrit
+
+  table <- data.frame(parameter = bar, ci.lo = ci.lo, ci.hi = ci.hi, stability = stability)
+
+  if(output.var == TRUE){
+  table <- cbind(table, data.frame(var.within = wv, var.between = bv, var.total = tv))
+  }
+
+  return(table)
+}
+
+
 #' Aggregated factor correlations
 #'
 #' The factor correlations aggregated over k-folds
@@ -269,7 +314,7 @@ appendix_prep <- function(fits, index, suffix){
 #'
 #' @param kfa An object returned from \code{\link[kfa]{kfa}}
 #'
-#' @return A \code{list} containing \code{lavaan} syntax specifying the factor structure and the folds where the structure was identified
+#' @return For each unique structure within each factor model, a \code{list} containing \code{lavaan} syntax specifying the factor structure and the folds where the structure was identified
 
 model_structure <- function(kfa){
 
