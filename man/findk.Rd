@@ -2,28 +2,34 @@
 % Please edit documentation in R/findk.R
 \name{findk}
 \alias{findk}
-\title{Determine k for k-fold cross-validation}
+\title{Find k for k-fold cross-validation}
 \usage{
-findk(variables, m, rmsea0 = 0.05, rmseaA = 0.08, ...)
+findk(
+  variables,
+  m = floor(ncol(variables)/4),
+  maxk = 10,
+  rmsea0 = 0.05,
+  rmseaA = 0.08,
+  ...
+)
 }
 \arguments{
 \item{variables}{a \code{data.frame} (or convertible to a \code{data.frame}) of variables to factor analyze}
 
-\item{m}{integer; maximum number of factors to extract. Default is 4 items per factor.}
+\item{m}{integer; number of factors. Set to the maximum number of factors expected to be extracted from \code{variables}. Default is 4 items per factor.}
+
+\item{maxk}{integer; maximum number of folds. \code{NULL} indicates no maximum.}
 
 \item{rmsea0}{numeric; RMSEA under the null hypothesis.}
 
 \item{rmseaA}{numeric; RMSEA under the alternative hypothesis.}
 
-\item{p}{integer specifying the number of items or \code{data.frame}
-where the number of items is determined via \code{ncol}}
+\item{...}{other arguments passed to \code{\link[semTools]{findRMSEAsamplesize}}.}
 }
 \value{
 integer indicating the number of folds
 }
 \description{
-This function is specifically for determining k in the context of factor analysis.
-Using change in RMSEA as the criterion for obtaining the best fitting factor
-analytic model, the function determines the number of folds based on the sample
-size, maximum number of possible factors, and RMSEA values.
+This function is specifically for determining *k* in the context of factor analysis using
+change in RMSEA as the criterion for identifying the optimal factor model.
 }

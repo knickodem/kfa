@@ -102,11 +102,21 @@ k_efa <- function(variables, m, rotation,
 }
 
 
-## internal function for extracting standardized loadings
+#' standardized factor loadings
+#'
+#' Internal function for extracting standardized factor loadings from
+#'
+#' @param object a \code{lavaan} object
+#' @param type standardize on the latent variables (\code{"std.lv"}),
+#' latent and observed variables (\code{"std.all"}, default), or latent and observed variables
+#' but not exogenous variables (\code{"std.nox"}).See \code{\link[lavaan]{standardizedSolution}}.
+#'
+#' @return A \code{matrix} of factor loadings
+
 get_std_loadings <- function(object, type = "std.all"){
 
   # extracting unrotated standardized results
-  params <- lavaan::standardizedsolution(object, type = type,
+  params <- lavaan::standardizedSolution(object, type = type,
                                          se = FALSE, zstat = FALSE, # Not needed so saves
                                          pvalue = FALSE, ci = FALSE)# computation time
   loaddf <- params[params$op == "=~",]

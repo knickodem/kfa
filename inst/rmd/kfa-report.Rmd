@@ -1,14 +1,3 @@
----
-output:
-   html_document:
-      toc: TRUE
-      toc_depth: 2
-      always_allow_html: TRUE
-   word_document:
-      toc: TRUE
-      toc_depth: 2
-      reference_docx: kfa_word_template.docx
----
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = FALSE)
@@ -28,6 +17,15 @@ border <- officer::fp_border(width = 2) # manual horizontal flextable border wid
 ---
 title: "`r report.title`"
 date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+   html_document:
+      toc: TRUE
+      toc_depth: 2
+      always_allow_html: TRUE
+   word_document:
+      toc: TRUE
+      toc_depth: 2
+      reference_docx: `r word.template`
 ---
 
 # Fold and Sample Summary

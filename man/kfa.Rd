@@ -9,7 +9,7 @@ kfa(
   k = NULL,
   rmsea0 = 0.05,
   rmseaA = 0.08,
-  m = floor(ncol(items)/4),
+  m = floor(ncol(variables)/4),
   rotation = "oblimin",
   ordered = FALSE,
   estimator = "default",

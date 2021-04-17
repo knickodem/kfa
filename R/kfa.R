@@ -32,7 +32,7 @@
 
 kfa <- function(variables,
                 k = NULL, rmsea0 = .05, rmseaA = .08,
-                m = floor(ncol(items) / 4), rotation = "oblimin",
+                m = floor(ncol(variables) / 4), rotation = "oblimin",
                 ordered = FALSE, estimator = "default", missing = "listwise", ...){
 
   variables <- as.data.frame(variables)

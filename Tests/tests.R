@@ -45,8 +45,6 @@ tictoc::toc() # ~ 60 seconds
 
 kstructures <- model_structure(kstudent)
 
-
-
 k <- length(kstudent)
 m <- max(unlist(lapply(kstudent, length)))
 vnames <- dimnames(lavaan::lavInspect(kstudent[[1]][[1]], "sampstat")$cov)[[1]]
@@ -85,6 +83,25 @@ mice::pool.scalar(klambdas[[1]][klambdas[[1]]$rhs == "a1101x", ]$est.std, klambd
 kfa_report(kstudent, file.name = "kfa_students",
            report.format = "word_document",
            report.title = "K-fold Factor Analysis - Lebenon Students")
+
+
+
+# -----  README Test --------
+library(lavaan)
+data("HolzingerSwineford1939")
+
+
+set.seed(1161)
+tictoc::tic()
+kstudent <- kfa(variables = HolzingerSwineford1939[7:15],
+                k = NULL,
+                m = 4,
+                rotation = "oblimin")
+tictoc::toc()
+
+findk(HolzingerSwineford1939[7:15], 1)
+
+#########################################
 
 k <- 5
 m <- 5

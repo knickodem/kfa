@@ -12,6 +12,8 @@
 #' @param digits integer; number of decimal places to display in the report.
 #'
 #' @return a summary report of factor structure and model fit within and between folds
+#'
+#' @export
 
 kfa_report <- function(kfa, file.name, report.format = "html_document", report.title = file.name,
                        word.template = NULL,
@@ -50,6 +52,9 @@ kfa_report <- function(kfa, file.name, report.format = "html_document", report.t
   krels <- agg_reliability(kfa)
 
   ## running report
+  if(is.null(word.template)){
+    word.template <- kfa_word_template.docx
+  }
   template <- system.file("rmd", "kfa-report.Rmd", package = "kfa")
   dir <- getwd()
   rmarkdown::render(input = template,
