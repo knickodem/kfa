@@ -8,6 +8,8 @@
 
 agg_loadings <- function(kfa){
 
+  kfa <- kfa$cfas
+
   k <- length(kfa)
   m <- max(unlist(lapply(kfa, length)))
   vnames <- dimnames(lavaan::lavInspect(kfa[[1]][[1]], "sampstat")$cov)[[1]]
@@ -28,6 +30,7 @@ agg_loadings <- function(kfa){
                                 min = tapply(lambdas$est.std, lambdas$rhs, min),
                                 max = tapply(lambdas$est.std, lambdas$rhs, max))
   }
+  names(klambdas) <- names(kfa[[1]])
   return(klambdas)
 }
 
@@ -87,6 +90,8 @@ agg_param <- function(est, var, n, alpha = .05, output.var = FALSE){
 
 agg_fac_cor <- function(kfa){
 
+  kfa <- kfa$cfas
+
   k <- length(kfa)
   m <- max(unlist(lapply(kfa, length)))
 
@@ -104,6 +109,7 @@ agg_fac_cor <- function(kfa){
     kcorrs[[n]] <- aggcorrs
 
   }
+  names(kcorrs) <- names(kfa[[1]])
  return(kcorrs)
 }
 
@@ -116,6 +122,8 @@ agg_fac_cor <- function(kfa){
 #' @return \code{data.frame} of factor reliabilities for each factor model
 
 agg_reliability <- function(kfa){
+
+  kfa <- kfa$cfas
 
   k <- length(kfa)
   m <- max(unlist(lapply(kfa, length)))
@@ -133,6 +141,7 @@ agg_reliability <- function(kfa){
     }
     krels[[n]] <- cbind(data.frame(type = c("alpha", "omega_h")), krels[[n]])
   }
+  names(krels) <- names(kfa[[1]])
   return(krels)
 }
 
@@ -148,8 +157,10 @@ agg_reliability <- function(kfa){
 
 k_model_fit <- function(kfa, index = c("chisq", "cfi", "rmsea"), by.fold = TRUE){
 
+  kfa <- kfa$cfas
   k <- length(kfa) # number of folds
   m <- max(unlist(lapply(kfa, length))) # number of models per fold
+  model.names <- names(kfa[[1]])
   index <- if(sum(grepl("df", index)) == 0) c("df", index) else index
 
   ## extract fit for every model in each fold
@@ -165,20 +176,21 @@ k_model_fit <- function(kfa, index = c("chisq", "cfi", "rmsea"), by.fold = TRUE)
 
     kfits <- vector("list", length = k)
     for(f in 1:k){
-      fits.df <- cbind(data.frame(factors = as.character(1:m)),
+      fits.df <- cbind(data.frame(model = model.names),
                        as.data.frame(Reduce(rbind, fits[[f]])))
       row.names(fits.df) <- NULL
       kfits[[f]] <- fits.df
     }
-  } else {
+  } else if(by.fold == FALSE){
 
     kfits <- vector("list", length = m)
     for(n in 1:m){
       fits.df <- cbind(data.frame(fold = as.character(1:k)),
-                       as.data.frame(Reduce(rbind, lapply(fits, function(x) x[[n]]))))
+                       as.data.frame(Reduce(rbind, lapply(fits, "[[", n)))) #function(x) x[[n]]
       row.names(fits.df) <- NULL
       kfits[[n]] <- fits.df
     }
+    names(kfits) <- model.names
   }
   return(kfits)
 }
@@ -200,24 +212,25 @@ agg_model_fit <- function(kfits, index = c("chisq", "cfi", "rmsea"), digits = 2)
   # }
 
   index <- index[index != "df"] # df is added automatically so don't need to loop through it
-  m <- max(unlist(lapply(kfits, nrow)))
+  model.names <- kfits[[1]]$model
+  # m <- max(unlist(lapply(kfits, nrow)))
 
   bdf <- as.data.frame(Reduce(rbind, kfits))
 
-  fit <- data.frame(factors = 1:m,
-                    df = tapply(bdf[["df"]], bdf$factors, mean))
+  fit <- data.frame(model = model.names,
+                    df = tapply(bdf[["df"]], bdf$model, mean))
   for(i in index){
 
-    agg <- data.frame(factors = 1:m,
-                      mean = tapply(bdf[[i]], bdf$factors, mean),
-                      range = paste(format(round(tapply(bdf[[i]], bdf$factors, min), digits = digits), nsmall = digits), "-",
-                                    format(round(tapply(bdf[[i]], bdf$factors, max), digits = digits), nsmall = digits)))
+    agg <- data.frame(factors = model.names,
+                      mean = tapply(bdf[[i]], bdf$model, mean),
+                      range = paste(format(round(tapply(bdf[[i]], bdf$model, min), digits = digits), nsmall = digits), "-",
+                                    format(round(tapply(bdf[[i]], bdf$model, max), digits = digits), nsmall = digits)))
                       # hist = tapply(bdf[[index]], bdf$factors, function(x) skimr::skim(x)[["numeric.hist"]])
-    names(agg) <- c("factors", paste(c("mean", "range"), i, sep = "."))
+    names(agg) <- c("model", paste(c("mean", "range"), i, sep = "."))
 
 
     # joining into single table
-    fit <- merge(x = fit, y = agg, by = "factors", all.x = TRUE)
+    fit <- merge(x = fit, y = agg, by = "model", all.x = TRUE)
   }
 
   return(fit)
@@ -234,7 +247,7 @@ agg_model_fit <- function(kfits, index = c("chisq", "cfi", "rmsea"), digits = 2)
 
 best_model <- function(kfits, index = c("chisq", "cfi", "rmsea")){
 
-  k <- length(kfa) # number of folds
+  k <- length(kfits) # number of folds
   index <- index[index != "df"]
 
   best.df <- data.frame(fold = 1:k)
@@ -271,16 +284,16 @@ best_model <- function(kfits, index = c("chisq", "cfi", "rmsea")){
 get_appendix <- function(mfits, index = "all"){
 
   k <- max(unlist(lapply(mfits, nrow))) # number of folds
-  m <- length(mfits) # number of models per fold
+
   if(length(index) == 1){
     if(index == "all"){
       index <- names(mfits[[1]])[!(names(mfits[[1]]) %in% c("fold", "df"))]
     }
   }
 
-  appendix <- mapply(appendix_prep, fits = mfits, suffix = 1:m, MoreArgs = list(index = index), SIMPLIFY = FALSE)
+  appendix <- mapply(appendix_prep, fits = mfits, suffix = names(mfits), MoreArgs = list(index = index), SIMPLIFY = FALSE)
   appendix.df <- appendix[[1]]
-  for(i in 2:m){
+  for(i in 2:length(mfits)){
     appendix.df <- merge(appendix.df, appendix[[i]], by = "fold")
   }
   appendix.df$fold <- factor(appendix.df$fold, levels = c(1:k, "Mean"))
@@ -313,35 +326,72 @@ appendix_prep <- function(fits, index, suffix){
 #' Extract unique factor structures across the k-folds
 #'
 #' @param kfa An object returned from \code{\link[kfa]{kfa}}
+#' @param which Should the unique structures be extracted from the "cfa" \code{lavaan} models or "efa" syntax?
 #'
 #' @return For each unique structure within each factor model, a \code{list} containing \code{lavaan} syntax specifying the factor structure and the folds where the structure was identified
 
-model_structure <- function(kfa){
+model_structure <- function(kfa, which = c("cfa", "efa")){
+
+  if(which == "cfa"){
+    kfa <- kfa$cfas
+  } else if(which == "efa"){
+    kfa <- kfa$efa.structures
+  }
 
   k <- length(kfa)
   m <- max(unlist(lapply(kfa, length)))
 
   kstructures <- vector("list", length = m)
-  kstructures[[1]][[1]] <- list(structure = efa_cfa_syntax(lavaan::lavInspect(kfa[[1]][[1]], "est")$lambda),
-                                folds = 1:k)
-  for(n in 2:m){
-    structures <- vector("list", length = k)
-    for(f in 1:k){
-      structures[[f]] <- efa_cfa_syntax(lavaan::lavInspect(kfa[[f]][[n]], "est")$lambda)
+
+  # Can probably simplify cfa vs. efa code since only difference is extracting factor loadings from lavaan (lavInspect + efa_cfa_syntax)
+  if(which == "cfa"){
+
+    kstructures[[1]][[1]] <- list(structure = efa_cfa_syntax(lavaan::lavInspect(kfa[[1]][[1]], "std")$lambda),
+                                  folds = 1:k)
+    for(n in 2:m){
+      structures <- vector("list", length = k)
+      for(f in 1:k){
+        structures[[f]] <- efa_cfa_syntax(lavaan::lavInspect(kfa[[f]][[n]], "std")$lambda)
+      }
+      kstructures[[n]] <- match_structure(structures)
     }
+  } else if(which == "efa"){
 
-    us <- unique(unlist(structures, use.names = FALSE))
-
-    slist <- vector("list", length = length(us))
-    for(u in seq_along(us)){
-
-      folds <- which(unlist(lapply(structures, function(x) x == us[[u]])))
-
-      slist[[u]] <- list(structure = us[[u]],
-                         folds = which(unlist(lapply(structures, function(x) x == us[[u]]))))
+    # currently assumes 1-factor structure exists and is the same over folds
+    kstructures[[1]][[1]] <- list(structure = kfa[[1]][[1]], folds = 1:k)
+    for(n in 2:m){
+      structures <- vector("list", length = k)
+      for(f in 1:k){
+        structures[[f]] <- kfa[[f]][[n]]
+      }
+      kstructures[[n]] <- match_structure(structures)
     }
-
-    kstructures[[n]] <- slist
   }
+
   return(kstructures)
 }
+
+#' Match factor structures
+#'
+#' Internal function in model structures
+#'
+#' @param structures list of \code{lavaan} syntax
+#'
+#' @return For each unique structure, a \code{list} containing \code{lavaan} syntax specifying the factor structure and the folds where the structure was identified
+
+match_structure <- function(structures){
+
+  us <- unique(unlist(structures, use.names = FALSE))
+
+  slist <- vector("list", length = length(us))
+  for(u in seq_along(us)){
+
+    folds <- which(unlist(lapply(structures, function(x) x == us[[u]])))
+
+    slist[[u]] <- list(structure = us[[u]],
+                       folds = which(unlist(lapply(structures, function(x) x == us[[u]]))))
+  }
+
+  return(slist)
+}
+

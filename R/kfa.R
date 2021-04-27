@@ -7,9 +7,10 @@
 #'
 #' @param variables a \code{data.frame} (or convertible to a \code{data.frame}) of variables to factor analyze
 #' @param k an integer between 2 and 10; number of folds in which to split the data. Default is NULL which determines k via power analysis.
+#' @param m integer; maximum number of factors to extract. Default is 4 items per factor.
+#' @param custom.cfas a single object or named \code{list} of \code{lavaan} syntax specifying custom factor model(s).
 #' @param rmsea0 numeric; RMSEA under the null hypothesis for the power analysis.
 #' @param rmseaA numeric; RMSEA under the alternative hypothesis for the power analysis.
-#' @param m integer; maximum number of factors to extract. Default is 4 items per factor.
 #' @param rotation character (case-sensitive); any rotation method listed in
 #' \code{\link[GPArotation]{rotations}} in the \code{GPArotation} package. Default is "oblimin".
 #' @param ordered logical; Should items be treated as ordinal and the
@@ -22,23 +23,39 @@
 #' @param ... other arguments passed to \code{lavaan} functions. See \code{\link[lavaan]{lavOptions}}.
 #'
 #' @details
-#' Deciding an appropriate *m* can be difficult, but is consequential for both the
-#' possible factor structures to examine and the computation time.
-#' The \code{\link[parameters]{n_factors}} in the \code{parameters} package can assist with this decision.
+#' In order to be tested along with the EFA identified structures, each model supplied in \code{custom.cfas} must
+#' include all \code{variables} in \code{lavaan} compatible syntax. Thus, to simultaneously test a model dropping
+#' a \code{variable}, have the variable load on to a factor while constraining the loading to 0.
 #'
-#' @return A \code{list} of \code{lists} with *k* outer elements for each fold and *m* inner elements containing a \code{lavaan} object.
+#' Deciding an appropriate *m* can be difficult, but is consequential for both the possible factor structures to
+#' examine and the computation time. The \code{\link[parameters]{n_factors}} in the \code{parameters} package
+#' can assist with this decision.
+#'
+#' @return A two-element \code{list}:
+#' \itemize{
+#' \item \code{lavaan} CFA objects for each *k* fold
+#' \item all factor structures identified in the EFA
+#' }
 #'
 #' @export
 
 kfa <- function(variables,
-                k = NULL, rmsea0 = .05, rmseaA = .08,
-                m = floor(ncol(variables) / 4), rotation = "oblimin",
-                ordered = FALSE, estimator = "default", missing = "listwise", ...){
+                k = NULL, m = floor(ncol(variables) / 4),
+                efa.only = FALSE,
+                custom.cfas = NULL,
+                rmsea0 = .05, rmseaA = .08,
+                rotation = "oblimin", ordered = FALSE,
+                estimator = NULL, missing = "listwise", ...){
 
   variables <- as.data.frame(variables)
 
   # The ordered = TRUE functionality in lavaan is not currently equivalent to listing
   # all items, so need to do it manually since I want this functionality for our users
+  if(is.character(ordered)){
+    if(is.null(estimator)){
+      estimator <- "DWLS"
+    }
+  }
   if(ordered == TRUE){
     ordered <- names(variables)
     if(is.null(estimator)){
@@ -86,16 +103,50 @@ kfa <- function(variables,
           ...)
   }
 
+  # formatting for use in model_structure
+  temp <- list(cfas = NULL,
+               efa.structures = efa)
+
+  # identifying unique structure
+  efa.structures <- model_structure(temp, which = "efa")
+
+  # collect most common structure for each factor model to use in CFAs
+  cfa.structures <- vector("list", length = m)
+  for(n in 1:m){
+    if(length(efa.structures[[n]]) == 1){
+      cfa.structures[[n]] <- efa.structures[[n]][[1]]$structure
+    } else {
+      # number of folds each structure was found; keep most common structure
+      num.folds <- unlist(lapply(efa.structures[[n]], function(x) length(x$folds)))
+      cfa.structures[[n]] <- efa.structures[[n]][[which(num.folds == max(num.folds))]]$structure
+    }
+  }
+  names(cfa.structures) <- paste0(1:m, "-factor")
+
+  if(!is.null(custom.cfas)){
+    if(class(custom.cfas) != "list"){ # converting single object to named list
+      custom.name <- deparse(substitute(custom.cfas))
+      custom.cfas <- list(custom.cfas)
+      names(custom.cfas) <- custom.name
+    } else if(is.null(names(custom.cfas))){ # (if necessary) adding names to list
+      names(custom.cfas) <- paste("custom", LETTERS[1:length(custom.cfas)])
+    }
+    cfa.structures <- c(cfa.structures, custom.cfas)
+  }
+
   ## Run CFAs
-  cfa <- foreach::foreach(fold = 1:k) %dopar% {
-    k_cfa(efa = efa[[fold]],
+  cfas <- foreach::foreach(fold = 1:k) %dopar% {
+    k_cfa(syntax = cfa.structures,
           variables = variables[testfolds[[fold]], ],
           ordered = ordered,
           estimator = estimator,
           missing = missing,
           ...)
   }
+  output <- list(cfas = cfas,
+                 efa.structures = efa.structures)
+
   parallel::stopCluster(clusters)
 
-  return(cfa)
+  return(output)
 }

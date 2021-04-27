@@ -27,54 +27,70 @@ principaldf <- principal[ ,names(principal) %in% na.omit(itemmaps$principal$`Var
 coachdf <- coach[ ,names(coach) %in% na.omit(itemmaps$coach$`Variable Name`)]
 studentdf2 <- studentdf[!(names(studentdf) %in% c("a1118x", "a1120x", "a1121x"))]
 
-
-
 # ---- test full kfold_fa function ----------------
+
+## custom factor structure (just an example, not based on theory)
+custom <- paste0("f1 =~ ", paste(names(studentdf)[1:10], collapse = " + "),
+                 "\nf2 =~ ",paste(names(studentdf)[11:21], collapse = " + "))
 
 ## set seed to get the same folds
 set.seed(936639)
 tictoc::tic()
 kstudent <- kfa(variables = studentdf,
-                  k = NULL,
-                  m = 5,
-                  rotation = "oblimin",
-                  ordered = TRUE,
-                  estimator = "DWLS",
-                  missing = "pairwise")
+                k = NULL,
+                m = 5,
+                custom.cfas = custom,
+                rotation = "oblimin",
+                ordered = TRUE,
+                estimator = "DWLS",
+                missing = "pairwise")
 tictoc::toc() # ~ 60 seconds
 
-kstructures <- model_structure(kstudent)
+kstructures <- model_structure(kstudent, which = "cfa")
 
-k <- length(kstudent)
-m <- max(unlist(lapply(kstudent, length)))
-vnames <- dimnames(lavaan::lavInspect(kstudent[[1]][[1]], "sampstat")$cov)[[1]]
+kfit <- k_model_fit(kstudent)
+mfit <- k_model_fit(kstudent, by.fold = FALSE)
+agg_model_fit(kfit)
+get_appendix(mfit)
+agg_loadings(kstudent)
+agg_fac_cor(kstudent)
+agg_reliability(kstudent)
+best_model(kfit)
 
-klambdas <- vector("list", m)
-for(n in 1:m){
-  lambdas <- data.frame()
-  for(f in 1:k){
-    loads <- subset(lavaan::standardizedSolution(kstudent[[f]][[n]], "std.lv",
-                                                 se = TRUE, zstat = FALSE,
-                                                 pvalue = FALSE, ci = FALSE),
-                    op == "=~")
-    lambdas <- rbind(lambdas, loads)
+strux <- kstudent$efa.structures
+for(n in 1:length(strux)){
+  cat("### Factors:", n)
+  cat("\n\n")
+  for(s in seq_along(strux[[n]])){
+    cat("**Factor Structure Option", s, "**")
+    cat("\n\n")
+    cat("**In Folds:", paste(strux[[n]][[s]]$folds, collapse = ", "), "**")
+    cat("\n\n")
+    if (strux[[n]][[s]]$structure == "") cat("Structure contained single item factors") else cat(gsub("\n", "\n\n", strux[[n]][[s]]$structure))
+    cat("\n\n")
   }
-
-  klambdas[[n]] <- lambdas
-  # klambdas[[n]] <- data.frame(variable = vnames,
-  #                             mean = tapply(lambdas$est.std, lambdas$rhs, mean),
-  #                             min = tapply(lambdas$est.std, lambdas$rhs, min),
-  #                             max = tapply(lambdas$est.std, lambdas$rhs, max))
 }
 
 
-nobs <- round(median(unlist(lapply(kstudent, function(x) lavaan::lavInspect(x[[1]], "nobs")))),0)
-vnames <- dimnames(lavaan::lavInspect(kstudent[[1]][[1]], "sampstat")$cov)[[1]]
 
-
-for(i in vnames){
-mice::pool.scalar(klambdas[[1]][klambdas[[1]]$rhs == "a1101x", ]$est.std, klambdas[[1]][klambdas[[1]]$rhs == "a1101x", ]$se^2, n = nobs)
+## extracting red flags
+# converged
+converged <- vector("list", length = k)
+for(f in 1:k){
+  converged[[f]] <- lapply(kstudent[[f]], lavaan::lavInspect, "converged")
 }
+cnvgd <- integer(length = m)
+for(n in 1:m){
+
+  cnvgd[[n]] <- sum(unlist(lapply(converged, '[[', n)) == FALSE)
+}
+
+# heywood cases - see sources of strength code
+lavaan::lavInspect(kstudent[[1]][[1]], "post.check") # when there is a problem, what is returned? FALSE or the warning?
+sum(lavaan::lavInspect(kstudent[[1]][[4]], "cov.lv") < 0)
+
+# single-item factor
+
 
 
 
@@ -113,14 +129,49 @@ testfolds <- caret::createFolds(y = 1:nrow(studentdf),
                                 k = k, list = TRUE,
                                 returnTrain = FALSE)
 
-testefa <- mclapply(1:k, function(fold){
-  k_efa(training = studentdf[!c(row.names(studentdf) %in% testfolds[[fold]]), ],
+testefa <- lapply(1:k, function(fold){
+  k_efa(variables = studentdf[!c(row.names(studentdf) %in% testfolds[[fold]]), ],
         m = 5,
         rotation = rotation,
         ordered = ordered,
         estimator = estimator,
         missing = missing)
 })
+
+
+set.seed(936639)
+testefa <- kfa(variables = studentdf,
+                k = NULL,
+                m = 5,
+               efa.only = TRUE,
+                rotation = "oblimin",
+                ordered = TRUE,
+                estimator = "DWLS",
+                missing = "pairwise")
+
+efa.structures <- model_structure(testefa, which = "efa") # present in appendix
+
+# collect most common structure for each factor model to use in CFAs
+cfa.structures <- vector("list", length = 5)
+for(n in 1:m){
+  if(length(all.structures[[n]]) == 1){
+    cfa.structures[[n]] <- all.structures[[n]][[1]]$structure
+  } else {
+    # number of folds each structure was found; keep most common structure
+    num.folds <- unlist(lapply(all.structures[[n]], function(x) length(x$folds)))
+    cfa.structures[[n]] <- all.structures[[n]][[which(num.folds == max(num.folds))]]$structure
+  }
+}
+
+names(cfa.structures) <- as.character(1:m)
+
+
+
+
+k <- length(testefa)
+m <- max(unlist(lapply(testefa, length)))
+
+
 
 traincfa <- mclapply(1:k, function(fold){
   k_cfa(efa = testefa[[fold]],

@@ -17,15 +17,6 @@ border <- officer::fp_border(width = 2) # manual horizontal flextable border wid
 ---
 title: "`r report.title`"
 date: "`r format(Sys.Date(), '%B %d, %Y')`"
-output:
-   html_document:
-      toc: TRUE
-      toc_depth: 2
-      always_allow_html: TRUE
-   word_document:
-      toc: TRUE
-      toc_depth: 2
-      reference_docx: `r word.template`
 ---
 
 # Fold and Sample Summary
@@ -36,7 +27,7 @@ output:
 
 **# of observations:** `r nobs`
 
-**Maximum # of factors extracted:** `r m`
+**Maximum # of factors extracted:** `r max.fac`
 
 # Model Fit Summary
 
@@ -45,12 +36,12 @@ output:
 ```{r model fit, ft.align = "left", results='asis'}
 index <- index[index != "df"] 
 fit.map <- data.frame(col_keys = names(fit.table),
-                      top = c("factors", "df", rep(index, each = 2)),
-                      bottom = c("factors", "df", rep(c("mean", "range"), times = length(index))))
+                      top = c("model", "df", rep(index, each = 2)),
+                      bottom = c("model", "df", rep(c("mean", "range"), times = length(index))))
 
 fit.flex <- flextable::flextable(fit.table)
 fit.flex <- flextable::colformat_double(fit.flex, j = -c(1,2), digits = digits)
-fit.flex <- two_level_flex(fit.flex, mapping = fit.map, vert.cols = c("factors", "df"), border = border)
+fit.flex <- two_level_flex(fit.flex, mapping = fit.map, vert.cols = c("model", "df"), border = border)
 # fit.flex <- flextable::set_header_df(fit.flex, mapping = fit.map)
 # fit.flex <- flextable::merge_h(fit.flex, part = "header")
 # fit.flex <- flextable::merge_v(fit.flex, j = c("factors", "df"), part = "header")
@@ -63,9 +54,10 @@ fit.flex <- two_level_flex(fit.flex, mapping = fit.map, vert.cols = c("factors",
 knit_print(fit.flex)
 ```
 
-**Best model in each fold by fit index**
 
-```{r best model, ft.align = "left", results='asis'}
+
+```{r best model, ft.align = "left", results='asis', eval=FALSE}
+cat("**Best model in each fold by fit index**")
 best.flex <- flextab_format(best.model, bold.type = "none", digits = digits)
 knit_print(best.flex)
 ```
@@ -73,12 +65,24 @@ knit_print(best.flex)
 
 # Model Structures
 
-```{r structure, ft.align = "left", results = 'asis', warning = FALSE, message = FALSE, fig.height = 8, fig.width = 12}
+```{r structure, ft.align = "left", results = 'asis', warning = FALSE, message = FALSE, fig.height = 4, fig.width = 6}
 
 for(n in 1:m){
-  cat("## Factors:", n)
+  cat("##", model.names[[n]])
   cat("\n\n")
-  cat("### Across Folds Measures")
+  cat("**Factor Structure**")
+  cat("\n\n")
+  cat(gsub("\n", "\n\n", kstructures[[n]][[1]]$structure))
+  cat("\n\n")
+  # l <- length(kstructures[[n]][[1]]$folds)
+  # plotmat <- matrix(1:l, nrow = ifelse(l < 4, 1, 2), byrow = TRUE)
+  # graphics::layout(plotmat)
+    do.call(semPlot::semPaths, args = c(list(object = kfa$cfas[[1]][[n]],
+                                           color = list(lat = palette.colors(n = n + 1, palette = "Okabe-Ito",
+                                                        recycle = TRUE)[-1]),
+                                           title = FALSE),
+                                      plot.settings))
+    # title(paste("Fold:", f), adj = 0, line = 0)
   cat("\n\n")
   cat("**Standardized Loading Across Folds**")
   cat("\n\n")
@@ -99,52 +103,44 @@ for(n in 1:m){
   rel.flex <- flextab_format(as.data.frame(krels[[n]]), bold.type = "none", digits = digits)
   cat(knit_print(rel.flex))
   cat("\n\n")
-  cat("### Within Fold Information")
-  cat("\n\n")
-  for(s in seq_along(kstructures[[n]])){
-    cat("**Factor Structure Option", s, "**")
-    cat("\n\n")
-    cat("**In Folds:", paste(kstructures[[n]][[s]]$folds, collapse = ", "), "**")
-    cat("\n\n")
-    cat(gsub("\n", "\n\n", kstructures[[n]][[s]]$structure))
-    cat("\n\n")
-    l <- length(kstructures[[n]][[s]]$folds)
-    plotmat <- matrix(1:l, nrow = ifelse(l < 4, 1, 2), byrow = TRUE)
-    graphics::layout(plotmat)
-    for(f in kstructures[[n]][[s]]$folds){
-    do.call(semPlot::semPaths, args = c(list(object = kfa[[f]][[n]],
-                                             color = list(lat = palette.colors(n = n + 1, palette = "Okabe-Ito",
-                                                          recycle = TRUE)[-1]),
-                                             title = FALSE),
-                                        plot.settings))
-      title(paste("Fold:", f), adj = 0, line = 0)
-    # semPlot::semPaths(object = kfa[[f]][[m]], what = "std", whatLabels = "no", layout = "tree",
-    #                     intercepts = FALSE, residuals = FALSE, thresholds = FALSE,
-    #                     color = list(lat = palette.colors(n = m + 1, palette = "Okabe-Ito",
-    #                                                       recycle = TRUE)[-1]),
-    #                     cut = cut, posCol = c("#BF0000","#000000"), fade = FALSE,
-    #                     # edge.color = , # could create custom function to utilize this argument
-    #                     weighted = TRUE, negDashed = TRUE, esize = 5,
-    #                     manifests = vnames, reorder = FALSE)
-      cat("\n\n")
-  }
- }
 }
 
 ```
 
 \newpage
 
-# Appendix - Within Fold Model Fit
+# Appendix
 
-```{r appendix, ft.align = "left", results='asis'}
+## Within Fold Model Fit
+
+```{r appendix.fits, ft.align = "left", results='asis'}
 index <- if(sum(grepl("df", index)) == 0) c("df", index) else index
 appendix.map <- data.frame(col_keys = names(appendix),
-                      top = c("fold", rep(paste(1:m, "factor", sep = "-"), each = length(index))),
-                      bottom = c("fold", rep(index, times = m)))
+                      top = c("fold", rep(model.names, each = length(index))),
+                      bottom = c("fold", rep(index, times = length(model.names))))
 
 appendix.flex <- flextable::flextable(appendix)
 appendix.flex <- flextable::colformat_double(appendix.flex, j = -c(1), digits = digits)
 appendix.flex <- two_level_flex(appendix.flex, mapping = appendix.map, vert.cols = c("fold"), border = border)
 knit_print(appendix.flex)
 ```
+
+## All EFA Structures
+
+```{r appendix.structures, results = 'asis'}
+strux <- kfa$efa.structures
+for(n in 1:length(strux)){
+  cat("### Factors:", n)
+  cat("\n\n")
+  for(s in seq_along(strux[[n]])){
+    cat("**Factor Structure Option", s, "**")
+    cat("\n\n")
+    cat("**In Folds:", paste(strux[[n]][[s]]$folds, collapse = ", "), "**")
+    cat("\n\n")
+    if (strux[[n]][[s]]$structure == "") cat("Structure contained single item factor") else cat(gsub("\n", "\n\n", strux[[n]][[s]]$structure))
+    cat("\n\n")
+  }
+}
+
+```
+

@@ -20,10 +20,12 @@ kfa_report <- function(kfa, file.name, report.format = "html_document", report.t
                        index = c("chisq", "cfi", "rmsea"), cut = .3, digits = 2){
 
   ## analysis summary info
-  k <- length(kfa) # number of folds
-  m <- max(unlist(lapply(kfa, length))) # largest factor model
-  nobs <- sum(unlist(lapply(kfa, function(x) lavaan::lavInspect(x[[1]], "nobs"))))
-  vnames <- dimnames(lavaan::lavInspect(kfa[[1]][[1]], "sampstat")$cov)[[1]]
+  k <- length(kfa$cfas) # number of folds
+  model.names <- names(kfa$cfas[[1]])
+  max.fac <- max(as.numeric(substring(model.names[grepl("-factor", model.names)], 1, 1)))  # kfa naming convention "#-factor"; custom functions are assumed to have different convention
+  m <- max(unlist(lapply(kfa$cfas, length))) # number of models per fold (includes both efa and custom structures)
+  nobs <- sum(unlist(lapply(kfa$cfas, function(x) lavaan::lavInspect(x[[1]], "nobs"))))
+  vnames <- dimnames(lavaan::lavInspect(kfa$cfas[[1]][[1]], "sampstat")$cov)[[1]]
   nvars <- length(vnames)
 
   #### Model Fit ####
@@ -32,7 +34,7 @@ kfa_report <- function(kfa, file.name, report.format = "html_document", report.t
   fit.table <- agg_model_fit(kfits, index = index)
 
   ## best model in each fold
-  best.model <- best_model(kfits, index = index)
+  # best.model <- best_model(kfits, index = index)
 
   ## creating appendix -  folds x model table of fit statistics
   mfits <- k_model_fit(kfa, index = index, by.fold = FALSE)
@@ -40,7 +42,7 @@ kfa_report <- function(kfa, file.name, report.format = "html_document", report.t
 
   #### Parameters ####
   ## model structures
-  kstructures <- model_structure(kfa)
+  kstructures <- model_structure(kfa, which = "cfa")
 
   ## loadings
   klambdas <- agg_loadings(kfa)
@@ -52,8 +54,10 @@ kfa_report <- function(kfa, file.name, report.format = "html_document", report.t
   krels <- agg_reliability(kfa)
 
   ## running report
-  if(is.null(word.template)){
-    word.template <- kfa_word_template.docx
+  if(report.format == "word_document"){
+    if(is.null(word.template)){
+      word.template <- "kfa_word_template.docx"
+    }
   }
   template <- system.file("rmd", "kfa-report.Rmd", package = "kfa")
   dir <- getwd()
@@ -61,7 +65,9 @@ kfa_report <- function(kfa, file.name, report.format = "html_document", report.t
                     output_format = report.format,
                     output_file = file.name,
                     output_dir = dir,
-                    output_options = list(toc = TRUE))
+                    output_options = list(toc = TRUE, toc_depth = 2,
+                                          always_allow_html = TRUE,
+                                          reference_docx = word.template))
 }
 
 

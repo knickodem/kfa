@@ -4,10 +4,10 @@
 \alias{k_cfa}
 \title{k-fold confirmatory factor analysis}
 \usage{
-k_cfa(efa, variables, ordered, estimator, missing, ...)
+k_cfa(syntax, variables, ordered, estimator, missing, ...)
 }
 \arguments{
-\item{efa}{An object returned from \code{\link[kfa]{k_efa}}}
+\item{syntax}{A (named) list of \code{lavaan} syntax specifying the CFA models to run.}
 
 \item{variables}{a \code{data.frame} of variables to factor analyze.}
 

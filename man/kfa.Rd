@@ -7,12 +7,14 @@
 kfa(
   variables,
   k = NULL,
+  m = floor(ncol(variables)/4),
+  efa.only = FALSE,
+  custom.cfas = NULL,
   rmsea0 = 0.05,
   rmseaA = 0.08,
-  m = floor(ncol(variables)/4),
   rotation = "oblimin",
   ordered = FALSE,
-  estimator = "default",
+  estimator = NULL,
   missing = "listwise",
   ...
 )
@@ -22,11 +24,13 @@ kfa(
 
 \item{k}{an integer between 2 and 10; number of folds in which to split the data. Default is NULL which determines k via power analysis.}
 
+\item{m}{integer; maximum number of factors to extract. Default is 4 items per factor.}
+
+\item{custom.cfas}{a single object or named \code{list} of \code{lavaan} syntax specifying custom factor model(s).}
+
 \item{rmsea0}{numeric; RMSEA under the null hypothesis for the power analysis.}
 
 \item{rmseaA}{numeric; RMSEA under the alternative hypothesis for the power analysis.}
-
-\item{m}{integer; maximum number of factors to extract. Default is 4 items per factor.}
 
 \item{rotation}{character (case-sensitive); any rotation method listed in
 \code{\link[GPArotation]{rotations}} in the \code{GPArotation} package. Default is "oblimin".}
@@ -44,7 +48,11 @@ also accepted to prompt estimation of the polychoric correlation matrix.}
 \item{...}{other arguments passed to \code{lavaan} functions. See \code{\link[lavaan]{lavOptions}}.}
 }
 \value{
-A \code{list} of \code{lists} with *k* outer elements for each fold and *m* inner elements containing a \code{lavaan} object.
+A two-element \code{list}:
+\itemize{
+\item \code{lavaan} CFA objects for each *k* fold
+\item all factor structures identified in the EFA
+}
 }
 \description{
 The function splits the data into *k* folds. For each fold,
@@ -53,7 +61,11 @@ is transformed into \code{lavaan}-compatible CFA syntax. The CFAs are then run
 on the test data.
 }
 \details{
-Deciding an appropriate *m* can be difficult, but is consequential for both the
-possible factor structures to examine and the computation time.
-The \code{\link[parameters]{n_factors}} in the \code{parameters} package can assist with this decision.
+In order to be tested along with the EFA identified structures, each model supplied in \code{custom.cfas} must
+include all \code{variables} in \code{lavaan} compatible syntax. Thus, to simultaneously test a model dropping
+a \code{variable}, have the variable load on to a factor while constraining the loading to 0.
+
+Deciding an appropriate *m* can be difficult, but is consequential for both the possible factor structures to
+examine and the computation time. The \code{\link[parameters]{n_factors}} in the \code{parameters} package
+can assist with this decision.
 }

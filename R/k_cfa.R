@@ -2,7 +2,7 @@
 #'
 #' Runs CFA for models identified from a previous EFA.
 #'
-#' @param efa An object returned from \code{\link[kfa]{k_efa}}
+#' @param syntax A (named) list of \code{lavaan} syntax specifying the CFA models to run.
 #' @param variables a \code{data.frame} of variables to factor analyze.
 #' @param ordered passed to \code{lavaan} functions. See \code{\link[lavaan]{lavCor}}.
 #' @param estimator passed to \code{lavaan} functions. See \code{\link[lavaan]{lavCor}}.
@@ -11,7 +11,7 @@
 #'
 #' @return A list of \code{lavaan} objects
 
-k_cfa <- function(efa, variables, ordered, estimator, missing, ...){
+k_cfa <- function(syntax, variables, ordered, estimator, missing, ...){
 
   ## calculate and extract sample statistics for test sample
   sampstats <- lavaan::lavCor(object = variables,
@@ -32,13 +32,13 @@ k_cfa <- function(efa, variables, ordered, estimator, missing, ...){
 
 
   ## run CFAs
-  cfa <- vector(mode = "list", length = length(efa))
+  cfa <- vector(mode = "list", length = length(syntax))
 
-  for(c in 1:length(efa)){
+  for(c in 1:length(syntax)){
 
-    if(nchar(efa[[c]]) > 0){
+    if(nchar(syntax[[c]]) > 0){
 
-      fit <- lavaan::cfa(model = efa[[c]],
+      fit <- lavaan::cfa(model = syntax[[c]],
                          sample.cov = sample.cov,
                          sample.nobs = sample.nobs,
                          sample.mean = sample.mean,
@@ -57,6 +57,8 @@ k_cfa <- function(efa, variables, ordered, estimator, missing, ...){
 
   }
 
+  names(cfa) <- names(syntax)
+  cfa <- cfa[lengths(cfa) != 0] # dropping NULL elements
   return(cfa)
 }
 
