@@ -4,12 +4,12 @@
 \alias{model_structure}
 \title{Unique factor structures}
 \usage{
-model_structure(kfa, which = c("cfa", "efa"))
+model_structure(kfa, which = "cfa")
 }
 \arguments{
 \item{kfa}{An object returned from \code{\link[kfa]{kfa}}}
 
-\item{which}{Should the unique structures be extracted from the "cfa" \code{lavaan} models or "efa" syntax?}
+\item{which}{Currently only for internal use; Should the unique structures be extracted from the "cfa" \code{lavaan} models or "efa" syntax?}
 }
 \value{
 For each unique structure within each factor model, a \code{list} containing \code{lavaan} syntax specifying the factor structure and the folds where the structure was identified

@@ -3,10 +3,11 @@
 #' The factor loadings aggregated over k-folds
 #'
 #' @param kfa An object returned from \code{\link[kfa]{kfa}}
+#' @param flag threshold below which loading will be flagged
 #'
-#' @return \code{data.frame} of mean factor loadings for each factor model
+#' @return \code{data.frame} of mean factor loadings for each factor model and \code{vector} with count of folds with a flagged loading
 
-agg_loadings <- function(kfa){
+agg_loadings <- function(kfa, flag = .30){
 
   kfa <- kfa$cfas
 
@@ -15,23 +16,34 @@ agg_loadings <- function(kfa){
   vnames <- dimnames(lavaan::lavInspect(kfa[[1]][[1]], "sampstat")$cov)[[1]]
 
   klambdas <- vector("list", m)
+  kflag <- vector("integer", m)
   for(n in 1:m){
     lambdas <- data.frame()
+    load.flag <- vector("integer", k)
     for(f in 1:k){
       loads <- subset(lavaan::standardizedSolution(kfa[[f]][[n]], "std.lv",
                                                    se = FALSE, zstat = FALSE,
                                                    pvalue = FALSE, ci = FALSE),
                       op == "=~")
       lambdas <- rbind(lambdas, loads)
+
+      load.flag[[f]] <- sum(loads$est.std < flag)
     }
 
     klambdas[[n]] <- data.frame(variable = vnames,
                                 mean = tapply(lambdas$est.std, lambdas$rhs, mean),
                                 min = tapply(lambdas$est.std, lambdas$rhs, min),
-                                max = tapply(lambdas$est.std, lambdas$rhs, max))
+                                max = tapply(lambdas$est.std, lambdas$rhs, max),
+                                `folds flagged` = tapply(lambdas$est.std, lambdas$rhs, function(x) sum(x < flag)),
+                                check.names = FALSE)
+
+    ## count of folds with a loading under flag threshold
+    kflag[[n]] <- sum(load.flag > 0)
   }
   names(klambdas) <- names(kfa[[1]])
-  return(klambdas)
+
+  return(list(loadings = klambdas,
+              flag = kflag))
 }
 
 
@@ -85,10 +97,12 @@ agg_param <- function(est, var, n, alpha = .05, output.var = FALSE){
 #' The factor correlations aggregated over k-folds
 #'
 #' @param kfa An object returned from \code{\link[kfa]{kfa}}
+#' @param type currently ignored; \code{"factor"} (default) or \code{"observed"} variable correlations
+#' @param flag threshold above which a factor correlation will be flagged
 #'
-#' @return \code{data.frame} of factor correlations for each factor model
+#' @return a \code{data.frame} of mean factor correlations for each factor model and \code{vector} with count of folds with a flagged correlation
 
-agg_fac_cor <- function(kfa){
+agg_cors <- function(kfa, type = "factor", flag = .90){
 
   kfa <- kfa$cfas
 
@@ -96,21 +110,32 @@ agg_fac_cor <- function(kfa){
   m <- max(unlist(lapply(kfa, length)))
 
   kcorrs <- vector("list", m)
-  kcorrs[[1]] <- NULL  # Currently assumes the first element is a 1 factor model; need a more robust check
+  kflag <- vector("integer", m)
+  # Currently assumes the first element is a 1 factor model; need a more robust check
+  kcorrs[[1]] <- NULL
+  kflag[[1]] <- NA
   for(n in 2:m){
-    cor.lv <- vector("list", k)
+    cor.lv <- vector("list", k) # latent variable correlation matrix
+    cor.flag <- vector("integer", k) # count of correlations above flag threshold
     for(f in 1:k){
       cor.lv[[f]] <- lavaan::lavInspect(kfa[[f]][[n]], "cor.lv")
+      cor.flag[[f]] <- sum(cor.lv[[f]] > flag) - nrow(cor.lv[[f]])
     }
 
+    ## mean correlation across folds
     aggcorrs <- Reduce(`+`, cor.lv) / length(cor.lv)
     aggcorrs[upper.tri(aggcorrs, diag = FALSE)] <- NA
     aggcorrs <- cbind(data.frame(rn = row.names(aggcorrs)), aggcorrs)
     kcorrs[[n]] <- aggcorrs
 
+    ## count of folds with a correlation over flag threshold
+    kflag[[n]] <- sum(cor.flag > 0)
+
   }
   names(kcorrs) <- names(kfa[[1]])
- return(kcorrs)
+
+ return(list(correlations = kcorrs,
+             flag = kflag))
 }
 
 #' Aggregated scale reliabilities
@@ -118,10 +143,11 @@ agg_fac_cor <- function(kfa){
 #' The factor reliabilities aggregated over k-folds
 #'
 #' @param kfa An object returned from \code{\link[kfa]{kfa}}
+#' @param flag threshold below which reliability will be flagged
 #'
-#' @return \code{data.frame} of factor reliabilities for each factor model
+#' @return a \code{data.frame} of mean factor (scale) reliabilities for each factor model and \code{vector} with count of folds with a flagged reliability
 
-agg_reliability <- function(kfa){
+agg_rels <- function(kfa, flag = .60){
 
   kfa <- kfa$cfas
 
@@ -129,20 +155,34 @@ agg_reliability <- function(kfa){
   m <- max(unlist(lapply(kfa, length)))
 
   krels <- vector("list", m)
+  kflag <- vector("integer", m)
   for(n in 1:m){
     rels <- vector("list", k)
+    rel.flag <- vector("integer", k)
     for(f in 1:k){
       rels[[f]] <- suppressMessages(semTools::reliability(kfa[[f]][[n]])[c(1,4),])
+      if(n == 1){
+        rel.flag[[f]] <- sum(rels[[f]][[2]] < flag) # flag based on omega, not alpha
+      } else{
+        rel.flag[[f]] <- sum(rels[[f]][2,] < flag) # flag based on omega, not alpha
+      }
     }
+
+    ## mean reliability across folds
     krels[[n]] <- Reduce(`+`, rels) / length(rels)
     if(n == 1){
       krels[[n]] <- as.data.frame(krels[[n]])
       names(krels[[n]]) <- "f1"
     }
     krels[[n]] <- cbind(data.frame(type = c("alpha", "omega_h")), krels[[n]])
+
+    ## count of folds with a reliabilities below flag threshold
+    kflag[[n]] <- sum(rel.flag > 0)
   }
   names(krels) <- names(kfa[[1]])
-  return(krels)
+
+  return(list(reliabilities = krels,
+              flag = kflag))
 }
 
 #' Extract model fit
@@ -326,16 +366,16 @@ appendix_prep <- function(fits, index, suffix){
 #' Extract unique factor structures across the k-folds
 #'
 #' @param kfa An object returned from \code{\link[kfa]{kfa}}
-#' @param which Should the unique structures be extracted from the "cfa" \code{lavaan} models or "efa" syntax?
+#' @param which Currently only for internal use; Should the unique structures be extracted from the "cfa" \code{lavaan} models or "efa" syntax?
 #'
 #' @return For each unique structure within each factor model, a \code{list} containing \code{lavaan} syntax specifying the factor structure and the folds where the structure was identified
 
-model_structure <- function(kfa, which = c("cfa", "efa")){
+model_structure <- function(kfa, which = "cfa"){
 
   if(which == "cfa"){
     kfa <- kfa$cfas
   } else if(which == "efa"){
-    kfa <- kfa$efa.structures
+    kfa <- kfa$efas
   }
 
   k <- length(kfa)
@@ -343,7 +383,7 @@ model_structure <- function(kfa, which = c("cfa", "efa")){
 
   kstructures <- vector("list", length = m)
 
-  # Can probably simplify cfa vs. efa code since only difference is extracting factor loadings from lavaan (lavInspect + efa_cfa_syntax)
+  # cfa requires extracting factor loadings (lavInspect)
   if(which == "cfa"){
 
     kstructures[[1]][[1]] <- list(structure = efa_cfa_syntax(lavaan::lavInspect(kfa[[1]][[1]], "std")$lambda),
@@ -393,5 +433,67 @@ match_structure <- function(structures){
   }
 
   return(slist)
+}
+
+
+#' Flag model problems
+#'
+#' Internal function to create table of flag counts
+#'
+#' @param kfa An object returned from \code{\link[kfa]{kfa}}
+#' @param corrs An object returned from \code{\link[kfa]{agg_cors}}
+#' @param rels An object returned from \code{\link[kfa]{agg_rels}}
+#'
+#' @return a \code{data.frame}
+
+model_flags <- function(kfa, cors, rels, loads){
+
+  # Multiple structures from EFA
+  multistrux <- data.frame(model = names(kfa$efa.structures),
+                           `multiple structures` = unlist(lapply(kfa$efa.structures, function(x) length(x) > 1)),
+                           check.names = FALSE)
+
+  # flags from CFA models
+  cfas <- kfa$cfas
+  k <- length(cfas)
+  m <- max(unlist(lapply(cfas, length)))
+
+  ## Flagging non-convergence and heywood case warnings/errors
+  cnvgd <- vector("list", k)
+  hey <- vector("list", k)
+  for(f in 1:k){
+
+    ## count of heywood cases in each model
+    hey[[f]] <- lapply(kstudent$cfas[[f]], function(x)
+      nrow(subset(lavaan::parameterEstimates(x, standardized = FALSE,
+                                             se = FALSE, zstat = FALSE,
+                                             pvalue = FALSE, ci = FALSE),
+                  op == "~~" & lhs == rhs & est < 0))) # keeps negative residual or factor variance
+
+    ## convergence status of each model
+    cnvgd[[f]] <- lapply(kstudent$cfas[[f]], lavaan::lavInspect, "converged")
+
+  }
+
+  nonconvergence <- integer(length = m)
+  heywood <- integer(length = m)
+  for(n in 1:m){
+
+    nonconvergence[[n]] <- sum(unlist(lapply(cnvgd, '[[', n)) == FALSE)
+    heywood[[n]] <- sum(unlist(lapply(hey, '[[', n)) > 0)
+  }
+
+  ## joining flags into data.frame
+  flags <- data.frame(model = names(cfas[[1]]),
+                      `non-convergence` = nonconvergence,
+                      `heywood case` = heywood,
+                      `high factor correlation` = cors$flag,
+                      `low scale reliability` = rels$flag,
+                      `low loading` = loads$flag,
+                      check.names = FALSE)
+
+  flags <- merge(multistrux, flags, by = "model", all.x = FALSE, all.y = TRUE)
+
+  return(flags)
 }
 

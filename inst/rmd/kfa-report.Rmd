@@ -6,7 +6,7 @@ flextable::set_flextable_defaults(fonts_ignore = TRUE)
 
 plot.settings <- list(what = "std", whatLabels = "no", layout = "tree",
                         intercepts = FALSE, residuals = FALSE, thresholds = FALSE,
-                        cut = cut, posCol = c("#BF0000","#000000"), fade = FALSE,
+                        cut = load.flag, posCol = c("#BF0000","#000000"), fade = FALSE,
                         # edge.color = , # could create custom function to utilize this argument
                         weighted = TRUE, negDashed = TRUE, esize = 5,
                         manifests = vnames, reorder = FALSE)
@@ -29,7 +29,7 @@ date: "`r format(Sys.Date(), '%B %d, %Y')`"
 
 **Maximum # of factors extracted:** `r max.fac`
 
-# Model Fit Summary
+# Model Summary
 
 **Fit across folds by factor model**
 
@@ -42,18 +42,23 @@ fit.map <- data.frame(col_keys = names(fit.table),
 fit.flex <- flextable::flextable(fit.table)
 fit.flex <- flextable::colformat_double(fit.flex, j = -c(1,2), digits = digits)
 fit.flex <- two_level_flex(fit.flex, mapping = fit.map, vert.cols = c("model", "df"), border = border)
-# fit.flex <- flextable::set_header_df(fit.flex, mapping = fit.map)
-# fit.flex <- flextable::merge_h(fit.flex, part = "header")
-# fit.flex <- flextable::merge_v(fit.flex, j = c("factors", "df"), part = "header")
-# fit.flex <- flextable::fix_border_issues(fit.flex)
-# fit.flex <- flextable::border_inner_h(fit.flex, border = border, part = "header")
-# fit.flex <- flextable::hline_top(fit.flex, border = border, part = "all")
-# # fit.flex <- flextable::theme_vanilla(fit.flex)
-# fit.flex <- flextable::align(fit.flex, align = "center", part = "all")
-# fit.flex <- flextable::autofit(fit.flex)
 knit_print(fit.flex)
 ```
 
+
+**Count of folds out of `r k` with flagged problems**
+
+```{r flagged, ft.align = "left", results='asis'}
+flagged.flex <- flextab_format(flagged, bold.type = "none", width = width, digits = digits)
+knit_print(flagged.flex)
+```
+
+*Notes:*  
+"multiple structures" is TRUE when multiple factor structures were identified in the EFA. The most common structure was used in the CFA. See Appendix for all structures.  
+"high factor correlation" threshold set to `r cor.flag`.  
+"low scale reliability" threshold set to `r rel.flag`.  
+"low loading" threshold set to `r load.flag`.  
+blanks = not applicable  
 
 
 ```{r best model, ft.align = "left", results='asis', eval=FALSE}
@@ -63,7 +68,7 @@ knit_print(best.flex)
 ```
 
 
-# Model Structures
+# Model Details
 
 ```{r structure, ft.align = "left", results = 'asis', warning = FALSE, message = FALSE, fig.height = 4, fig.width = 6}
 
@@ -86,21 +91,21 @@ for(n in 1:m){
   cat("\n\n")
   cat("**Standardized Loading Across Folds**")
   cat("\n\n")
-  lambda.flex <- flextab_format(klambdas[[n]], bold.type = "lambda",
-                                cut = cut, digits = digits)
+  lambda.flex <- flextab_format(klambdas$loadings[[n]], bold.type = "none", digits = digits)
   cat(knit_print(lambda.flex))
+  cat("Note: loadings flagged when <", load.flag)
   cat("\n\n")
   if(n > 1){
   cat("**Mean Factor Correlations**")
   cat("\n\n")
-  corr.flex <- flextab_format(kcorrs[[n]], bold.type = "none", digits = digits)
+  corr.flex <- flextab_format(kcorrs$correlations[[n]], bold.type = "none", digits = digits)
   corr.flex <- flextable::compose(corr.flex, i = 1, j = 1, value = flextable::as_paragraph(""), part = "header")
   cat(knit_print(corr.flex))
   cat("\n\n")
   }
   cat("**Mean Scale Reliabilities**")
   cat("\n\n")
-  rel.flex <- flextab_format(as.data.frame(krels[[n]]), bold.type = "none", digits = digits)
+  rel.flex <- flextab_format(as.data.frame(krels$reliabilities[[n]]), bold.type = "none", digits = digits)
   cat(knit_print(rel.flex))
   cat("\n\n")
 }

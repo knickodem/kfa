@@ -4,14 +4,14 @@
 \alias{flextab_format}
 \title{Default flextable format}
 \usage{
-flextab_format(df, bold.type = "none", cut = 0.3, digits = 2)
+flextab_format(df, bold.type = "none", width = NULL, digits = 2)
 }
 \arguments{
 \item{df}{a \code{data.frame}}
 
 \item{bold.type}{character indicating table with a pre-specified bolding pattern. Not currently implemented.}
 
-\item{cut}{numeric; standardized factor loadings below this value are bolded in tables.}
+\item{width}{numeric; maximum width of table in inches.}
 
 \item{digits}{integer; number of decimal places to display in the report.}
 }

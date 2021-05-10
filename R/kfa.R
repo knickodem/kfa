@@ -105,23 +105,26 @@ kfa <- function(variables,
 
   # formatting for use in model_structure
   temp <- list(cfas = NULL,
-               efa.structures = efa)
+               efas = efa)
 
   # identifying unique structure
   efa.structures <- model_structure(temp, which = "efa")
+  names(efa.structures) <- paste0(1:m, "-factor")
 
   # collect most common structure for each factor model to use in CFAs
-  cfa.structures <- vector("list", length = m)
+  cfa.syntax <- vector("list", length = m)
   for(n in 1:m){
-    if(length(efa.structures[[n]]) == 1){
-      cfa.structures[[n]] <- efa.structures[[n]][[1]]$structure
+    if(length(efa.structures[[n]]) == 1){ # all one factor structures should be the same
+      cfa.syntax[[n]] <- efa.structures[[n]][[1]]$structure
     } else {
       # number of folds each structure was found; keep most common structure
       num.folds <- unlist(lapply(efa.structures[[n]], function(x) length(x$folds)))
-      cfa.structures[[n]] <- efa.structures[[n]][[which(num.folds == max(num.folds))]]$structure
+      ties <- which(num.folds == max(num.folds))
+      ties <- ifelse(length(ties) == 1, ties, ties[[1]]) # in case of ties, use first structure
+      cfa.syntax[[n]] <- efa.structures[[n]][[ties]]$structure
     }
   }
-  names(cfa.structures) <- paste0(1:m, "-factor")
+  names(cfa.syntax) <- paste0(1:m, "-factor")
 
   if(!is.null(custom.cfas)){
     if(class(custom.cfas) != "list"){ # converting single object to named list
@@ -131,12 +134,12 @@ kfa <- function(variables,
     } else if(is.null(names(custom.cfas))){ # (if necessary) adding names to list
       names(custom.cfas) <- paste("custom", LETTERS[1:length(custom.cfas)])
     }
-    cfa.structures <- c(cfa.structures, custom.cfas)
+    cfa.syntax <- c(cfa.syntax, custom.cfas)
   }
 
   ## Run CFAs
   cfas <- foreach::foreach(fold = 1:k) %dopar% {
-    k_cfa(syntax = cfa.structures,
+    k_cfa(syntax = cfa.syntax,
           variables = variables[testfolds[[fold]], ],
           ordered = ordered,
           estimator = estimator,
@@ -144,6 +147,7 @@ kfa <- function(variables,
           ...)
   }
   output <- list(cfas = cfas,
+                 cfa.syntax = cfa.syntax,
                  efa.structures = efa.structures)
 
   parallel::stopCluster(clusters)

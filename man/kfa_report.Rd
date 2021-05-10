@@ -11,7 +11,9 @@ kfa_report(
   report.title = file.name,
   word.template = NULL,
   index = c("chisq", "cfi", "rmsea"),
-  cut = 0.3,
+  load.flag = 0.3,
+  cor.flag = 0.9,
+  rel.flag = 0.6,
   digits = 2
 )
 }
@@ -27,7 +29,11 @@ lists where the inner list consists of \code{lavaan} objects.}
 
 \item{index}{One or more fit indices to summarize in the report. The degrees of freedom are always reported. Default are "chisq", "cfi", and "rmsea".}
 
-\item{cut}{numeric; standardized factor loadings below this value are bolded in tables.}
+\item{load.flag}{Item loadings below this value will be flagged. Default is .30}
+
+\item{cor.flag}{Factor correlations above this value will be flagged. Default is .90}
+
+\item{rel.flag}{Factor (scale) reliability below this value will be flagged. Default is .60.}
 
 \item{digits}{integer; number of decimal places to display in the report.}
 }

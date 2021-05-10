@@ -8,7 +8,9 @@
 #' @param report.format File format of the report. Default is HTML ("html_document"). See \code{\link[rmarkdown]{render}} for other options.
 #' @param report.title Title of the report
 #' @param index One or more fit indices to summarize in the report. The degrees of freedom are always reported. Default are "chisq", "cfi", and "rmsea".
-#' @param cut numeric; standardized factor loadings below this value are bolded in tables.
+#' @param load.flag Item loadings below this value will be flagged. Default is .30
+#' @param cor.flag Factor correlations above this value will be flagged. Default is .90
+#' @param rel.flag Factor (scale) reliability below this value will be flagged. Default is .60.
 #' @param digits integer; number of decimal places to display in the report.
 #'
 #' @return a summary report of factor structure and model fit within and between folds
@@ -16,8 +18,9 @@
 #' @export
 
 kfa_report <- function(kfa, file.name, report.format = "html_document", report.title = file.name,
-                       word.template = NULL,
-                       index = c("chisq", "cfi", "rmsea"), cut = .3, digits = 2){
+                       word.template = NULL, index = c("chisq", "cfi", "rmsea"),
+                       load.flag = .30, cor.flag = .90, rel.flag = .60,
+                       digits = 2){
 
   ## analysis summary info
   k <- length(kfa$cfas) # number of folds
@@ -45,19 +48,25 @@ kfa_report <- function(kfa, file.name, report.format = "html_document", report.t
   kstructures <- model_structure(kfa, which = "cfa")
 
   ## loadings
-  klambdas <- agg_loadings(kfa)
+  klambdas <- agg_loadings(kfa, flag = load.flag)
 
   ## factor correlations
-  kcorrs <- agg_fac_cor(kfa)
+  kcorrs <- agg_cors(kfa, flag = cor.flag)
 
   ## score reliabilities
-  krels <- agg_reliability(kfa)
+  krels <- agg_rels(kfa, flag = rel.flag)
+
+  ## flagged problems
+  flagged <- model_flags(kfa, kcorrs, krels, klambdas)
 
   ## running report
   if(report.format == "word_document"){
     if(is.null(word.template)){
       word.template <- "kfa_word_template.docx"
     }
+    width <- 6.5
+  } else {
+    width <- NULL
   }
   template <- system.file("rmd", "kfa-report.Rmd", package = "kfa")
   dir <- getwd()
@@ -77,18 +86,18 @@ kfa_report <- function(kfa, file.name, report.format = "html_document", report.t
 #'
 #' @param df a \code{data.frame}
 #' @param bold.type character indicating table with a pre-specified bolding pattern. Not currently implemented.
-#' @param cut numeric; standardized factor loadings below this value are bolded in tables.
+#' @param width numeric; maximum width of table in inches.
 #' @param digits integer; number of decimal places to display in the report.
 #'
 #' @return a \code{flextable} object
 
-flextab_format <- function(df, bold.type = "none", cut = .3, digits = 2){
+flextab_format <- function(df, bold.type = "none", width = NULL, digits = 2){
 
   numericcols <- which(unlist(lapply(df, is.numeric)))
 
-  flex <- flextable(df)
-  flex <- colformat_double(flex, j = numericcols, digits = digits)
-  flex <- align(flex, i = NULL, j = NULL, align = "center", part = "all")
+  flex <- flextable::flextable(df)
+  flex <- flextable::colformat_double(flex, j = numericcols, digits = digits)
+  flex <- flextable::align(flex, i = NULL, j = NULL, align = "center", part = "all")
   flex <- flextable::font(flex, fontname = "Times New Roman", part = "all")
   flex <- flextable::padding(flex, padding = 3, part = "all")
 
@@ -99,7 +108,10 @@ flextab_format <- function(df, bold.type = "none", cut = .3, digits = 2){
     # error occurs when .3 is replaced by cut; not sure why
   }
 
-  flex <- autofit(flex)
+  if(!is.null(width)){
+    flex <- flextable::fit_to_width(flex, width)
+  }
+  flex <- flextable::autofit(flex)
 
   return(flex)
 }

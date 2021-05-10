@@ -48,57 +48,40 @@ tictoc::toc() # ~ 60 seconds
 
 kstructures <- model_structure(kstudent, which = "cfa")
 
+library(tidySEM)
+tidySEM::graph_sem(kstudent$cfas[[2]]$`2-factor`)
+
+
+k <- length(kstudent$cfas)
+m <- max(unlist(lapply(kstudent$cfas, length)))
+
+
 kfit <- k_model_fit(kstudent)
 mfit <- k_model_fit(kstudent, by.fold = FALSE)
 agg_model_fit(kfit)
 get_appendix(mfit)
-agg_loadings(kstudent)
-agg_fac_cor(kstudent)
-agg_reliability(kstudent)
-best_model(kfit)
+tictoc::tic()
+ld <- agg_loadings(kstudent)
+tictoc::toc() #.16
 
-strux <- kstudent$efa.structures
-for(n in 1:length(strux)){
-  cat("### Factors:", n)
-  cat("\n\n")
-  for(s in seq_along(strux[[n]])){
-    cat("**Factor Structure Option", s, "**")
-    cat("\n\n")
-    cat("**In Folds:", paste(strux[[n]][[s]]$folds, collapse = ", "), "**")
-    cat("\n\n")
-    if (strux[[n]][[s]]$structure == "") cat("Structure contained single item factors") else cat(gsub("\n", "\n\n", strux[[n]][[s]]$structure))
-    cat("\n\n")
-  }
-}
+tictoc::tic()
+cr <- agg_cors(kstudent)
+tictoc::toc() #.01
 
+tictoc::tic()
+rl <- agg_rels(kstudent)
+tictoc::toc() #74.9
 
-
-## extracting red flags
-# converged
-converged <- vector("list", length = k)
-for(f in 1:k){
-  converged[[f]] <- lapply(kstudent[[f]], lavaan::lavInspect, "converged")
-}
-cnvgd <- integer(length = m)
-for(n in 1:m){
-
-  cnvgd[[n]] <- sum(unlist(lapply(converged, '[[', n)) == FALSE)
-}
-
-# heywood cases - see sources of strength code
-lavaan::lavInspect(kstudent[[1]][[1]], "post.check") # when there is a problem, what is returned? FALSE or the warning?
-sum(lavaan::lavInspect(kstudent[[1]][[4]], "cov.lv") < 0)
-
-# single-item factor
-
-
-
+tictoc::tic()
+str(model_flags(kstudent, cr, rl, ld))
+tictoc::toc() #.11
 
 
 # Run report
 kfa_report(kstudent, file.name = "kfa_students",
            report.format = "word_document",
            report.title = "K-fold Factor Analysis - Lebenon Students")
+
 
 
 
