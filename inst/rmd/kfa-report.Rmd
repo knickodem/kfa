@@ -27,7 +27,12 @@ date: "`r format(Sys.Date(), '%B %d, %Y')`"
 
 **# of observations:** `r nobs`
 
-**Maximum # of factors extracted:** `r max.fac`
+**Maximum # of factors:**
+
+ - Allowed - `r fac.allow`
+ - Extracted - `r fac.max`
+
+\newpage
 
 # Model Summary
 
@@ -120,15 +125,45 @@ for(n in 1:m){
 
 ```{r appendix.fits, ft.align = "left", results='asis'}
 index <- if(sum(grepl("df", index)) == 0) c("df", index) else index
-appendix.map <- data.frame(col_keys = names(appendix),
+
+ax <- length(index)*length(model.names)
+if(ax <= 16){ # is the appendix a reasonable width?
+  
+  appendix.map <- data.frame(col_keys = names(appendix),
                       top = c("fold", rep(model.names, each = length(index))),
                       bottom = c("fold", rep(index, times = length(model.names))))
 
-appendix.flex <- flextable::flextable(appendix)
-appendix.flex <- flextable::colformat_double(appendix.flex, j = -c(1), digits = digits)
-appendix.flex <- two_level_flex(appendix.flex, mapping = appendix.map, vert.cols = c("fold"), border = border)
-knit_print(appendix.flex)
+appendix.flex <- appendix_wrapper(appendix, appendix.map, border, digits)
+appendix.flex
+  
+  
+} else { # If not, split into two tables 
+
+  modsplit <- floor(16/length(index))
+colsplit <- 1+length(index)*modsplit
+appendix1 <- appendix[1:colsplit]
+appendix2 <- appendix[c(1, (colsplit+1):length(appendix))]
+
+appendix1.map <- data.frame(col_keys = names(appendix1),
+                           top = c("fold", rep(model.names[1:modsplit], each = length(index))),
+                           bottom = c("fold", rep(index, times = modsplit)))
+
+appendix1.flex <- appendix_wrapper(appendix1, appendix1.map, border, digits)
+appendix1.flex
+# part 2 needs to be in a separate chunk for some reason
+}
 ```
+
+```{r appendix2, ft.align = "left", results='asis'}
+if(ax > 16){ 
+  appendix2.map <- data.frame(col_keys = names(appendix2),
+                            top = c("fold", rep(model.names[(modsplit+1):length(model.names)], each = length(index))),
+                            bottom = c("fold", rep(index, times = length(model.names) - modsplit)))
+  appendix2.flex <- appendix_wrapper(appendix2, appendix2.map, border, digits)
+  appendix2.flex
+}
+```
+
 
 ## All EFA Structures
 

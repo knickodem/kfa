@@ -25,13 +25,16 @@ studentdf <- student[ ,names(student) %in% na.omit(itemmaps$student$`Variable Na
 teacherdf <- teacher[ ,names(teacher) %in% na.omit(itemmaps$teacher$`Variable Name`)]
 principaldf <- principal[ ,names(principal) %in% na.omit(itemmaps$principal$`Variable Name`)]
 coachdf <- coach[ ,names(coach) %in% na.omit(itemmaps$coach$`Variable Name`)]
-studentdf2 <- studentdf[!(names(studentdf) %in% c("a1118x", "a1120x", "a1121x"))]
+
 
 # ---- test full kfold_fa function ----------------
 
 ## custom factor structure (just an example, not based on theory)
-custom <- paste0("f1 =~ ", paste(names(studentdf)[1:10], collapse = " + "),
+custom2 <- paste0("f1 =~ ", paste(names(studentdf)[1:10], collapse = " + "),
                  "\nf2 =~ ",paste(names(studentdf)[11:21], collapse = " + "))
+custom3 <- paste0("f1 =~ ", paste(names(studentdf)[1:19], collapse = " + "),
+                  "\nf2 =~ ",paste(names(studentdf)[20], collapse = " + "),
+                  "\nf3 =~ ",paste(names(studentdf)[21], collapse = " + "))
 
 ## set seed to get the same folds
 set.seed(936639)
@@ -39,7 +42,7 @@ tictoc::tic()
 kstudent <- kfa(variables = studentdf,
                 k = NULL,
                 m = 5,
-                custom.cfas = custom,
+                custom.cfas = list(`Custom 2f` = custom2, Break = custom3),
                 rotation = "oblimin",
                 ordered = TRUE,
                 estimator = "DWLS",
@@ -59,7 +62,32 @@ m <- max(unlist(lapply(kstudent$cfas, length)))
 kfit <- k_model_fit(kstudent)
 mfit <- k_model_fit(kstudent, by.fold = FALSE)
 agg_model_fit(kfit)
-get_appendix(mfit)
+appendix <- get_appendix(mfit)
+index = c("chisq", "cfi", "rmsea")
+
+model.names <- names(kstudent$cfas[[1]])
+
+length(index)*length(model.names) > 16
+modsplit <- floor(16/length(index))
+colsplit <- 1+length(index)*modsplit
+appx1 <- appx[1:colsplit]
+appx2 <- appx[c(1, (colsplit+1):length(appx))]
+
+appendix1.map <- data.frame(col_keys = names(appx1),
+                           top = c("fold", rep(model.names[1:modsplit], each = length(index))),
+                           bottom = c("fold", rep(index, times = modsplit)))
+
+appendix2.map <- data.frame(col_keys = names(appx2),
+                            top = c("fold", rep(model.names[(modsplit+1):length(model.names)], each = length(index))),
+                            bottom = c("fold", rep(index, times = length(model.names) - modsplit)))
+
+
+appendix1.flex <- flextable::flextable(appx1)
+appendix1.flex <- flextable::colformat_double(appendix1.flex, j = -c(1), digits = 2)
+appendix1.flex <- two_level_flex(appendix1.flex, mapping = appendix1.map, vert.cols = c("fold"), border = officer::fp_border(width = 2))
+
+
+
 tictoc::tic()
 ld <- agg_loadings(kstudent)
 tictoc::toc() #.16
@@ -78,8 +106,8 @@ tictoc::toc() #.11
 
 
 # Run report
-kfa_report(kstudent, file.name = "kfa_students",
-           report.format = "word_document",
+kfa_report(kstudent, file.name = "kfa_students_custom",
+           report.format = "html_document",
            report.title = "K-fold Factor Analysis - Lebenon Students")
 
 
@@ -271,6 +299,9 @@ semTools::findRMSEAsamplesize(rmsea0 = .05, rmseaA = .08, df = df)
 findRMSEAsamplesizenested(rmsea0A = .05, rmsea0B = NULL, rmsea1A,
                           rmsea1B = NULL, dfA, dfB, power = 0.8, alpha = 0.05, group = 1)
 
+
+
+
 # ---- Using correlation matrix in lavaan -----------------
 tictoc::tic()
 kefa <- k_efa(variables = items,
@@ -315,8 +346,6 @@ cormat <- lavaan::lavInspect(prelim, "sampstat")$cov # same as lavaan::lavInspec
 means <- lavaan::lavInspect(prelim, "sampstat")$mean
 th <- lavaan::lavInspect(prelim, "sampstat")$th # same values as lavaan::lavInspect(prelim, "est")$tau
 attr(th, "th.idx") <- lavaan::lavInspect(prelim, "th.idx")
-
-
 
 
 efa.mod <- write_efa(3, names(items))
@@ -405,155 +434,7 @@ inputtype <- microbenchmark::microbenchmark(
 ######################################
 
 
-# ---- Comparing semTools to direct use in lavaan ---------------------
-
-## Notes:
-# - direct approach uses the model produced by semTools
-# - parameterization = "delta" produces 0s for all loadings for semTools call
-#   - https://groups.google.com/g/lavaan/c/ujkHmCVirEY/m/-LGut4ewAwAJ
-#   - delta works when lavaan called directly
-# - data argument is specified even when sample.cov and sample.nobs are provided
-#   otherwise get error (see above)
-
-## semTools with previously calculated polychoric correlation matrix
-st.mat = semTools::efaUnrotate(data = items,
-                               nf = 3,
-                               start = FALSE,
-                               sample.cov = cormat,
-                               sample.nobs = nobs,
-                               ordered = names(items),
-                               parameterization = "theta",
-                               se = "none",
-                               test = "none")
-st.mod <- lavaan::lavInspect(st.mat, "call")$model
-
-# ----- Comparing model defined by semTools to model defined by regsem ------------
-## Model from regsem
-rs.mod <- regsem::efaModel(3, names(items))
-rs <- lavaan::cfa(model = rs.mod,
-                  sample.cov = cormat,
-                  sample.nobs = nobs,
-                  sample.mean = means,
-                  sample.th = th,
-                  WLS.V = wlsv,
-                  NACOV = nacov,
-                  estimator = "DWLS",
-                  parameterization = "delta",
-                  se = "none",
-                  test = "none")
-
-## Do the regsem and semTools syntax produce the same results
-all.equal(get_std_loadings(matonly), get_std_loadings(rs)) # nope; loadings are the same on each factor for rs
-lapply(list(matonly, rs),function(x) lavaan::lavInspect(x, "iterations"))
-
-pfa <- psych::fa(r = cormat, nfactors = 3, n.obs = nobs, rotate = "none", covar = FALSE, fm = "wls")
-
-## rs.mod is substantially fastor
-# expr      min       lq      mean   median       uq       max neval
-# rs 1.017891 1.060982  1.426087 1.121872  1.39415  2.671816    20
-# st 7.143214 7.405637 10.612499 7.824584 16.39990 18.224163    20
-
-rs.v.st <- microbenchmark::microbenchmark(
-  rs = lavaan::cfa(model = rs.mod,
-                   sample.cov = cormat,
-                   sample.nobs = nobs,
-                   sample.mean = means,
-                   sample.th = th,
-                   WLS.V = wlsv,
-                   NACOV = nacov,
-                   estimator = "DWLS",
-                   parameterization = "delta",
-                   se = "none",
-                   test = "none"),
-  st = lavaan::cfa(model = st.mod,
-                   sample.cov = cormat,
-                   sample.nobs = nobs,
-                   sample.mean = means,
-                   sample.th = th,
-                   WLS.V = wlsv,
-                   NACOV = nacov,
-                   estimator = "DWLS",
-                   parameterization = "delta",
-                   se = "none",
-                   test = "none"),
-
-  times = 20)
-
-
-# Questions:
-# - Does regsem produce same loadings as semtools? No. Do either match Mplus?
-#   - If yes, what is the speed difference? regsem is considerably faster
-# - What exactly do I need to return from the lavCor call? TBD
-
-
-## lawley-rao syntax - not done yet
-write_efa <- function(nf, itemnames){
-  factors <- paste0("f", 1:nf)
-  loadings <- paste(itemnames, collapse = " + ")
-  syntax <- paste(lapply(factors, function(x) paste0(x, " =~ ", loadings)), collapse = "\n")
-  syntax
-
-}
-
-lr <- write_efa(3, names(items))
-lr.dat <- lavaan::lavaan(model = test,
-                           data = items,
-                           auto.efa = TRUE,
-                           ordered = names(items),
-                           estimator = "DWLS",
-                           missing = "pairwise",
-                           parameterization = "theta",
-                           orthogonal = TRUE,
-                           se = "none")
-
-lavaan::lavInspect(test.dat, "partable")
 
 
 
-## set seed to get the same folds
-set.seed(936639)
 
-## defaults
-# rotation = "oblimin"
-# k = NULL
-# rmsea0 = .05
-# rmseaA = .08
-# m = floor(ncol(items) / 4)
-# threshold = NA # might not make threshold an argument
-# ordered = FALSE
-# missing = "listwise"
-
-tictoc::tic()
-thesyntax <- kfold_fa(items = items, extract.method = "lrt",
-                      rotation = "oblimin", k = NULL,
-                      ordered = TRUE, missing = "pairwise")
-
-tictoc::toc()
-
-
-
-#### part of kfold_fa ####
-
-if(ordered == TRUE){
-  ordered <- names(items)
-} else if(ordered == FALSE){
-  ordered <- NULL
-}
-
-if(is.null(k)){
-
-  ## determine number of folds based on power analysis
-  k <- findk(p = items, m = m, rmsea0 = rmsea0, rmseaA = rmseaA)
-}
-
-trainfolds <- caret::createFolds(y = 1:nrow(items),
-                                 k = k, list = TRUE,
-                                 returnTrain = TRUE)
-
-######
-
-## Testing standalone efa function
-efatest <- run_efa(items = items[trainfolds[[1]], ],
-                         rotation = "oblimin", m = 5,
-                         simple = TRUE, threshold = NA,
-                         ordered = TRUE, missing = "pairwise")

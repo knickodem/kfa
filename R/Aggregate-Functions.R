@@ -270,7 +270,7 @@ agg_model_fit <- function(kfits, index = c("chisq", "cfi", "rmsea"), digits = 2)
 
 
     # joining into single table
-    fit <- merge(x = fit, y = agg, by = "model", all.x = TRUE)
+    fit <- merge(x = fit, y = agg, by = "model", all.x = TRUE, sort = FALSE)
   }
 
   return(fit)
@@ -463,7 +463,7 @@ model_flags <- function(kfa, cors, rels, loads){
   hey <- vector("list", k)
   for(f in 1:k){
 
-    ## count of heywood cases in each model
+    ## count of heywood cases in each model - use lavInspect(kstudent$cfas[[1]]$Break, "post.check") instead
     hey[[f]] <- lapply(kstudent$cfas[[f]], function(x)
       nrow(subset(lavaan::parameterEstimates(x, standardized = FALSE,
                                              se = FALSE, zstat = FALSE,
@@ -492,7 +492,7 @@ model_flags <- function(kfa, cors, rels, loads){
                       `low loading` = loads$flag,
                       check.names = FALSE)
 
-  flags <- merge(multistrux, flags, by = "model", all.x = FALSE, all.y = TRUE)
+  flags <- merge(multistrux, flags, by = "model", all.x = FALSE, all.y = TRUE, sort = FALSE)
 
   return(flags)
 }

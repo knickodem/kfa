@@ -24,9 +24,10 @@ kfa_report <- function(kfa, file.name, report.format = "html_document", report.t
 
   ## analysis summary info
   k <- length(kfa$cfas) # number of folds
-  model.names <- names(kfa$cfas[[1]])
-  max.fac <- max(as.numeric(substring(model.names[grepl("-factor", model.names)], 1, 1)))  # kfa naming convention "#-factor"; custom functions are assumed to have different convention
-  m <- max(unlist(lapply(kfa$cfas, length))) # number of models per fold (includes both efa and custom structures)
+  model.names <- names(kfa$cfas[[1]]) # names(kfa$cfa.syntax)
+  fac.allow <- length(kfa$efa.structures)
+  fac.max <- max(as.numeric(substring(model.names[grepl("-factor", model.names)], 1, 1)))  # kfa naming convention "#-factor"; custom functions are assumed to have different convention
+  m <- max(unlist(lapply(kfa$cfas, length))) # number of models per fold (includes both efa and custom structures); m == length(model.names)
   nobs <- sum(unlist(lapply(kfa$cfas, function(x) lavaan::lavInspect(x[[1]], "nobs"))))
   vnames <- dimnames(lavaan::lavInspect(kfa$cfas[[1]][[1]], "sampstat")$cov)[[1]]
   nvars <- length(vnames)
@@ -109,7 +110,7 @@ flextab_format <- function(df, bold.type = "none", width = NULL, digits = 2){
   }
 
   if(!is.null(width)){
-    flex <- flextable::fit_to_width(flex, width)
+    flex <- flextable::fit_to_width(flex, max_width = width)
   }
   flex <- flextable::autofit(flex)
 
@@ -125,7 +126,7 @@ flextab_format <- function(df, bold.type = "none", width = NULL, digits = 2){
 #' @param vert.cols columns where level 1 and level 2 cells will be vertically merged. See \code{\link[flextable]{merge_v}} for details.
 #' @param border format of of horizontal borders. See \code{\link[flextable]{border_inner_h}} for details.
 #'
-#' @return a flextable object
+#' @return a \code{flextable} object
 
 two_level_flex <- function(flex, mapping, vert.cols, border){
 
@@ -140,4 +141,26 @@ two_level_flex <- function(flex, mapping, vert.cols, border){
   flex <- flextable::font(flex, fontname = "Times New Roman", part = "all")
   flex <- flextable::padding(flex, padding = 3, part = "all")
   flex <- flextable::autofit(flex)
+  return(flex)
+}
+
+
+#' Create appendix table
+#'
+#' Internal function for converting appendix from \code{data.frame} to \code{flextable}
+#'
+#' @param appendix object returned from \code{\link[kfa]{get_appendix}}
+#' @param mapping a \code{data.frame} specifying header columns. See \code{\link[flextable]{set_header_footer_df}} for details.
+#' @param border format of of horizontal borders. See \code{\link[flextable]{border_inner_h}} for details.
+#' @param digits integer; number of decimal places to display in the report.
+#'
+#' @return a \code{flextable} object
+
+appendix_wrapper <- function(appendix, mapping, border, digits){
+
+  appendix.flex <- flextable::flextable(appendix)
+  appendix.flex <- flextable::colformat_double(appendix.flex, j = -c(1), digits = digits)
+  appendix.flex <- two_level_flex(appendix.flex, mapping = mapping, vert.cols = c("fold"), border = border)
+  return(appendix.flex)
+
 }
