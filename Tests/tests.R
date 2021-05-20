@@ -32,9 +32,18 @@ coachdf <- coach[ ,names(coach) %in% na.omit(itemmaps$coach$`Variable Name`)]
 ## custom factor structure (just an example, not based on theory)
 custom2 <- paste0("f1 =~ ", paste(names(studentdf)[1:10], collapse = " + "),
                  "\nf2 =~ ",paste(names(studentdf)[11:21], collapse = " + "))
-custom3 <- paste0("f1 =~ ", paste(names(studentdf)[1:19], collapse = " + "),
-                  "\nf2 =~ ",paste(names(studentdf)[20], collapse = " + "),
-                  "\nf3 =~ ",paste(names(studentdf)[21], collapse = " + "))
+custom3 <- paste0("f1 =~ ", paste(names(studentdf)[1:2], collapse = " + "),
+                  "\nf2 =~ ",paste(names(studentdf)[3:4], collapse = " + "),
+                  "\nf3 =~ ",paste(names(studentdf)[5:6], collapse = " + "),
+                  "\nf4 =~ ",paste(names(studentdf)[7:8], collapse = " + "),
+                  "\nf5 =~ ",paste(names(studentdf)[9:10], collapse = " + "),
+                  "\nf6 =~ ",paste(names(studentdf)[11:12], collapse = " + "),
+                  "\nf7 =~ ",paste(names(studentdf)[13:21], collapse = " + "),
+                  "\na1101x ~~ ", paste(names(studentdf)[2:21], collapse = " + "),
+                  "\na1102x ~~ ", paste(names(studentdf)[3:21], collapse = " + "))
+
+# When custom model does not contain all items, the following error is currently produced:
+# Error in { : task 1 failed - "invalid 'times' argument"
 
 ## set seed to get the same folds
 set.seed(936639)
@@ -51,8 +60,10 @@ tictoc::toc() # ~ 60 seconds
 
 kstructures <- model_structure(kstudent, which = "cfa")
 
+vnames <- dimnames(lavaan::lavInspect(kstudent$cfas[[1]][[1]], "sampstat")$cov)[[1]]
+
 library(tidySEM)
-tidySEM::graph_sem(kstudent$cfas[[2]]$`2-factor`)
+tidySEM::graph_sem(kstudent$cfas[[2]]$Break)
 
 
 k <- length(kstudent$cfas)
@@ -263,11 +274,12 @@ kteacher <- kfa(variables = teacherdf,
                 ordered = TRUE,
                 estimator = "DWLS",
                 missing = "pairwise")
-tictoc::toc() #
+tictoc::toc() # ~
 
 # Run report
-kfa_report(kteachers, report.title = "K-fold Factor Analysis - Lebenon Teachers",
-           file.name = "kfa_teachers")
+kfa_report(kteachers, file.name = "kfa_teachers",
+           report.format = "html_document",
+           report.title = "K-fold Factor Analysis - Lebenon Teachers")
 
 # tictoc::tic()
 # kprincipal <- kfa(variables = principaldf,

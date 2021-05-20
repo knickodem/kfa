@@ -19,22 +19,27 @@ agg_loadings <- function(kfa, flag = .30){
   kflag <- vector("integer", m)
   for(n in 1:m){
     lambdas <- data.frame()
+    thetas <- data.frame()
     load.flag <- vector("integer", k)
     for(f in 1:k){
-      loads <- subset(lavaan::standardizedSolution(kfa[[f]][[n]], "std.lv",
-                                                   se = FALSE, zstat = FALSE,
-                                                   pvalue = FALSE, ci = FALSE),
+      ## gather standardized loadings
+      loads <- subset(lavaan::standardizedSolution(kfa[[f]][[n]], "std.lv", se = FALSE),
                       op == "=~")
       lambdas <- rbind(lambdas, loads)
-
+      # flag for model summary table
       load.flag[[f]] <- sum(loads$est.std < flag)
+
+      ## gather residual variances
+      resids <- subset(lavaan::parameterestimates(kstudent$cfas[[1]][[1]], se = FALSE), op == "~~" & lhs %in% vnames)
+      thetas <- rbind(thetas, resids)
     }
 
     klambdas[[n]] <- data.frame(variable = vnames,
                                 mean = tapply(lambdas$est.std, lambdas$rhs, mean),
                                 min = tapply(lambdas$est.std, lambdas$rhs, min),
                                 max = tapply(lambdas$est.std, lambdas$rhs, max),
-                                `folds flagged` = tapply(lambdas$est.std, lambdas$rhs, function(x) sum(x < flag)),
+                                `loading flag` = tapply(lambdas$est.std, lambdas$rhs, function(x) sum(x < flag)),
+                                `heywood flag` = tapply(thetas$est, thetas$rhs, function(x) sum(x < 0)),
                                 check.names = FALSE)
 
     ## count of folds with a loading under flag threshold
@@ -276,40 +281,22 @@ agg_model_fit <- function(kfits, index = c("chisq", "cfi", "rmsea"), digits = 2)
   return(fit)
 }
 
-#' Model with best fit
+#' Internal appendix function
 #'
-#' Summary table of best fitting model in k-folds
+#' Prepare model fit results for appendix table
 #'
-#' @param kfits An object returned from \code{\link[kfa]{k_model_fit}} when \code{by.folds = TRUE}
-#' @param index One or more fit indices to summarize in the report. Default are "chisq", "cfi", and "rmsea".
+#' @param fits An element from the list object returned from \code{\link[kfa]{k_model_fit}} when \code{by.folds = FALSE}
+#' @param index One or more fit indices to include in the appendix table. Default is \code{"all"} indices present in \code{fits}. The degrees of freedom are always reported.
+#' @param suffix character to append to column names
 #'
-#' @return \code{data.frame} with fold in rows, index in columns, and factor model with best fit in the cells
+#' @return \code{data.frame} of model fit by fold, factor model, and fit index
 
-best_model <- function(kfits, index = c("chisq", "cfi", "rmsea")){
+appendix_prep <- function(fits, index, suffix){
 
-  k <- length(kfits) # number of folds
-  index <- index[index != "df"]
-
-  best.df <- data.frame(fold = 1:k)
-  for(i in index){
-
-    if(i %in% c("chisq", "rmsea", "srmr")){
-
-      best <- lapply(kfits, function(x) x[x[[i]] == min(x[[i]]),])
-
-    } else if(i %in% c("cfi", "tli")){
-
-      best <- lapply(kfits, function(x) x[x[[i]] == max(x[[i]]),])
-
-    } else {stop("Not available at the moment")}
-
-    best <- as.data.frame(Reduce(rbind, best))
-    best.df <- cbind(best.df, best$factors)
-  }
-
-  names(best.df) <- c("fold", index)
-
-  return(best.df)
+  fits <- fits[c("fold", "df", index)]
+  fits <- rbind(fits, cbind(data.frame(fold = "Mean", data.frame(t(colMeans(fits[-1]))))))
+  names(fits) <- c("fold", paste(c("df", index), suffix, sep = "."))
+  return(fits)
 }
 
 #' Appendix of model fit
@@ -343,23 +330,6 @@ get_appendix <- function(mfits, index = "all"){
   return(appendix.df)
 }
 
-#' Internal appendix function
-#'
-#' Prepare model fit results for appendix table
-#'
-#' @param fits An element from the list object returned from \code{\link[kfa]{k_model_fit}} when \code{by.folds = FALSE}
-#' @param index One or more fit indices to include in the appendix table. Default is \code{"all"} indices present in \code{fits}. The degrees of freedom are always reported.
-#' @param suffix character to append to column names
-#'
-#' @return \code{data.frame} of model fit by fold, factor model, and fit index
-
-appendix_prep <- function(fits, index, suffix){
-
-  fits <- fits[c("fold", "df", index)]
-  fits <- rbind(fits, cbind(data.frame(fold = "Mean", data.frame(t(colMeans(fits[-1]))))))
-  names(fits) <- c("fold", paste(c("df", index), suffix, sep = "."))
-  return(fits)
-}
 
 #' Unique factor structures
 #'
@@ -449,8 +419,14 @@ match_structure <- function(structures){
 model_flags <- function(kfa, cors, rels, loads){
 
   # Multiple structures from EFA
+  s <- length(kfa$efa.structures)
+  common.strux <- vector("integer", s)
+  for(n in 1:s){
+    common.strux[[n]] <- max(unlist(lapply(kfa$efa.structures[[n]], function(x) length(x$folds))))
+
+  }
   multistrux <- data.frame(model = names(kfa$efa.structures),
-                           `multiple structures` = unlist(lapply(kfa$efa.structures, function(x) length(x) > 1)),
+                           `common structure` = common.strux,
                            check.names = FALSE)
 
   # flags from CFA models
@@ -463,15 +439,10 @@ model_flags <- function(kfa, cors, rels, loads){
   hey <- vector("list", k)
   for(f in 1:k){
 
-    ## count of heywood cases in each model - use lavInspect(kstudent$cfas[[1]]$Break, "post.check") instead
-    hey[[f]] <- lapply(kstudent$cfas[[f]], function(x)
-      nrow(subset(lavaan::parameterEstimates(x, standardized = FALSE,
-                                             se = FALSE, zstat = FALSE,
-                                             pvalue = FALSE, ci = FALSE),
-                  op == "~~" & lhs == rhs & est < 0))) # keeps negative residual or factor variance
-
     ## convergence status of each model
     cnvgd[[f]] <- lapply(kstudent$cfas[[f]], lavaan::lavInspect, "converged")
+    ## count of heywood cases in each model - use lavInspect(kstudent$cfas[[1]]$Break, "post.check") instead
+    hey[[f]] <- lapply(kstudent$cfas[[f]], lavaan::lavInspect, "post.check")
 
   }
 
@@ -480,7 +451,7 @@ model_flags <- function(kfa, cors, rels, loads){
   for(n in 1:m){
 
     nonconvergence[[n]] <- sum(unlist(lapply(cnvgd, '[[', n)) == FALSE)
-    heywood[[n]] <- sum(unlist(lapply(hey, '[[', n)) > 0)
+    heywood[[n]] <- sum(unlist(lapply(hey, '[[', n)) == FALSE)
   }
 
   ## joining flags into data.frame
@@ -497,3 +468,38 @@ model_flags <- function(kfa, cors, rels, loads){
   return(flags)
 }
 
+#' Model with best fit
+#'
+#' Summary table of best fitting model in k-folds
+#'
+#' @param kfits An object returned from \code{\link[kfa]{k_model_fit}} when \code{by.folds = TRUE}
+#' @param index One or more fit indices to summarize in the report. Default are "chisq", "cfi", and "rmsea".
+#'
+#' @return \code{data.frame} with fold in rows, index in columns, and factor model with best fit in the cells
+
+best_model <- function(kfits, index = c("chisq", "cfi", "rmsea")){
+
+  k <- length(kfits) # number of folds
+  index <- index[index != "df"]
+
+  best.df <- data.frame(fold = 1:k)
+  for(i in index){
+
+    if(i %in% c("chisq", "rmsea", "srmr")){
+
+      best <- lapply(kfits, function(x) x[x[[i]] == min(x[[i]]),])
+
+    } else if(i %in% c("cfi", "tli")){
+
+      best <- lapply(kfits, function(x) x[x[[i]] == max(x[[i]]),])
+
+    } else {stop("Not available at the moment")}
+
+    best <- as.data.frame(Reduce(rbind, best))
+    best.df <- cbind(best.df, best$factors)
+  }
+
+  names(best.df) <- c("fold", index)
+
+  return(best.df)
+}

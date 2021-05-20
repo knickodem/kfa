@@ -59,7 +59,7 @@ knit_print(flagged.flex)
 ```
 
 *Notes:*  
-"multiple structures" is TRUE when multiple factor structures were identified in the EFA. The most common structure was used in the CFA. See Appendix for all structures.  
+"common structure" is the number of folds the EFA identified the most common structure. Thus, "common structure" will be `r k` when the same structure was identified in every fold and < `r k` when multiple factor structures were identified. The most common structure was used in the CFA. See Appendix for all structures.
 "high factor correlation" threshold set to `r cor.flag`.  
 "low scale reliability" threshold set to `r rel.flag`.  
 "low loading" threshold set to `r load.flag`.  
@@ -98,7 +98,7 @@ for(n in 1:m){
   cat("\n\n")
   lambda.flex <- flextab_format(klambdas$loadings[[n]], bold.type = "none", digits = digits)
   cat(knit_print(lambda.flex))
-  cat("Note: loadings flagged when <", load.flag)
+  cat("Note: loadings flagged when <", load.flag, "in a fold\nheywood flag is the number of folds the variable's estimated residual variance was negative")
   cat("\n\n")
   if(n > 1){
   cat("**Mean Factor Correlations**")
