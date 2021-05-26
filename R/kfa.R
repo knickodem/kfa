@@ -80,6 +80,10 @@ kfa <- function(variables,
                                   k = k, list = TRUE,
                                   returnTrain = FALSE)
 
+  if(length(testfolds[[1]]) < 200){
+    warning("Sample size for each test fold is ", length(testfolds[[1]]), ", which is smaller than recommended (200; CITE")
+  }
+
   if(.Platform$OS.type == "windows"){
     cluster.type <- "PSOCK"
   } else{

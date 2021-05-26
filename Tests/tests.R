@@ -78,26 +78,6 @@ index = c("chisq", "cfi", "rmsea")
 
 model.names <- names(kstudent$cfas[[1]])
 
-length(index)*length(model.names) > 16
-modsplit <- floor(16/length(index))
-colsplit <- 1+length(index)*modsplit
-appx1 <- appx[1:colsplit]
-appx2 <- appx[c(1, (colsplit+1):length(appx))]
-
-appendix1.map <- data.frame(col_keys = names(appx1),
-                           top = c("fold", rep(model.names[1:modsplit], each = length(index))),
-                           bottom = c("fold", rep(index, times = modsplit)))
-
-appendix2.map <- data.frame(col_keys = names(appx2),
-                            top = c("fold", rep(model.names[(modsplit+1):length(model.names)], each = length(index))),
-                            bottom = c("fold", rep(index, times = length(model.names) - modsplit)))
-
-
-appendix1.flex <- flextable::flextable(appx1)
-appendix1.flex <- flextable::colformat_double(appendix1.flex, j = -c(1), digits = 2)
-appendix1.flex <- two_level_flex(appendix1.flex, mapping = appendix1.map, vert.cols = c("fold"), border = officer::fp_border(width = 2))
-
-
 
 tictoc::tic()
 ld <- agg_loadings(kstudent)

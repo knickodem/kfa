@@ -15,12 +15,14 @@ agg_loadings <- function(kfa, flag = .30){
   m <- max(unlist(lapply(kfa, length)))
   vnames <- dimnames(lavaan::lavInspect(kfa[[1]][[1]], "sampstat")$cov)[[1]]
 
-  klambdas <- vector("list", m)
-  kflag <- vector("integer", m)
+  klambdas <- vector("list", m)  # factor loadings across folds
+  lflag <- vector("integer", m)  # low loading flag
+  hflag <- vector("integer", m)  # heywood case flag
   for(n in 1:m){
     lambdas <- data.frame()
     thetas <- data.frame()
     load.flag <- vector("integer", k)
+    hey.flag <- vector("integer", k)
     for(f in 1:k){
       ## gather standardized loadings
       loads <- subset(lavaan::standardizedSolution(kfa[[f]][[n]], "std.lv", se = FALSE),
@@ -30,8 +32,11 @@ agg_loadings <- function(kfa, flag = .30){
       load.flag[[f]] <- sum(loads$est.std < flag)
 
       ## gather residual variances
-      resids <- subset(lavaan::parameterestimates(kstudent$cfas[[1]][[1]], se = FALSE), op == "~~" & lhs %in% vnames)
+      resids <- subset(lavaan::parameterestimates(kfa[[f]][[n]], se = FALSE),
+                       op == "~~" & lhs %in% vnames & lhs == rhs)
       thetas <- rbind(thetas, resids)
+      # flag for model summary table
+      hey.flag[[f]] <- sum(resids$est < 0)
     }
 
     klambdas[[n]] <- data.frame(variable = vnames,
@@ -43,12 +48,14 @@ agg_loadings <- function(kfa, flag = .30){
                                 check.names = FALSE)
 
     ## count of folds with a loading under flag threshold
-    kflag[[n]] <- sum(load.flag > 0)
+    lflag[[n]] <- sum(load.flag > 0)
+    hflag[[n]] <- sum(hey.flag > 0)
   }
   names(klambdas) <- names(kfa[[1]])
 
   return(list(loadings = klambdas,
-              flag = kflag))
+              flag = lflag,
+              heywood = hflag))
 }
 
 
@@ -434,33 +441,31 @@ model_flags <- function(kfa, cors, rels, loads){
   k <- length(cfas)
   m <- max(unlist(lapply(cfas, length)))
 
-  ## Flagging non-convergence and heywood case warnings/errors
+  ## Flagging non-convergence and non-positive definite matrix warnings
   cnvgd <- vector("list", k)
   hey <- vector("list", k)
   for(f in 1:k){
 
     ## convergence status of each model
-    cnvgd[[f]] <- lapply(kstudent$cfas[[f]], lavaan::lavInspect, "converged")
-    ## count of heywood cases in each model - use lavInspect(kstudent$cfas[[1]]$Break, "post.check") instead
-    hey[[f]] <- lapply(kstudent$cfas[[f]], lavaan::lavInspect, "post.check")
+    cnvgd[[f]] <- lapply(cfas[[f]], lavaan::lavInspect, "converged")
+    ## presence of non-positive definite matrix (and heywood cases) in each model
+    hey[[f]] <- lapply(cfas[[f]], lavaan::lavInspect, "post.check")
 
   }
 
-  nonconvergence <- integer(length = m)
-  heywood <- integer(length = m)
+  improper <- integer(length = m)
   for(n in 1:m){
-
-    nonconvergence[[n]] <- sum(unlist(lapply(cnvgd, '[[', n)) == FALSE)
-    heywood[[n]] <- sum(unlist(lapply(hey, '[[', n)) == FALSE)
+    # flagged if either indicates an improper solution
+    improper[[n]] <- sum(unlist(lapply(cnvgd, '[[', n)) == FALSE | unlist(lapply(hey, '[[', n)) == FALSE)
   }
 
   ## joining flags into data.frame
-  flags <- data.frame(model = names(cfas[[1]]),
-                      `non-convergence` = nonconvergence,
-                      `heywood case` = heywood,
+  flags <- data.frame(model = names(cfas[[1]]),  # assumes first fold contains all models in the same order as other folds
+                      `improper solution` = improper,
+                      `heywood item` = loads$heywood,
+                      `low loading` = loads$flag,
                       `high factor correlation` = cors$flag,
                       `low scale reliability` = rels$flag,
-                      `low loading` = loads$flag,
                       check.names = FALSE)
 
   flags <- merge(multistrux, flags, by = "model", all.x = FALSE, all.y = TRUE, sort = FALSE)
