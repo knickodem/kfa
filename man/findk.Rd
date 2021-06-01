@@ -33,3 +33,6 @@ integer indicating the number of folds
 This function is specifically for determining *k* in the context of factor analysis using
 change in RMSEA as the criterion for identifying the optimal factor model.
 }
+\references{
+Curran, P. J., Bollen, K. A., Chen, F., Paxton, P., & Kirby, J. B. (2003). Finite sampling properties of the point estimates and confidence intervals of the RMSEA. *Sociological Methods & Research, 32*(2), 208-252.
+}

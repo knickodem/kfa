@@ -12,6 +12,9 @@
 #'
 #' @return integer indicating the number of folds
 #'
+#' @references
+#' Curran, P. J., Bollen, K. A., Chen, F., Paxton, P., & Kirby, J. B. (2003). Finite sampling properties of the point estimates and confidence intervals of the RMSEA. *Sociological Methods & Research, 32*(2), 208-252.
+#'
 #' @export
 
 findk <- function(variables, m = floor(ncol(variables) / 4), maxk = 10,

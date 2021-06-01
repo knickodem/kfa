@@ -81,7 +81,7 @@ kfa <- function(variables,
                                   returnTrain = FALSE)
 
   if(length(testfolds[[1]]) < 200){
-    warning("Sample size for each test fold is ", length(testfolds[[1]]), ", which is smaller than recommended (200; CITE")
+    warning("Sample size for each test fold is ", length(testfolds[[1]]), ",\nwhich is smaller than the recommended 200 (Curran, Bollen, Chen, Paxton, & Kirby, 2003)")
   }
 
   if(.Platform$OS.type == "windows"){
