@@ -4,12 +4,14 @@
 \alias{agg_loadings}
 \title{Aggregated factor loadings}
 \usage{
-agg_loadings(kfa, flag = 0.3)
+agg_loadings(kfa, flag = 0.3, digits = 2)
 }
 \arguments{
 \item{kfa}{An object returned from \code{\link[kfa]{kfa}}}
 
 \item{flag}{threshold below which loading will be flagged}
+
+\item{digits}{integer; number of decimal places to display in the report.}
 }
 \value{
 \code{data.frame} of mean factor loadings for each factor model and \code{vector} with count of folds with a flagged loading

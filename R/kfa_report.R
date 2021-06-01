@@ -35,7 +35,7 @@ kfa_report <- function(kfa, file.name, report.format = "html_document", report.t
   #### Model Fit ####
   ## summarizing fit statistics by fold
   kfits <- k_model_fit(kfa, index = index, by.fold = TRUE) # dataframe for each fold
-  fit.table <- agg_model_fit(kfits, index = index)
+  fit.table <- agg_model_fit(kfits, index = index, digits = 2)
 
   ## best model in each fold
   # best.model <- best_model(kfits, index = index)
@@ -49,13 +49,13 @@ kfa_report <- function(kfa, file.name, report.format = "html_document", report.t
   kstructures <- model_structure(kfa, which = "cfa")
 
   ## loadings
-  klambdas <- agg_loadings(kfa, flag = load.flag)
+  klambdas <- agg_loadings(kfa, flag = load.flag, digits = digits)
 
   ## factor correlations
   kcorrs <- agg_cors(kfa, flag = cor.flag)
 
   ## score reliabilities
-  krels <- agg_rels(kfa, flag = rel.flag)
+  krels <- agg_rels(kfa, flag = rel.flag, digits = digits)
 
   ## flagged problems
   flagged <- model_flags(kfa, kcorrs, krels, klambdas)

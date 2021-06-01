@@ -4,12 +4,14 @@
 \alias{agg_rels}
 \title{Aggregated scale reliabilities}
 \usage{
-agg_rels(kfa, flag = 0.6)
+agg_rels(kfa, flag = 0.6, digits = 2)
 }
 \arguments{
 \item{kfa}{An object returned from \code{\link[kfa]{kfa}}}
 
 \item{flag}{threshold below which reliability will be flagged}
+
+\item{digits}{integer; number of decimal places to display in the report.}
 }
 \value{
 a \code{data.frame} of mean factor (scale) reliabilities for each factor model and \code{vector} with count of folds with a flagged reliability

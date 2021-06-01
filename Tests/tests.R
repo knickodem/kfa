@@ -58,13 +58,8 @@ kstudent <- kfa(variables = studentdf,
                 missing = "pairwise")
 tictoc::toc() # ~ 60 seconds
 
+
 kstructures <- model_structure(kstudent, which = "cfa")
-
-vnames <- dimnames(lavaan::lavInspect(kstudent$cfas[[1]][[1]], "sampstat")$cov)[[1]]
-
-library(tidySEM)
-tidySEM::graph_sem(kstudent$cfas[[2]]$Break)
-
 
 k <- length(kstudent$cfas)
 m <- max(unlist(lapply(kstudent$cfas, length)))
@@ -85,23 +80,25 @@ tictoc::toc() #.16
 
 tictoc::tic()
 cr <- agg_cors(kstudent)
-tictoc::toc() #.01
+tictoc::toc() #.04
 
 tictoc::tic()
 rl <- agg_rels(kstudent)
 tictoc::toc() #74.9
 
 tictoc::tic()
-str(model_flags(kstudent, cr, rl, ld))
+model_flags(kstudent, cr, rl, ld)
 tictoc::toc() #.11
 
 
 # Run report
 kfa_report(kstudent, file.name = "kfa_students_custom",
-           report.format = "html_document",
+           report.format = "word_document",
            report.title = "K-fold Factor Analysis - Lebenon Students")
 
 
+library(tidySEM)
+tidySEM::graph_sem(kstudent$cfas[[2]]$Break)
 
 
 # -----  README Test --------

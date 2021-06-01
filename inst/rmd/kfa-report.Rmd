@@ -19,6 +19,8 @@ title: "`r report.title`"
 date: "`r format(Sys.Date(), '%B %d, %Y')`"
 ---
 
+\newpage
+
 # Fold and Sample Summary
 
 **# of folds:** `r k`
@@ -31,8 +33,6 @@ date: "`r format(Sys.Date(), '%B %d, %Y')`"
 
  - Allowed - `r fac.allow`
  - Extracted - `r fac.max`
-
-\newpage
 
 # Model Summary
 
@@ -55,15 +55,16 @@ knit_print(fit.flex)
 
 ```{r flagged, ft.align = "left", results='asis'}
 flagged.flex <- flextab_format(flagged, bold.type = "none", width = width, digits = digits)
+flagged.flex <- flextable::vline(flagged.flex, j = 2, border = border)
 knit_print(flagged.flex)
 ```
 
 *Notes:*  
-"common structure" is the number of folds the EFA identified the most common structure. Thus, "common structure" will be `r k` when the same structure was identified in every fold and < `r k` when multiple factor structures were identified. The most common structure was used in the CFA. See Appendix for all structures.
-"improper solution" is the number of folds with non-convergence or a non-positive definite matrix.
-"high factor correlation" threshold set to `r cor.flag`.  
-"low scale reliability" threshold set to `r rel.flag` with $\omega_h$.  
-"low loading" threshold set to `r load.flag`.  
+'common structure' is the number of folds the EFA identified the most common structure. Thus, "common structure" will be `r k` when the same structure was identified in every fold and < `r k` when multiple factor structures were identified. The most common structure was used in the CFA. See Appendix for all structures.  
+'improper solution' is the number of folds with non-convergence or a non-positive definite matrix.  
+'high factor correlation' threshold set to `r cor.flag`.  
+'low scale reliability' threshold set to `r rel.flag` with $\omega_h$.  
+'low loading' threshold set to `r load.flag`.  
 blanks = not applicable  
 
 
@@ -76,7 +77,11 @@ knit_print(best.flex)
 
 # Model Details
 
-```{r structure, ft.align = "left", results = 'asis', warning = FALSE, message = FALSE, fig.height = 4, fig.width = 6}
+```{r details, ft.align = "left", results = 'asis', warning = FALSE, message = FALSE, fig.height = 4, fig.width = 6}
+
+rel.map <- data.frame(col_keys = names(krels$reliabilities[[1]]),
+                      top = c("factor", rep(c("omega_h", "alpha"), each = 3)),
+                      bottom = c("factor", rep(c("mean", "range", "flag"), times = 2)))
 
 for(n in 1:m){
   cat("##", model.names[[n]])
@@ -99,20 +104,25 @@ for(n in 1:m){
   cat("\n\n")
   lambda.flex <- flextab_format(klambdas$loadings[[n]], bold.type = "none", digits = digits)
   cat(knit_print(lambda.flex))
-  cat("Note: loadings flagged when <", load.flag, "in a fold\n  heywood flag is the number of folds the variable's estimated residual variance was negative")
+  cat("Note: loadings flagged when <", load.flag, "in a fold. 'heywood flag' is the number of folds the variable's estimated residual variance was negative")
   cat("\n\n")
   if(n > 1){
   cat("**Mean Factor Correlations**")
   cat("\n\n")
   corr.flex <- flextab_format(kcorrs$correlations[[n]], bold.type = "none", digits = digits)
   corr.flex <- flextable::compose(corr.flex, i = 1, j = 1, value = flextable::as_paragraph(""), part = "header")
+  corr.flex <- flextable::vline(corr.flex, j = ncol(kcorrs$correlations[[n]]) - 1, border = border)
   cat(knit_print(corr.flex))
+  cat("Note: 'flag' is the number of folds the factor had a correlation >", cor.flag)
   cat("\n\n")
   }
-  cat("**Mean Scale Reliabilities**")
+  cat("**Scale Reliability Across Folds**")
   cat("\n\n")
-  rel.flex <- flextab_format(as.data.frame(krels$reliabilities[[n]]), bold.type = "none", digits = digits)
+  rel.flex <- flextable::flextable(krels$reliabilities[[n]])
+  rel.flex <- flextable::colformat_double(rel.flex, j = c(2, 5), digits = digits)
+  rel.flex <- two_level_flex(rel.flex, mapping = rel.map, vert.cols = c("factor"), border = border)
   cat(knit_print(rel.flex))
+  cat("Note: 'flag' is the number of folds the scale had a reliability <", rel.flag)
   cat("\n\n")
 }
 

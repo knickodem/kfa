@@ -4,10 +4,13 @@
 #'
 #' @param kfa An object returned from \code{\link[kfa]{kfa}}
 #' @param flag threshold below which loading will be flagged
+#' @param digits integer; number of decimal places to display in the report.
 #'
 #' @return \code{data.frame} of mean factor loadings for each factor model and \code{vector} with count of folds with a flagged loading
+#'
+#' @export
 
-agg_loadings <- function(kfa, flag = .30){
+agg_loadings <- function(kfa, flag = .30, digits = 2){
 
   kfa <- kfa$cfas
 
@@ -19,30 +22,33 @@ agg_loadings <- function(kfa, flag = .30){
   lflag <- vector("integer", m)  # low loading flag
   hflag <- vector("integer", m)  # heywood case flag
   for(n in 1:m){
-    lambdas <- data.frame()
-    thetas <- data.frame()
+    lambdas <- vector("list", k)
+    thetas <- vector("list", k)
     load.flag <- vector("integer", k)
     hey.flag <- vector("integer", k)
     for(f in 1:k){
       ## gather standardized loadings
-      loads <- subset(lavaan::standardizedSolution(kfa[[f]][[n]], "std.lv", se = FALSE),
+      lambdas[[f]] <- subset(lavaan::standardizedSolution(kfa[[f]][[n]], "std.lv", se = FALSE),
                       op == "=~")
-      lambdas <- rbind(lambdas, loads)
+
       # flag for model summary table
-      load.flag[[f]] <- sum(loads$est.std < flag)
+      load.flag[[f]] <- sum(lambdas[[f]]$est.std < flag)
 
       ## gather residual variances
-      resids <- subset(lavaan::parameterestimates(kfa[[f]][[n]], se = FALSE),
+      thetas[[f]] <- subset(lavaan::parameterestimates(kfa[[f]][[n]], se = FALSE),
                        op == "~~" & lhs %in% vnames & lhs == rhs)
-      thetas <- rbind(thetas, resids)
+
       # flag for model summary table
-      hey.flag[[f]] <- sum(resids$est < 0)
+      hey.flag[[f]] <- sum(thetas[[f]]$est < 0)
     }
+    lambdas <- do.call("rbind", lambdas)
+    thetas <- do.call("rbind", thetas)
+
 
     klambdas[[n]] <- data.frame(variable = vnames,
                                 mean = tapply(lambdas$est.std, lambdas$rhs, mean),
-                                min = tapply(lambdas$est.std, lambdas$rhs, min),
-                                max = tapply(lambdas$est.std, lambdas$rhs, max),
+                                range = paste(format(round(tapply(lambdas$est.std, lambdas$rhs, min), digits = digits), nsmall = digits), "-",
+                                                format(round(tapply(lambdas$est.std, lambdas$rhs, max), digits = digits), nsmall = digits)),
                                 `loading flag` = tapply(lambdas$est.std, lambdas$rhs, function(x) sum(x < flag)),
                                 `heywood flag` = tapply(thetas$est, thetas$rhs, function(x) sum(x < 0)),
                                 check.names = FALSE)
@@ -59,51 +65,6 @@ agg_loadings <- function(kfa, flag = .30){
 }
 
 
-#' Aggregate parameter and stability
-#'
-#' Internal function for aggregating a parameter over k-folds following Rubin's (1987) rules and calculating the stability of the parameter.
-#'
-#' @param est vector of parameter estimates
-#' @param var vector of variances for \code{est}
-#' @param n number of observations per fold
-#' @param alpha type I error rate for one-sided test
-#' @param output.var include all variance components in the output
-#'
-#' @details
-#' The stability index is calculated as 1 - bv / tv where bv is the between fold variance and tv is the total pooled variance.
-#'
-#' @return a single row \code{data.frame}
-
-agg_param <- function(est, var, n, alpha = .05, output.var = FALSE){
-
-  k <- length(est)
-  bar <- mean(est)
-  wv <- mean(var)
-  bv <- var(est)
-  tv <- wv + (1 + k)*bv/k
-  stability <- 1 - bv / tv
-
-  # degrees of freedom
-  rd <- (1 + 1/k) * bv/tv
-  df <- (k - 1) / rd^2
-  dfadj <- (n + 1) / (n + 3) * n * (1 - rd)
-  df <- df * dfadj / (df + dfadj)
-
-  # confidence interval
-  tcrit <- qt(alpha, df)
-  ci.lo <- bar - sqrt(tv) * tcrit
-  ci.hi <- bar + sqrt(tv) * tcrit
-
-  table <- data.frame(parameter = bar, ci.lo = ci.lo, ci.hi = ci.hi, stability = stability)
-
-  if(output.var == TRUE){
-  table <- cbind(table, data.frame(var.within = wv, var.between = bv, var.total = tv))
-  }
-
-  return(table)
-}
-
-
 #' Aggregated factor correlations
 #'
 #' The factor correlations aggregated over k-folds
@@ -113,6 +74,8 @@ agg_param <- function(est, var, n, alpha = .05, output.var = FALSE){
 #' @param flag threshold above which a factor correlation will be flagged
 #'
 #' @return a \code{data.frame} of mean factor correlations for each factor model and \code{vector} with count of folds with a flagged correlation
+#'
+#' @export
 
 agg_cors <- function(kfa, type = "factor", flag = .90){
 
@@ -128,20 +91,23 @@ agg_cors <- function(kfa, type = "factor", flag = .90){
   kflag[[1]] <- NA
   for(n in 2:m){
     cor.lv <- vector("list", k) # latent variable correlation matrix
-    cor.flag <- vector("integer", k) # count of correlations above flag threshold
+    cor.flag <- vector("list", k) # count of correlations above flag threshold
     for(f in 1:k){
       cor.lv[[f]] <- lavaan::lavInspect(kfa[[f]][[n]], "cor.lv")
-      cor.flag[[f]] <- sum(cor.lv[[f]] > flag) - nrow(cor.lv[[f]])
+      cor.flag[[f]] <- rowSums(cor.lv[[f]] > flag) - 1 # minus diagonal which will always be TRUE
     }
+
+    ## count of folds with a correlation over flag threshold
+    fc <- unlist(cor.flag)
+    cflag <- tapply(fc, names(fc), function(x) sum(x > flag)) # for each factor
+    kflag[[n]] <- sum(unlist(lapply(cor.flag, sum)) > 0)      # for the model
 
     ## mean correlation across folds
     aggcorrs <- Reduce(`+`, cor.lv) / length(cor.lv)
     aggcorrs[upper.tri(aggcorrs, diag = FALSE)] <- NA
-    aggcorrs <- cbind(data.frame(rn = row.names(aggcorrs)), aggcorrs)
+    aggcorrs <- cbind(data.frame(rn = row.names(aggcorrs)),
+                      aggcorrs, data.frame(flag = cflag))
     kcorrs[[n]] <- aggcorrs
-
-    ## count of folds with a correlation over flag threshold
-    kflag[[n]] <- sum(cor.flag > 0)
 
   }
   names(kcorrs) <- names(kfa[[1]])
@@ -156,10 +122,13 @@ agg_cors <- function(kfa, type = "factor", flag = .90){
 #'
 #' @param kfa An object returned from \code{\link[kfa]{kfa}}
 #' @param flag threshold below which reliability will be flagged
+#' @param digits integer; number of decimal places to display in the report.
 #'
 #' @return a \code{data.frame} of mean factor (scale) reliabilities for each factor model and \code{vector} with count of folds with a flagged reliability
+#'
+#' @export
 
-agg_rels <- function(kfa, flag = .60){
+agg_rels <- function(kfa, flag = .60, digits = 2){
 
   kfa <- kfa$cfas
 
@@ -172,21 +141,29 @@ agg_rels <- function(kfa, flag = .60){
     rels <- vector("list", k)
     rel.flag <- vector("integer", k)
     for(f in 1:k){
-      rels[[f]] <- suppressMessages(semTools::reliability(kfa[[f]][[n]])[c(1,4),])
-      if(n == 1){
-        rel.flag[[f]] <- sum(rels[[f]][[2]] < flag) # flag based on omega, not alpha
-      } else{
-        rel.flag[[f]] <- sum(rels[[f]][2,] < flag) # flag based on omega, not alpha
-      }
+      rels[[f]] <- t(suppressMessages(semTools::reliability(kfa[[f]][[n]])[c(1,4),]))
+      rel.flag[[f]] <- sum(rels[[f]][,2] < flag) # flag based on omega, not alpha
     }
 
     ## mean reliability across folds
-    krels[[n]] <- Reduce(`+`, rels) / length(rels)
+    aos <- do.call("rbind", rels)
     if(n == 1){
-      krels[[n]] <- as.data.frame(krels[[n]])
-      names(krels[[n]]) <- "f1"
+      fn <- "f1"
+      fnames <- rep(fn, nrow(aos))
+    } else{
+      fn <- dimnames(rels[[1]])[[1]]  # grabs names from first fold; should be the same in all folds
+      fnames <- dimnames(aos)[[1]] # should be the equivalent of rep(fn, nrow(aos))
     }
-    krels[[n]] <- cbind(data.frame(type = c("alpha", "omega_h")), krels[[n]])
+
+    krels[[n]] <- data.frame(factor = fn,
+                             o.mean = tapply(aos[, 2], fnames, mean),
+                             o.range = paste(format(round(tapply(aos[, 2], fnames, min), digits = digits), nsmall = digits), "-",
+                                             format(round(tapply(aos[, 2], fnames, max), digits = digits), nsmall = digits)),
+                             o.flag = tapply(aos[, 2], fnames, function(x) sum(x < flag)),
+                             a.mean = tapply(aos[, 1], fnames, mean),
+                             a.range = paste(format(round(tapply(aos[, 1], fnames, min), digits = digits), nsmall = digits), "-",
+                                           format(round(tapply(aos[, 1], fnames, max), digits = digits), nsmall = digits)),
+                             a.flag = tapply(aos[, 1], fnames, function(x) sum(x < flag)))
 
     ## count of folds with a reliabilities below flag threshold
     kflag[[n]] <- sum(rel.flag > 0)
@@ -204,8 +181,10 @@ agg_rels <- function(kfa, flag = .60){
 #' @param kfa An object returned from \code{\link[kfa]{kfa}}
 #' @param index One or more fit indices to summarize in the report. The degrees of freedom are always reported. Default are "chisq", "cfi", and "rmsea".
 #' @param by.fold Should each element in the returned lists be a fold (default) or a factor model?
-
+#'
 #' @return \code{list} of data.frames with average model fit for each factor model
+#'
+#' @export
 
 k_model_fit <- function(kfa, index = c("chisq", "cfi", "rmsea"), by.fold = TRUE){
 
@@ -256,6 +235,8 @@ k_model_fit <- function(kfa, index = c("chisq", "cfi", "rmsea"), by.fold = TRUE)
 #' @param digits integer; number of decimal places to display in the report.
 #'
 #' @return \code{data.frame} of aggregated model fit statistics
+#'
+#' @export
 
 agg_model_fit <- function(kfits, index = c("chisq", "cfi", "rmsea"), digits = 2){
 
@@ -273,7 +254,7 @@ agg_model_fit <- function(kfits, index = c("chisq", "cfi", "rmsea"), digits = 2)
                     df = tapply(bdf[["df"]], bdf$model, mean))
   for(i in index){
 
-    agg <- data.frame(factors = model.names,
+    agg <- data.frame(model = model.names,
                       mean = tapply(bdf[[i]], bdf$model, mean),
                       range = paste(format(round(tapply(bdf[[i]], bdf$model, min), digits = digits), nsmall = digits), "-",
                                     format(round(tapply(bdf[[i]], bdf$model, max), digits = digits), nsmall = digits)))
@@ -453,7 +434,7 @@ model_flags <- function(kfa, cors, rels, loads){
 
   }
 
-  improper <- integer(length = m)
+  improper <- vector("integer", length = m)
   for(n in 1:m){
     # flagged if either indicates an improper solution
     improper[[n]] <- sum(unlist(lapply(cnvgd, '[[', n)) == FALSE | unlist(lapply(hey, '[[', n)) == FALSE)
@@ -471,40 +452,4 @@ model_flags <- function(kfa, cors, rels, loads){
   flags <- merge(multistrux, flags, by = "model", all.x = FALSE, all.y = TRUE, sort = FALSE)
 
   return(flags)
-}
-
-#' Model with best fit
-#'
-#' Summary table of best fitting model in k-folds
-#'
-#' @param kfits An object returned from \code{\link[kfa]{k_model_fit}} when \code{by.folds = TRUE}
-#' @param index One or more fit indices to summarize in the report. Default are "chisq", "cfi", and "rmsea".
-#'
-#' @return \code{data.frame} with fold in rows, index in columns, and factor model with best fit in the cells
-
-best_model <- function(kfits, index = c("chisq", "cfi", "rmsea")){
-
-  k <- length(kfits) # number of folds
-  index <- index[index != "df"]
-
-  best.df <- data.frame(fold = 1:k)
-  for(i in index){
-
-    if(i %in% c("chisq", "rmsea", "srmr")){
-
-      best <- lapply(kfits, function(x) x[x[[i]] == min(x[[i]]),])
-
-    } else if(i %in% c("cfi", "tli")){
-
-      best <- lapply(kfits, function(x) x[x[[i]] == max(x[[i]]),])
-
-    } else {stop("Not available at the moment")}
-
-    best <- as.data.frame(Reduce(rbind, best))
-    best.df <- cbind(best.df, best$factors)
-  }
-
-  names(best.df) <- c("fold", index)
-
-  return(best.df)
 }
