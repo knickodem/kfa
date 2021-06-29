@@ -7,8 +7,8 @@
 kfa_report(
   kfa,
   file.name,
-  report.format = "html_document",
   report.title = file.name,
+  report.format = "html_document",
   word.template = NULL,
   index = c("chisq", "cfi", "rmsea"),
   load.flag = 0.3,
@@ -23,9 +23,9 @@ lists where the inner list consists of \code{lavaan} objects.}
 
 \item{file.name}{Character; file name to create on disk.}
 
-\item{report.format}{File format of the report. Default is HTML ("html_document"). See \code{\link[rmarkdown]{render}} for other options.}
-
 \item{report.title}{Title of the report}
+
+\item{report.format}{File format of the report. Default is HTML ("html_document"). See \code{\link[rmarkdown]{render}} for other options.}
 
 \item{index}{One or more fit indices to summarize in the report. The degrees of freedom are always reported. Default are "chisq", "cfi", and "rmsea".}
 

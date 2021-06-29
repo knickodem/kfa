@@ -45,9 +45,12 @@ custom3 <- paste0("f1 =~ ", paste(names(studentdf)[1:2], collapse = " + "),
 # When custom model does not contain all items, the following error is currently produced:
 # Error in { : task 1 failed - "invalid 'times' argument"
 
-## set seed to get the same folds
-set.seed(936639)
+
+
+
 tictoc::tic()
+set.seed(936639) # set seed to reproduce same folds
+
 kstudent <- kfa(variables = studentdf,
                 k = NULL,
                 m = 5,
@@ -56,10 +59,13 @@ kstudent <- kfa(variables = studentdf,
                 ordered = TRUE,
                 estimator = "DWLS",
                 missing = "pairwise")
-tictoc::toc() # ~ 60 seconds
+tictoc::toc(log = TRUE)# ~ 60 seconds
 
+kfa.time <- tictoc::tic.log()
 
 kstructures <- model_structure(kstudent, which = "cfa")
+lavaan::lavInspect(kstudent$cfas[[1]]$`1-factor`, "options")$estimator
+lavaan::lavInspect(kstudent$cfas[[1]]$`1-factor`, "options")$missing
 
 k <- length(kstudent$cfas)
 m <- max(unlist(lapply(kstudent$cfas, length)))
@@ -92,9 +98,11 @@ tictoc::toc() #.11
 
 
 # Run report
-kfa_report(kstudent, file.name = "kfa_students_custom",
-           report.format = "word_document",
+kfa_report(kstudent,
+           file.name = "kfa_students_ML",
            report.title = "K-fold Factor Analysis - Lebenon Students")
+
+# report.format = "html_document",
 
 
 library(tidySEM)
@@ -425,5 +433,76 @@ inputtype <- microbenchmark::microbenchmark(
 
 
 
+#### lavaan may have an unofficial mechanism for running efas ####
+mod <- paste(paste(paste0('efa("efa")*f', 1:(nf-1), " +"), collapse = "\n"),
+             paste0('efa("efa")*f', nf, " =~ ", paste(names(variables), collapse = " + ")))
 
+test <- lavaan::cfa(model = mod,
+                    data = variables,
+                    estimator = "WLSMV",
+                    ordered = TRUE)
+# errors out: ‘H’ is not a slot in class “lavModel”
+
+
+temp <- run_efa(studentdf,
+                m = 2,
+                ordered = TRUE,
+                missing = "pairwise")
+
+## calculate and extract sample statistics
+sampstats <- lavaan::lavCor(object = studentdf,
+                            ordered = names(studentdf),
+                            estimator = "DWLS",
+                            missing = 'pairwise',
+                            output = "fit",
+                            cor.smooth = FALSE)
+
+sample.nobs <- lavaan::lavInspect(sampstats, "nobs")
+sample.cov <- lavaan::lavInspect(sampstats, "sampstat")$cov
+sample.mean <- lavaan::lavInspect(sampstats, "sampstat")$mean
+sample.th <- lavaan::lavInspect(sampstats, "sampstat")$th
+attr(sample.th, "th.idx") <- lavaan::lavInspect(sampstats, "th.idx")
+WLS.V <- lavaan::lavInspect(sampstats, "wls.v")
+NACOV <- lavaan::lavInspect(sampstats, "gamma")
+
+# returns a data frame and summary information
+nfactors <- parameters::n_factors(x = variables,
+                                  type = "FA",
+                                  rotation = rotation,
+                                  package = c("psych", "nFactors"),
+                                  cor = sample.cov,
+                                  safe = TRUE)
+
+
+## Running EFAs, comparing models, converting structure to CFA syntax
+# results objects
+efa.loadings <- vector(mode = "list", length = m)
+mod.compare <- data.frame()
+
+
+## write efa syntax
+efa.mod <- write_efa(nf = 2, vnames = names(studentdf))
+
+unrotated <- lavaan::cfa(model = efa.mod,
+                         sample.cov = sample.cov,
+                         sample.nobs = sample.nobs,
+                         sample.mean = sample.mean,
+                         sample.th = sample.th,
+                         WLS.V = WLS.V,
+                         NACOV = NACOV,
+                         std.lv = TRUE,
+                         orthogonal = TRUE,
+                         estimator = "DWLS",
+                         missing = "pairwise",
+                         parameterization = "delta",
+                         se = "none",
+                         test = "none")
+
+loading <- GPArotation::GPFoblq(lavaan::lavInspect(unrotated, "est")$lambda, method = "oblimin")$loadings
+
+row.names(loading) <- paste0("v", 1:21)
+
+round(loading, 3)
+short <- round(loading[c(1,5,16:21),], 3)
+row.names(short) <- paste0("v", 1:8)
 

@@ -26,6 +26,13 @@ run_efa <- function(variables, m = floor(ncol(items) / 4), rotation = "oblimin",
                     simple = TRUE, threshold = NA, single.item = c("keep","drop", ""),
                     ordered = FALSE, estimator = NULL, missing = "listwise", ...){
 
+  # The ordered = TRUE functionality in lavaan is not currently equivalent to listing
+  # all items, so need to do it manually since I want this functionality for our users
+  if(is.character(ordered)){
+    if(is.null(estimator)){
+      estimator <- "DWLS"
+    }
+  }
   if(ordered == TRUE){
     ordered <- names(variables)
     if(is.null(estimator)){
@@ -39,7 +46,7 @@ run_efa <- function(variables, m = floor(ncol(items) / 4), rotation = "oblimin",
   }
 
   ## calculate and extract sample statistics
-  sampstats <- lavaan::lavCor(variables,
+  sampstats <- lavaan::lavCor(object = variables,
                               ordered = ordered,
                               estimator = estimator,
                               missing = missing,
@@ -87,6 +94,7 @@ run_efa <- function(variables, m = floor(ncol(items) / 4), rotation = "oblimin",
                              std.lv = TRUE,
                              orthogonal = TRUE,
                              estimator = estimator,
+                             missing = missing,
                              parameterization = "delta",
                              se = "none",
                              test = "none")
@@ -153,27 +161,4 @@ run_efa <- function(variables, m = floor(ncol(items) / 4), rotation = "oblimin",
 
   return(efaout)
 
-}
-
-
-
-## internal function for extracting standardized loadings
-get_std_loadings <- function(object, type = "std.all"){
-
-  # extracting unrotated standardized results
-  params <- lavaan::standardizedsolution(object, type = type,
-                                         se = FALSE, zstat = FALSE, # Not needed so saves
-                                         pvalue = FALSE, ci = FALSE)# computation time
-  loaddf <- params[params$op == "=~",]
-
-  # loading matrix dimension names
-  inames <- unique(loaddf$rhs) # item names
-  fnames <- unique(loaddf$lhs) # factor names
-
-  # matrix of standardized factor loadings
-  loadmat <- matrix(loaddf$est.std,
-                    ncol = length(fnames), nrow = length(inames),
-                    byrow = FALSE, dimnames = list(inames, fnames))
-
-  return(loadmat)
 }

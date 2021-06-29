@@ -16,7 +16,7 @@
 #' @export
 
 efa_cfa_syntax <- function(loadings, simple = TRUE, threshold = NA,
-                           single.item = c("keep","drop", "none")){
+                           single.item = c("keep", "drop", "none")){
 
   if(simple == FALSE & is.na(threshold)){
     stop("threshold must be supplied when simple = FALSE")

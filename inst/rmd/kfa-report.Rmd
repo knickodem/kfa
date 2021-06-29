@@ -21,7 +21,7 @@ date: "`r format(Sys.Date(), '%B %d, %Y')`"
 
 \newpage
 
-# Fold and Sample Summary
+# Overview
 
 **# of folds:** `r k`
 
@@ -33,6 +33,10 @@ date: "`r format(Sys.Date(), '%B %d, %Y')`"
 
  - Allowed - `r fac.allow`
  - Extracted - `r fac.max`
+ 
+**Estimation:** `r opts$estimator`
+
+**Missing Data:** `r opts$missing`
 
 # Model Summary
 

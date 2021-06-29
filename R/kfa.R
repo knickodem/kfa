@@ -40,7 +40,8 @@
 #' @export
 
 kfa <- function(variables,
-                k = NULL, m = floor(ncol(variables) / 4),
+                k = NULL,
+                m = floor(ncol(variables) / 4),
                 efa.only = FALSE,
                 custom.cfas = NULL,
                 rmsea0 = .05, rmseaA = .08,
@@ -96,7 +97,7 @@ kfa <- function(variables,
 
   print(paste("Using", foreach::getDoParWorkers(), "cores for parallelization."))
 
-  ## Run EFAs and return lavaan syntax for CFAs - uses all available cores (except for windows os)
+  ## Run EFAs and return lavaan syntax for CFAs
   efa <- foreach::foreach(fold = 1:k) %dopar% { # use %do% if we offer a parallel = FALSE option
     k_efa(variables = variables[!c(row.names(variables) %in% testfolds[[fold]]), ],
           m = m,

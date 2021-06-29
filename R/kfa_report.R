@@ -17,8 +17,9 @@
 #'
 #' @export
 
-kfa_report <- function(kfa, file.name, report.format = "html_document", report.title = file.name,
-                       word.template = NULL, index = c("chisq", "cfi", "rmsea"),
+kfa_report <- function(kfa, file.name, report.title = file.name,
+                       report.format = "html_document", word.template = NULL,
+                       index = c("chisq", "cfi", "rmsea"),
                        load.flag = .30, cor.flag = .90, rel.flag = .60,
                        digits = 2){
 
@@ -31,6 +32,7 @@ kfa_report <- function(kfa, file.name, report.format = "html_document", report.t
   nobs <- sum(unlist(lapply(kfa$cfas, function(x) lavaan::lavInspect(x[[1]], "nobs"))))
   vnames <- dimnames(lavaan::lavInspect(kfa$cfas[[1]][[1]], "sampstat")$cov)[[1]]
   nvars <- length(vnames)
+  opts <- lavaan::lavInspect(kfa$cfas[[1]][[1]]) # estimation options; assumed to be the same for all models
 
   #### Model Fit ####
   ## summarizing fit statistics by fold

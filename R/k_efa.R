@@ -51,6 +51,7 @@ k_efa <- function(variables, m, rotation,
                              std.lv = TRUE,
                              orthogonal = TRUE,
                              estimator = estimator,
+                             missing = missing,
                              parameterization = "delta",
                              se = "none",
                              test = "none")
