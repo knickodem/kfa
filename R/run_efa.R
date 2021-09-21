@@ -22,7 +22,7 @@
 #' @param missing passed to \code{lavaan} functions
 #' @param ... other arguments to pass on to \code{lavaan}
 
-run_efa <- function(variables, m = floor(ncol(items) / 4), rotation = "oblimin",
+run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblimin",
                     simple = TRUE, threshold = NA, single.item = c("keep","drop", ""),
                     ordered = FALSE, estimator = NULL, missing = "listwise", ...){
 

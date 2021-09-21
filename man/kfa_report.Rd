@@ -18,7 +18,7 @@ kfa_report(
 )
 }
 \arguments{
-\item{kfa}{An object returned from \code{kfa} or otherwise defined list of
+\item{kfa}{An object returned from \code{\link[kfa]{kfa}} or otherwise defined list of
 lists where the inner list consists of \code{lavaan} objects.}
 
 \item{file.name}{Character; file name to create on disk.}
@@ -29,16 +29,16 @@ lists where the inner list consists of \code{lavaan} objects.}
 
 \item{index}{One or more fit indices to summarize in the report. The degrees of freedom are always reported. Default are "chisq", "cfi", and "rmsea".}
 
-\item{load.flag}{Item loadings below this value will be flagged. Default is .30}
+\item{load.flag}{Factor loadings of variables below this value will be flagged. Default is .30}
 
 \item{cor.flag}{Factor correlations above this value will be flagged. Default is .90}
 
-\item{rel.flag}{Factor (scale) reliability below this value will be flagged. Default is .60.}
+\item{rel.flag}{Factor (scale) reliabilities below this value will be flagged. Default is .60.}
 
 \item{digits}{integer; number of decimal places to display in the report.}
 }
 \value{
-a summary report of factor structure and model fit within and between folds
+a summary report of factor structures and model fit within and between folds
 }
 \description{
 Generates a report summarizing the factor analytic results over k-folds.

@@ -2,18 +2,18 @@
 #'
 #' Generates a report summarizing the factor analytic results over k-folds.
 #'
-#' @param kfa An object returned from \code{kfa} or otherwise defined list of
+#' @param kfa An object returned from \code{\link[kfa]{kfa}} or otherwise defined list of
 #' lists where the inner list consists of \code{lavaan} objects.
 #' @param file.name Character; file name to create on disk.
 #' @param report.format File format of the report. Default is HTML ("html_document"). See \code{\link[rmarkdown]{render}} for other options.
 #' @param report.title Title of the report
 #' @param index One or more fit indices to summarize in the report. The degrees of freedom are always reported. Default are "chisq", "cfi", and "rmsea".
-#' @param load.flag Item loadings below this value will be flagged. Default is .30
+#' @param load.flag Factor loadings of variables below this value will be flagged. Default is .30
 #' @param cor.flag Factor correlations above this value will be flagged. Default is .90
-#' @param rel.flag Factor (scale) reliability below this value will be flagged. Default is .60.
+#' @param rel.flag Factor (scale) reliabilities below this value will be flagged. Default is .60.
 #' @param digits integer; number of decimal places to display in the report.
 #'
-#' @return a summary report of factor structure and model fit within and between folds
+#' @return a summary report of factor structures and model fit within and between folds
 #'
 #' @export
 
@@ -25,14 +25,14 @@ kfa_report <- function(kfa, file.name, report.title = file.name,
 
   ## analysis summary info
   k <- length(kfa$cfas) # number of folds
-  model.names <- names(kfa$cfas[[1]]) # names(kfa$cfa.syntax)
+  model.names <- unique(unlist(lapply(kfa$cfas, names)))
   fac.allow <- length(kfa$efa.structures)
   fac.max <- max(as.numeric(substring(model.names[grepl("-factor", model.names)], 1, 1)))  # kfa naming convention "#-factor"; custom functions are assumed to have different convention
-  m <- max(unlist(lapply(kfa$cfas, length))) # number of models per fold (includes both efa and custom structures); m == length(model.names)
+  m <- max(unlist(lapply(kfa$cfas, length))) # number of models per fold (includes both efa AND custom structures); m == length(model.names)
   nobs <- sum(unlist(lapply(kfa$cfas, function(x) lavaan::lavInspect(x[[1]], "nobs"))))
   vnames <- dimnames(lavaan::lavInspect(kfa$cfas[[1]][[1]], "sampstat")$cov)[[1]]
   nvars <- length(vnames)
-  opts <- lavaan::lavInspect(kfa$cfas[[1]][[1]]) # estimation options; assumed to be the same for all models
+  opts <- lavaan::lavInspect(kfa$cfas[[1]][[1]], "options") # estimation options; assumed to be the same for all models
 
   #### Model Fit ####
   ## summarizing fit statistics by fold
@@ -60,7 +60,7 @@ kfa_report <- function(kfa, file.name, report.title = file.name,
   krels <- agg_rels(kfa, flag = rel.flag, digits = digits)
 
   ## flagged problems
-  flagged <- model_flags(kfa, kcorrs, krels, klambdas)
+  flagged <- model_flags(kfa, kstructures, klambdas, kcorrs, krels)
 
   ## running report
   if(report.format == "word_document"){

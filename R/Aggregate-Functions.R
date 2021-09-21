@@ -12,34 +12,40 @@
 
 agg_loadings <- function(kfa, flag = .30, digits = 2){
 
-  kfa <- kfa$cfas
+  cfas <- kfa$cfas
 
-  k <- length(kfa)
-  m <- max(unlist(lapply(kfa, length)))
-  vnames <- dimnames(lavaan::lavInspect(kfa[[1]][[1]], "sampstat")$cov)[[1]]
+  vnames <- dimnames(lavaan::lavInspect(cfas[[1]][[1]], "sampstat")$cov)[[1]] # variable names
+  mnames <- unique(unlist(lapply(cfas, names))) # model names
+  m <- length(mnames) #max(unlist(lapply(cfas, length))) # maximum number of models per fold
+  k <- length(cfas) # number of folds
 
   klambdas <- vector("list", m)  # factor loadings across folds
+  names(klambdas) <- mnames
   lflag <- vector("integer", m)  # low loading flag
+  names(lflag) <- mnames
   hflag <- vector("integer", m)  # heywood case flag
-  for(n in 1:m){
+  names(hflag) <- mnames
+  for(n in mnames){
     lambdas <- vector("list", k)
     thetas <- vector("list", k)
     load.flag <- vector("integer", k)
     hey.flag <- vector("integer", k)
     for(f in 1:k){
+      if(n %in% names(cfas[[f]])){
       ## gather standardized loadings
-      lambdas[[f]] <- subset(lavaan::standardizedSolution(kfa[[f]][[n]], "std.lv", se = FALSE),
+      lambdas[[f]] <- subset(lavaan::standardizedSolution(cfas[[f]][[n]], "std.lv", se = FALSE),
                       op == "=~")
 
       # flag for model summary table
       load.flag[[f]] <- sum(lambdas[[f]]$est.std < flag)
 
       ## gather residual variances
-      thetas[[f]] <- subset(lavaan::parameterestimates(kfa[[f]][[n]], se = FALSE),
+      thetas[[f]] <- subset(lavaan::parameterestimates(cfas[[f]][[n]], se = FALSE),
                        op == "~~" & lhs %in% vnames & lhs == rhs)
 
       # flag for model summary table
       hey.flag[[f]] <- sum(thetas[[f]]$est < 0)
+      }
     }
     lambdas <- do.call("rbind", lambdas)
     thetas <- do.call("rbind", thetas)
@@ -57,7 +63,6 @@ agg_loadings <- function(kfa, flag = .30, digits = 2){
     lflag[[n]] <- sum(load.flag > 0)
     hflag[[n]] <- sum(hey.flag > 0)
   }
-  names(klambdas) <- names(kfa[[1]])
 
   return(list(loadings = klambdas,
               flag = lflag,
@@ -70,19 +75,16 @@ agg_loadings <- function(kfa, flag = .30, digits = 2){
 #' The factor correlations aggregated over k-folds
 #'
 #' @param kfa An object returned from \code{\link[kfa]{kfa}}
-#' @param type currently ignored; \code{"factor"} (default) or \code{"observed"} variable correlations
 #' @param flag threshold above which a factor correlation will be flagged
+#' @param type currently ignored; \code{"factor"} (default) or \code{"observed"} variable correlations
 #'
 #' @return a \code{data.frame} of mean factor correlations for each factor model and \code{vector} with count of folds with a flagged correlation
 #'
 #' @export
 
-agg_cors <- function(kfa, type = "factor", flag = .90){
+agg_cors <- function(kfa, flag = .90, type = "factor"){
 
-  kfa <- kfa$cfas
-
-  k <- length(kfa)
-  m <- max(unlist(lapply(kfa, length)))
+  cfas <- kfa$cfas
 
   kcorrs <- vector("list", m)
   kflag <- vector("integer", m)
@@ -93,16 +95,19 @@ agg_cors <- function(kfa, type = "factor", flag = .90){
     cor.lv <- vector("list", k) # latent variable correlation matrix
     cor.flag <- vector("list", k) # count of correlations above flag threshold
     for(f in 1:k){
-      cor.lv[[f]] <- lavaan::lavInspect(kfa[[f]][[n]], "cor.lv")
-      cor.flag[[f]] <- rowSums(cor.lv[[f]] > flag) - 1 # minus diagonal which will always be TRUE
+      if(mnames[[n]] %in% names(cfas[[f]])){
+        cor.lv[[f]] <- lavaan::lavInspect(cfas[[f]][[mnames[[n]]]], "cor.lv")
+        cor.flag[[f]] <- rowSums(cor.lv[[f]] > flag) - 1 # minus diagonal which will always be TRUE
+      }
     }
 
     ## count of folds with a correlation over flag threshold
     fc <- unlist(cor.flag)
-    cflag <- tapply(fc, names(fc), function(x) sum(x > flag)) # for each factor
+    cflag <- tapply(fc, names(fc), function(x) sum(x > 0)) # for each factor
     kflag[[n]] <- sum(unlist(lapply(cor.flag, sum)) > 0)      # for the model
 
     ## mean correlation across folds
+    cor.lv <- cor.lv[lengths(cor.lv) != 0] # removes NULL elements for folds were model was not run
     aggcorrs <- Reduce(`+`, cor.lv) / length(cor.lv)
     aggcorrs[upper.tri(aggcorrs, diag = FALSE)] <- NA
     aggcorrs <- cbind(data.frame(rn = row.names(aggcorrs)),
@@ -110,7 +115,8 @@ agg_cors <- function(kfa, type = "factor", flag = .90){
     kcorrs[[n]] <- aggcorrs
 
   }
-  names(kcorrs) <- names(kfa[[1]])
+  names(kcorrs) <- mnames
+  names(kflag) <- mnames
 
  return(list(correlations = kcorrs,
              flag = kflag))
@@ -130,10 +136,11 @@ agg_cors <- function(kfa, type = "factor", flag = .90){
 
 agg_rels <- function(kfa, flag = .60, digits = 2){
 
-  kfa <- kfa$cfas
+  cfas <- kfa$cfas
 
-  k <- length(kfa)
-  m <- max(unlist(lapply(kfa, length)))
+  mnames <- unique(unlist(lapply(cfas, names))) # model names
+  m <- length(mnames) #max(unlist(lapply(cfas, length))) # maximum number of models per fold
+  k <- length(cfas) # number of folds
 
   krels <- vector("list", m)
   kflag <- vector("integer", m)
@@ -141,8 +148,10 @@ agg_rels <- function(kfa, flag = .60, digits = 2){
     rels <- vector("list", k)
     rel.flag <- vector("integer", k)
     for(f in 1:k){
-      rels[[f]] <- t(suppressMessages(semTools::reliability(kfa[[f]][[n]])[c(1,4),]))
-      rel.flag[[f]] <- sum(rels[[f]][,2] < flag) # flag based on omega, not alpha
+      if(mnames[[n]] %in% names(cfas[[f]])){
+        rels[[f]] <- t(suppressMessages(semTools::reliability(cfas[[f]][[mnames[[n]]]])[c(1,4),]))
+        rel.flag[[f]] <- sum(rels[[f]][,2] < flag) # flag based on omega, not alpha
+      }
     }
 
     ## mean reliability across folds
@@ -151,7 +160,8 @@ agg_rels <- function(kfa, flag = .60, digits = 2){
       fn <- "f1"
       fnames <- rep(fn, nrow(aos))
     } else{
-      fn <- dimnames(rels[[1]])[[1]]  # grabs names from first fold; should be the same in all folds
+      rels <- rels[lengths(rels) != 0] # removes NULL elements for folds were model was not run
+      fn <- dimnames(rels[[1]])[[1]]  # grabs unique factor names from first fold; should be the same in all folds
       fnames <- dimnames(aos)[[1]] # should be the equivalent of rep(fn, nrow(aos))
     }
 
@@ -162,13 +172,14 @@ agg_rels <- function(kfa, flag = .60, digits = 2){
                              o.flag = tapply(aos[, 2], fnames, function(x) sum(x < flag)),
                              a.mean = tapply(aos[, 1], fnames, mean),
                              a.range = paste(format(round(tapply(aos[, 1], fnames, min), digits = digits), nsmall = digits), "-",
-                                           format(round(tapply(aos[, 1], fnames, max), digits = digits), nsmall = digits)),
+                                             format(round(tapply(aos[, 1], fnames, max), digits = digits), nsmall = digits)),
                              a.flag = tapply(aos[, 1], fnames, function(x) sum(x < flag)))
 
     ## count of folds with a reliabilities below flag threshold
     kflag[[n]] <- sum(rel.flag > 0)
   }
-  names(krels) <- names(kfa[[1]])
+  names(krels) <- mnames
+  names(kflag) <- mnames
 
   return(list(reliabilities = krels,
               flag = kflag))
@@ -191,7 +202,7 @@ k_model_fit <- function(kfa, index = c("chisq", "cfi", "rmsea"), by.fold = TRUE)
   kfa <- kfa$cfas
   k <- length(kfa) # number of folds
   m <- max(unlist(lapply(kfa, length))) # number of models per fold
-  model.names <- names(kfa[[1]])
+  model.names <- lapply(kfa, names) # list with unique set of names for each fold
   index <- if(sum(grepl("df", index)) == 0) c("df", index) else index
 
   ## extract fit for every model in each fold
@@ -202,27 +213,33 @@ k_model_fit <- function(kfa, index = c("chisq", "cfi", "rmsea"), by.fold = TRUE)
     })
   }
 
-  ## organize output by folds or by model
-  if(by.fold == TRUE){
-
+  ## organize output by folds
     kfits <- vector("list", length = k)
     for(f in 1:k){
-      fits.df <- cbind(data.frame(model = model.names),
+      fits.df <- cbind(data.frame(model = model.names[[f]]),
                        as.data.frame(Reduce(rbind, fits[[f]])))
       row.names(fits.df) <- NULL
       kfits[[f]] <- fits.df
     }
-  } else if(by.fold == FALSE){
+    ## organize output by model
+    if(by.fold == FALSE){
 
-    kfits <- vector("list", length = m)
-    for(n in 1:m){
-      fits.df <- cbind(data.frame(fold = as.character(1:k)),
-                       as.data.frame(Reduce(rbind, lapply(fits, "[[", n)))) #function(x) x[[n]]
-      row.names(fits.df) <- NULL
-      kfits[[n]] <- fits.df
+      for(i in 1:length(kfits)){ # Add column for fold
+        kfits[[i]] <- cbind(fold = i, kfits[[i]])
+      }
+      mfits <- Reduce(rbind, kfits) # bind folds into single dataframe
+      # create separate list for each unique model
+      mods <- unique(mfits$model)
+      kfits <- vector("list", length(mods))
+      for(i in 1:length(mods)){
+
+        temp <- mfits[mfits$model == mods[[i]],]
+        temp$model <- NULL
+        kfits[[i]] <- temp
+
+      }
+      names(kfits) <- mods
     }
-    names(kfits) <- model.names
-  }
   return(kfits)
 }
 
@@ -245,10 +262,10 @@ agg_model_fit <- function(kfits, index = c("chisq", "cfi", "rmsea"), digits = 2)
   # }
 
   index <- index[index != "df"] # df is added automatically so don't need to loop through it
-  model.names <- kfits[[1]]$model
   # m <- max(unlist(lapply(kfits, nrow)))
 
-  bdf <- as.data.frame(Reduce(rbind, kfits))
+  bdf <- Reduce(rbind, kfits)
+  model.names <- unique(bdf$model)
 
   fit <- data.frame(model = model.names,
                     df = tapply(bdf[["df"]], bdf$model, mean))
@@ -309,7 +326,7 @@ get_appendix <- function(mfits, index = "all"){
   appendix <- mapply(appendix_prep, fits = mfits, suffix = names(mfits), MoreArgs = list(index = index), SIMPLIFY = FALSE)
   appendix.df <- appendix[[1]]
   for(i in 2:length(mfits)){
-    appendix.df <- merge(appendix.df, appendix[[i]], by = "fold")
+    appendix.df <- merge(appendix.df, appendix[[i]], by = "fold", all.x = TRUE)
   }
   appendix.df$fold <- factor(appendix.df$fold, levels = c(1:k, "Mean"))
   appendix.df <- appendix.df[order(appendix.df$fold),]
@@ -324,36 +341,23 @@ get_appendix <- function(mfits, index = "all"){
 #' Extract unique factor structures across the k-folds
 #'
 #' @param kfa An object returned from \code{\link[kfa]{kfa}}
-#' @param which Currently only for internal use; Should the unique structures be extracted from the "cfa" \code{lavaan} models or "efa" syntax?
+#' @param which Should the unique structures be extracted from the "cfa" \code{lavaan} or "efa" syntax?
 #'
-#' @return For each unique structure within each factor model, a \code{list} containing \code{lavaan} syntax specifying the factor structure and the folds where the structure was identified
+#' @return \code{lavaan} syntax specifying the unique structures within each factor model in a \code{data.frame} when \code{which = "cfa"} or, when \code{which = "efa"}, a \code{list} containing the structure and the folds where the structure was identified
 
 model_structure <- function(kfa, which = "cfa"){
 
   if(which == "cfa"){
-    kfa <- kfa$cfas
+    kfa <- kfa$cfa.syntax
   } else if(which == "efa"){
     kfa <- kfa$efas
   }
 
   k <- length(kfa)
-  m <- max(unlist(lapply(kfa, length)))
 
-  kstructures <- vector("list", length = m)
-
-  # cfa requires extracting factor loadings (lavInspect)
-  if(which == "cfa"){
-
-    kstructures[[1]][[1]] <- list(structure = efa_cfa_syntax(lavaan::lavInspect(kfa[[1]][[1]], "std")$lambda),
-                                  folds = 1:k)
-    for(n in 2:m){
-      structures <- vector("list", length = k)
-      for(f in 1:k){
-        structures[[f]] <- efa_cfa_syntax(lavaan::lavInspect(kfa[[f]][[n]], "std")$lambda)
-      }
-      kstructures[[n]] <- match_structure(structures)
-    }
-  } else if(which == "efa"){
+  if(which == "efa"){
+    m <- max(unlist(lapply(kfa, length)))
+    kstructures <- vector("list", length = m)
 
     # currently assumes 1-factor structure exists and is the same over folds
     kstructures[[1]][[1]] <- list(structure = kfa[[1]][[1]], folds = 1:k)
@@ -364,6 +368,20 @@ model_structure <- function(kfa, which = "cfa"){
       }
       kstructures[[n]] <- match_structure(structures)
     }
+  } else if(which == "cfa"){
+
+    structures <- Reduce(rbind,
+                         lapply(1:k,function(x) data.frame(model = names(kfa[[x]]),
+                                                           structure = unlist(kfa[[x]]))))
+    kstructures <- unique(structures[structures$structure != "",])
+    # there is probably a more efficient way to add folds
+    folds <- as.data.frame(table(structures[structures$structure != "",]$structure))
+    names(folds) <- c("structure", "folds")
+
+    kstructures <- merge(kstructures, folds, by = "structure", all.x = TRUE, sort = FALSE)
+    kstructures[,c(2,1,3)]
+
+    # row.names(kstructures) <- NULL
   }
 
   return(kstructures)
@@ -399,23 +417,18 @@ match_structure <- function(structures){
 #' Internal function to create table of flag counts
 #'
 #' @param kfa An object returned from \code{\link[kfa]{kfa}}
-#' @param corrs An object returned from \code{\link[kfa]{agg_cors}}
+#' @param strux An object returned from \code{\link[kfa]{model_structures}} when \code{which = "cfa"}
+#' @param loads An object returned from \code{\link[kfa]{agg_loadings}}
+#' @param cors An object returned from \code{\link[kfa]{agg_cors}}
 #' @param rels An object returned from \code{\link[kfa]{agg_rels}}
 #'
 #' @return a \code{data.frame}
 
-model_flags <- function(kfa, cors, rels, loads){
+model_flags <- function(kfa, strux, loads, cors, rels){
 
   # Multiple structures from EFA
-  s <- length(kfa$efa.structures)
-  common.strux <- vector("integer", s)
-  for(n in 1:s){
-    common.strux[[n]] <- max(unlist(lapply(kfa$efa.structures[[n]], function(x) length(x$folds))))
-
-  }
-  multistrux <- data.frame(model = names(kfa$efa.structures),
-                           `common structure` = common.strux,
-                           check.names = FALSE)
+  strux <- strux[c("model", "folds")]
+  names(strux) <- c("model", "mode structure")
 
   # flags from CFA models
   cfas <- kfa$cfas
@@ -434,14 +447,12 @@ model_flags <- function(kfa, cors, rels, loads){
 
   }
 
-  improper <- vector("integer", length = m)
-  for(n in 1:m){
-    # flagged if either indicates an improper solution
-    improper[[n]] <- sum(unlist(lapply(cnvgd, '[[', n)) == FALSE | unlist(lapply(hey, '[[', n)) == FALSE)
-  }
+  # flagged if either indicates an improper solution
+  temp <- c(unlist(cnvgd) == FALSE, unlist(hey) == FALSE)
+  improper <-tapply(temp, names(temp), sum)
 
   ## joining flags into data.frame
-  flags <- data.frame(model = names(cfas[[1]]),  # assumes first fold contains all models in the same order as other folds
+  flags <- data.frame(model = unique(unlist(lapply(cfas, names))),  # assumes first fold contains all models in the same order as other folds
                       `improper solution` = improper,
                       `heywood item` = loads$heywood,
                       `low loading` = loads$flag,
@@ -449,7 +460,7 @@ model_flags <- function(kfa, cors, rels, loads){
                       `low scale reliability` = rels$flag,
                       check.names = FALSE)
 
-  flags <- merge(multistrux, flags, by = "model", all.x = FALSE, all.y = TRUE, sort = FALSE)
+  flags <- merge(strux, flags, by = "model", all.x = FALSE, all.y = TRUE, sort = FALSE)
 
   return(flags)
 }

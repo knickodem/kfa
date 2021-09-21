@@ -4,14 +4,18 @@
 \alias{model_flags}
 \title{Flag model problems}
 \usage{
-model_flags(kfa, cors, rels, loads)
+model_flags(kfa, strux, loads, cors, rels)
 }
 \arguments{
 \item{kfa}{An object returned from \code{\link[kfa]{kfa}}}
 
-\item{rels}{An object returned from \code{\link[kfa]{agg_rels}}}
+\item{strux}{An object returned from \code{\link[kfa]{model_structures}} when \code{which = "cfa"}}
 
-\item{corrs}{An object returned from \code{\link[kfa]{agg_cors}}}
+\item{loads}{An object returned from \code{\link[kfa]{agg_loadings}}}
+
+\item{cors}{An object returned from \code{\link[kfa]{agg_cors}}}
+
+\item{rels}{An object returned from \code{\link[kfa]{agg_rels}}}
 }
 \value{
 a \code{data.frame}

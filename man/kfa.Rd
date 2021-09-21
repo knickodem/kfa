@@ -8,10 +8,9 @@ kfa(
   variables,
   k = NULL,
   m = floor(ncol(variables)/4),
-  efa.only = FALSE,
+  seed = 101,
   custom.cfas = NULL,
-  rmsea0 = 0.05,
-  rmseaA = 0.08,
+  power.args = list(rmsea0 = 0.05, rmseaA = 0.08),
   rotation = "oblimin",
   ordered = FALSE,
   estimator = NULL,
@@ -22,15 +21,15 @@ kfa(
 \arguments{
 \item{variables}{a \code{data.frame} (or convertible to a \code{data.frame}) of variables to factor analyze}
 
-\item{k}{an integer between 2 and 10; number of folds in which to split the data. Default is NULL which determines k via power analysis.}
+\item{k}{an integer between 2 and 10; number of folds in which to split the data. Default is \code{NULL} which determines k via \code{\link[kfa]{find_k}}.}
 
 \item{m}{integer; maximum number of factors to extract. Default is 4 items per factor.}
 
+\item{seed}{integer passed to \code{set.seed} when randomly selecting cases for each fold.}
+
 \item{custom.cfas}{a single object or named \code{list} of \code{lavaan} syntax specifying custom factor model(s).}
 
-\item{rmsea0}{numeric; RMSEA under the null hypothesis for the power analysis.}
-
-\item{rmseaA}{numeric; RMSEA under the alternative hypothesis for the power analysis.}
+\item{power.args}{named \code{list} of arguments to pass to \code{\link[semTools]{findRMSEAsamplesize}} when conducting power analysis in \code{\link[kfa]{find_k}}.}
 
 \item{rotation}{character (case-sensitive); any rotation method listed in
 \code{\link[GPArotation]{rotations}} in the \code{GPArotation} package. Default is "oblimin".}
@@ -56,14 +55,14 @@ A two-element \code{list}:
 }
 \description{
 The function splits the data into *k* folds. For each fold,
-EFAs are run on the training data and the simple structure each model
+EFAs are run on the training data and the simple structure for each model
 is transformed into \code{lavaan}-compatible CFA syntax. The CFAs are then run
 on the test data.
 }
 \details{
 In order to be tested along with the EFA identified structures, each model supplied in \code{custom.cfas} must
-include all \code{variables} in \code{lavaan} compatible syntax. Thus, to simultaneously test a model dropping
-a \code{variable}, have the variable load on to a factor while constraining the loading to 0.
+include all \code{variables} in \code{lavaan} compatible syntax. Thus, to test a model dropping when
+a variable, have the variable load on to a factor while constraining the loading to 0.
 
 Deciding an appropriate *m* can be difficult, but is consequential for both the possible factor structures to
 examine and the computation time. The \code{\link[parameters]{n_factors}} in the \code{parameters} package

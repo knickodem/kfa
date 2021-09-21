@@ -1,16 +1,16 @@
 #' Conducts k-fold cross validation for factor analysis.
 #'
 #' The function splits the data into *k* folds. For each fold,
-#' EFAs are run on the training data and the simple structure each model
+#' EFAs are run on the training data and the simple structure for each model
 #' is transformed into \code{lavaan}-compatible CFA syntax. The CFAs are then run
 #' on the test data.
 #'
 #' @param variables a \code{data.frame} (or convertible to a \code{data.frame}) of variables to factor analyze
-#' @param k an integer between 2 and 10; number of folds in which to split the data. Default is NULL which determines k via power analysis.
+#' @param k an integer between 2 and 10; number of folds in which to split the data. Default is \code{NULL} which determines k via \code{\link[kfa]{find_k}}.
 #' @param m integer; maximum number of factors to extract. Default is 4 items per factor.
+#' @param seed integer passed to \code{set.seed} when randomly selecting cases for each fold.
 #' @param custom.cfas a single object or named \code{list} of \code{lavaan} syntax specifying custom factor model(s).
-#' @param rmsea0 numeric; RMSEA under the null hypothesis for the power analysis.
-#' @param rmseaA numeric; RMSEA under the alternative hypothesis for the power analysis.
+#' @param power.args named \code{list} of arguments to pass to \code{\link[semTools]{findRMSEAsamplesize}} when conducting power analysis in \code{\link[kfa]{find_k}}.
 #' @param rotation character (case-sensitive); any rotation method listed in
 #' \code{\link[GPArotation]{rotations}} in the \code{GPArotation} package. Default is "oblimin".
 #' @param ordered logical; Should items be treated as ordinal and the
@@ -24,8 +24,8 @@
 #'
 #' @details
 #' In order to be tested along with the EFA identified structures, each model supplied in \code{custom.cfas} must
-#' include all \code{variables} in \code{lavaan} compatible syntax. Thus, to simultaneously test a model dropping
-#' a \code{variable}, have the variable load on to a factor while constraining the loading to 0.
+#' include all \code{variables} in \code{lavaan} compatible syntax. Thus, to test a model dropping when
+#' a variable, have the variable load on to a factor while constraining the loading to 0.
 #'
 #' Deciding an appropriate *m* can be difficult, but is consequential for both the possible factor structures to
 #' examine and the computation time. The \code{\link[parameters]{n_factors}} in the \code{parameters} package
@@ -42,9 +42,9 @@
 kfa <- function(variables,
                 k = NULL,
                 m = floor(ncol(variables) / 4),
-                efa.only = FALSE,
+                seed = 101,
                 custom.cfas = NULL,
-                rmsea0 = .05, rmseaA = .08,
+                power.args = list(rmsea0 = .05, rmseaA = .08),
                 rotation = "oblimin", ordered = FALSE,
                 estimator = NULL, missing = "listwise", ...){
 
@@ -69,10 +69,16 @@ kfa <- function(variables,
     }
   }
 
+  # # Not used at the moment
+  # lavaan.args <- c(list(rotation = rotation, ordered = ordered,
+  #                       estimator = estimator, missing = missing, list(...)))
+
   if(is.null(k)){
     ## determine number of folds based on power analysis
-    k <- findk(variables = variables, m = m, rmsea0 = rmsea0, rmseaA = rmseaA)
+    k <- do.call(find_k, c(list(variables = variables, m = m), power.args))[[1]]
   }
+
+  set.seed(seed)
 
   ## create folds
   # returns list of row numbers for each test fold (i.e., the cfa sample)
@@ -91,71 +97,99 @@ kfa <- function(variables,
     cluster.type <- "FORK"
   }
 
-  cores <- parallel::detectCores() - 1
-  clusters <- parallel::makeCluster(cores, type = cluster.type)
-  doParallel::registerDoParallel(clusters)
+  tryCatch(  # used to stop the parallelization regardless of whether kfa runs successfully or breaks
+    expr = {
 
-  print(paste("Using", foreach::getDoParWorkers(), "cores for parallelization."))
+      cores <- parallel::detectCores() - 1
+      clusters <- parallel::makeCluster(cores, type = cluster.type)
+      doParallel::registerDoParallel(clusters)
 
-  ## Run EFAs and return lavaan syntax for CFAs
-  efa <- foreach::foreach(fold = 1:k) %dopar% { # use %do% if we offer a parallel = FALSE option
-    k_efa(variables = variables[!c(row.names(variables) %in% testfolds[[fold]]), ],
-          m = m,
-          rotation = rotation,
-          ordered = ordered,
-          estimator = estimator,
-          missing = missing,
-          ...)
-  }
+      print(paste("Using", foreach::getDoParWorkers(), "cores for parallelization."))
 
-  # formatting for use in model_structure
-  temp <- list(cfas = NULL,
-               efas = efa)
+      ## run EFAs and return lavaan syntax for CFAs
+      efa <- foreach::foreach(fold = 1:k) %dopar% { # use %do% if we offer a parallel = FALSE option
 
-  # identifying unique structure
-  efa.structures <- model_structure(temp, which = "efa")
-  names(efa.structures) <- paste0(1:m, "-factor")
+        k_efa(variables = variables[!c(row.names(variables) %in% testfolds[[fold]]), ],
+              m = m,
+              rotation = rotation,
+              ordered = ordered,
+              estimator = estimator,
+              missing = missing,
+              ...)
 
-  # collect most common structure for each factor model to use in CFAs
-  cfa.syntax <- vector("list", length = m)
-  for(n in 1:m){
-    if(length(efa.structures[[n]]) == 1){ # all one factor structures should be the same
-      cfa.syntax[[n]] <- efa.structures[[n]][[1]]$structure
-    } else {
-      # number of folds each structure was found; keep most common structure
-      num.folds <- unlist(lapply(efa.structures[[n]], function(x) length(x$folds)))
-      ties <- which(num.folds == max(num.folds))
-      ties <- ifelse(length(ties) == 1, ties, ties[[1]]) # in case of ties, use first structure
-      cfa.syntax[[n]] <- efa.structures[[n]][[ties]]$structure
-    }
-  }
-  names(cfa.syntax) <- paste0(1:m, "-factor")
+        ## do.call version throws error for some reason ( Error in { : task 1 failed - "$ operator is invalid for atomic vectors" )
+        # do.call(k_efa, args = c(list(variables = variables[!c(row.names(variables) %in% testfolds[[fold]]), ],
+        #                              m = m),
+        #                         lavaan.args))
+      }
 
-  if(!is.null(custom.cfas)){
-    if(class(custom.cfas) != "list"){ # converting single object to named list
-      custom.name <- deparse(substitute(custom.cfas))
-      custom.cfas <- list(custom.cfas)
-      names(custom.cfas) <- custom.name
-    } else if(is.null(names(custom.cfas))){ # (if necessary) adding names to list
-      names(custom.cfas) <- paste("custom", LETTERS[1:length(custom.cfas)])
-    }
-    cfa.syntax <- c(cfa.syntax, custom.cfas)
-  }
+      ## identifying unique structures
+      # formatting for use in model_structure
+      temp <- list(cfas = NULL,
+                   efas = efa)
+      efa.structures <- model_structure(temp, which = "efa")
+      names(efa.structures) <- paste0(1:m, "-factor")
 
-  ## Run CFAs
-  cfas <- foreach::foreach(fold = 1:k) %dopar% {
-    k_cfa(syntax = cfa.syntax,
-          variables = variables[testfolds[[fold]], ],
-          ordered = ordered,
-          estimator = estimator,
-          missing = missing,
-          ...)
-  }
-  output <- list(cfas = cfas,
-                 cfa.syntax = cfa.syntax,
-                 efa.structures = efa.structures)
+      ## collect most common (mode) structure for each factor model to use in CFAs
+      mode.structure <- rep(list(rep(list(""), m)), k) # creates list of lists framework needed for running cfas
+      for(n in 1:m){  # replaces "" in the sublists with mode structure when appropriate given the values in x$folds
+        if(length(efa.structures[[n]]) == 1){ # if there is only 1 structure of a given model
+          for(i in efa.structures[[n]][[1]]$folds){
+            mode.structure[[i]][[n]] <- efa.structures[[n]][[1]]$structure
+          }
+        } else {
+          # number of folds each structure was found; keep most common structure
+          num.folds <- unlist(lapply(efa.structures[[n]], function(x) length(x$folds)))
+          ties <- which(num.folds == max(num.folds))
+          ties <- ifelse(length(ties) == 1, ties, ties[[1]]) # in case of ties, use first structure
+          for(i in efa.structures[[n]][[ties]]$folds){
+            mode.structure[[i]][[n]] <- efa.structures[[n]][[ties]]$structure
+          }
+        }
+      }
 
-  parallel::stopCluster(clusters)
+      ## add names to models for each fold
+      mode.structure <- lapply(mode.structure, function(x) {
+        names(x) <- paste0(1:m, "-factor")
+        return(x)
+      })
+
+      ## add custom models (if present)
+      if(!is.null(custom.cfas)){
+        if(class(custom.cfas) != "list"){ # converting single object to named list
+          custom.name <- deparse(substitute(custom.cfas))
+          custom.cfas <- list(custom.cfas)
+          names(custom.cfas) <- custom.name
+        } else if(is.null(names(custom.cfas))){ # (if necessary) adding names to list
+          names(custom.cfas) <- paste("custom", LETTERS[1:length(custom.cfas)])
+        }
+        # add custom models to set of models for each fold
+        cfa.syntax <- lapply(mode.structure, function(x) c(x, custom.cfas))
+      } else {
+        cfa.syntax <- mode.structure
+      }
+
+      ## run CFAs
+      cfas <- foreach::foreach(fold = 1:k) %dopar% {
+
+        k_cfa(syntax = cfa.syntax[[fold]],
+              variables = variables[testfolds[[fold]], ],
+              ordered = ordered,
+              estimator = estimator,
+              missing = missing,
+              ...)
+
+        # do.call(k_cfa, args = c(list(syntax = cfa.syntax[[fold]],
+        #                              variables = variables[testfolds[[fold]], ]),
+        #                         lavaan.args))
+      }
+      output <- list(cfas = cfas,
+                     cfa.syntax = cfa.syntax,
+                     efa.structures = efa.structures)
+    },
+    finally = {
+      parallel::stopCluster(clusters)
+    })
 
   return(output)
 }

@@ -105,7 +105,7 @@ k_efa <- function(variables, m, rotation,
 
 #' standardized factor loadings
 #'
-#' Internal function for extracting standardized factor loadings from
+#' Internal function for extracting standardized factor loadings from lavaan object
 #'
 #' @param object a \code{lavaan} object
 #' @param type standardize on the latent variables (\code{"std.lv"}),

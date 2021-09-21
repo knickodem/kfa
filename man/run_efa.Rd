@@ -6,7 +6,7 @@
 \usage{
 run_efa(
   variables,
-  m = floor(ncol(items)/4),
+  m = floor(ncol(variables)/4),
   rotation = "oblimin",
   simple = TRUE,
   threshold = NA,

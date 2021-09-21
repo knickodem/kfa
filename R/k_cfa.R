@@ -32,7 +32,7 @@ k_cfa <- function(syntax, variables, ordered, estimator, missing, ...){
 
 
   ## run CFAs
-  cfa <- vector(mode = "list", length = length(syntax))
+  mods <- vector(mode = "list", length = length(syntax))
 
   for(c in 1:length(syntax)){
 
@@ -48,17 +48,22 @@ k_cfa <- function(syntax, variables, ordered, estimator, missing, ...){
                          estimator = estimator,
                          parameterization = "delta")
 
-      cfa[[c]] <- fit
+      mods[[c]] <- fit
 
     } else {
 
-      cfa[[c]] <- NULL
+      mods[[c]] <- NULL
     }
 
   }
 
-  names(cfa) <- names(syntax)
-  cfa <- cfa[lengths(cfa) != 0] # dropping NULL elements
-  return(cfa)
+  # If largest model is NULL, mods will be one element shorter than names(syntax)
+  if(nchar(syntax[[length(syntax)]]) > 0){
+    names(mods) <- names(syntax)
+  } else{
+    names(mods) <- names(syntax)[-length(syntax)]
+  }
+  mods <- cfa[lengths(mods) != 0] # dropping NULL elements
+  return(mods)
 }
 

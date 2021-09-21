@@ -9,10 +9,10 @@ model_structure(kfa, which = "cfa")
 \arguments{
 \item{kfa}{An object returned from \code{\link[kfa]{kfa}}}
 
-\item{which}{Currently only for internal use; Should the unique structures be extracted from the "cfa" \code{lavaan} models or "efa" syntax?}
+\item{which}{Should the unique structures be extracted from the "cfa" \code{lavaan} or "efa" syntax?}
 }
 \value{
-For each unique structure within each factor model, a \code{list} containing \code{lavaan} syntax specifying the factor structure and the folds where the structure was identified
+\code{lavaan} syntax specifying the unique structures within each factor model in a \code{data.frame} when \code{which = "cfa"} or, when \code{which = "efa"}, a \code{list} containing the structure and the folds where the structure was identified
 }
 \description{
 Extract unique factor structures across the k-folds

@@ -17,5 +17,5 @@ but not exogenous variables (\code{"std.nox"}).See \code{\link[lavaan]{standardi
 A \code{matrix} of factor loadings
 }
 \description{
-Internal function for extracting standardized factor loadings from
+Internal function for extracting standardized factor loadings from lavaan object
 }

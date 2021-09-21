@@ -4,14 +4,14 @@
 \alias{agg_cors}
 \title{Aggregated factor correlations}
 \usage{
-agg_cors(kfa, type = "factor", flag = 0.9)
+agg_cors(kfa, flag = 0.9, type = "factor")
 }
 \arguments{
 \item{kfa}{An object returned from \code{\link[kfa]{kfa}}}
 
-\item{type}{currently ignored; \code{"factor"} (default) or \code{"observed"} variable correlations}
-
 \item{flag}{threshold above which a factor correlation will be flagged}
+
+\item{type}{currently ignored; \code{"factor"} (default) or \code{"observed"} variable correlations}
 }
 \value{
 a \code{data.frame} of mean factor correlations for each factor model and \code{vector} with count of folds with a flagged correlation
