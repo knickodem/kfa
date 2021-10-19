@@ -57,13 +57,9 @@ k_cfa <- function(syntax, variables, ordered, estimator, missing, ...){
 
   }
 
-  # If largest model is NULL, mods will be one element shorter than names(syntax)
-  if(nchar(syntax[[length(syntax)]]) > 0){
-    names(mods) <- names(syntax)
-  } else{
-    names(mods) <- names(syntax)[-length(syntax)]
-  }
-  mods <- cfa[lengths(mods) != 0] # dropping NULL elements
+  mods <- mods[lengths(mods) != 0] # dropping NULL elements
+  names(mods) <- names(syntax)[which(nchar(syntax) > 0)] # adding names
+
   return(mods)
 }
 

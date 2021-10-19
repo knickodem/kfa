@@ -53,7 +53,7 @@ kstudent <- kfa(variables = studentdf,
                 k = NULL,
                 m = 5,
                 seed = 936639,
-               custom.cfas = list(`Custom 2f` = custom2, Break = custom3),
+               # custom.cfas = list(`Custom 2f` = custom2, Break = custom3),
                 rotation = "oblimin",
                 ordered = TRUE,
                 estimator = "DWLS",
@@ -98,27 +98,37 @@ kfa_report(kstudent,
 # report.format = "html_document",
 
 
-# library(tidySEM)
-tidySEM::graph_sem(kstudent$cfas[[2]]$Break)
+
 
 
 #####################################################
 
 
 # -----  README Test --------
-# library(lavaan)
-data("HolzingerSwineford1939")
+library(fungible)
+data("AmzBoxes")
 
+BoxList <- GenerateBoxData (XYZ = AmzBoxes[,2:4],
+                            BoxStudy = 20,
+                            Reliability = .75,
+                            ModApproxErrVar = .10,
+                            SampleSize = 900,
+                            NMinorFac = 50,
+                            epsTKL = .20,
+                            Seed = 1161,
+                            SeedErrorFactors = 1611,
+                            SeedMinorFactors = 6111,
+                            PRINT = FALSE,
+                            LB = FALSE,
+                            LBVal = 1,
+                            Constant = 0)
+View(BoxList$BoxData)
 
-set.seed(1161)
-tictoc::tic()
-kstudent <- kfa(variables = HolzingerSwineford1939[7:15],
-                k = NULL,
-                m = 4,
-                rotation = "oblimin")
-tictoc::toc()
+sim.boxes <- BoxList$BoxDataEME
 
-findk(HolzingerSwineford1939[7:15], 1)
+mods <- kfa(variables = sim.boxes,
+            k = NULL) # prompts power analysis to determine number of folds
+
 
 #########################################
 
@@ -182,19 +192,19 @@ semTools::findRMSEAsamplesize(rmsea0 = .05, rmseaA = .08, df = df, power = .80, 
 
 
 
-variables <- studentdf
-k <- 5
+variables <- as.data.frame(sim.boxes)
+k <- 4
 m <- 5
 rotation = "oblimin"
-ordered = TRUE
-estimator = "DWLS"
-missing = "pairwise"
-custom.cfas <- list(custom2, custom3)
+ordered = FALSE
+estimator = "ML"
+missing = "listwise"
+# custom.cfas <- list(custom2, custom3)
 
 lavaan.args <- c(list(rotation = rotation, ordered = ordered,
                       estimator = estimator, missing = missing)) #, list(...)
 
-
+set.seed(101)
 testfolds <- caret::createFolds(y = 1:nrow(variables),
                                 k = k, list = TRUE,
                                 returnTrain = FALSE)
@@ -214,30 +224,16 @@ testefa <- lapply(1:k, function(fold){
 # formatting for use in model_structure
 temp <- list(cfas = NULL,
              efas = testefa)
-
-# identifying unique structure
 efa.structures <- model_structure(temp, which = "efa")
-# names(efa.structures) <- paste0(1:m, "-factor")
+names(efa.structures) <- paste0(1:m, "-factor")
 
 
 
-# # collect most common structure for each factor model to use in CFAs
-# mode.structure <- vector("list", length = m)
-# for(n in 1:m){
-#   if(length(efa.structures[[n]]) == 1){
-#     mode.structure[[n]] <- efa.structures[[n]][[1]]$structure
-#   } else {
-#     # number of folds each structure was found; keep most common structure
-#     num.folds <- unlist(lapply(efa.structures[[n]], function(x) length(x$folds)))
-#     ties <- which(num.folds == max(num.folds))
-#     ties <- ifelse(length(ties) == 1, ties, ties[[1]]) # in case of ties, use first structure
-#     mode.structure[[n]] <- efa.structures[[n]][[ties]]$structure
-#   }
-# }
-# names(mode.structure) <- paste0(1:m, "-factor")
 
+
+## collect most common (mode) structure for each factor model to use in CFAs
 mode.structure <- rep(list(rep(list(""), m)), k) # creates list of lists framework needed for running cfas
-for(n in 1:m){  # replaces "" in the sublists with most common (mode) structure when appropriate given the values in x$folds
+for(n in 1:m){  # replaces "" in the sublists with mode structure when appropriate given the values in x$folds
   if(length(efa.structures[[n]]) == 1){ # if there is only 1 structure of a given model
     for(i in efa.structures[[n]][[1]]$folds){
       mode.structure[[i]][[n]] <- efa.structures[[n]][[1]]$structure
@@ -252,6 +248,8 @@ for(n in 1:m){  # replaces "" in the sublists with most common (mode) structure 
     }
   }
 }
+
+
 
 ## add names to models for each fold
 mode.structure <- lapply(mode.structure, function(x) {
@@ -276,23 +274,10 @@ if(!is.null(custom.cfas)){
 }
 
 
-## Run CFAs
-cfas <- vector("list", length = k)
-for(fold in 1:k) {
-
-  # do.call(k_cfa, args = c(list(syntax = cfa.syntax[[fold]],
-  #                              variables = variables[testfolds[[fold]], ]),
-  #                         lavaan.args))
-  cfas[[fold]] <- k_cfa(syntax = cfa.syntax[[fold]],
-        variables = variables[testfolds[[fold]], ],
-        ordered = ordered,
-        estimator = estimator,
-        missing = missing)
-
-}
+f <- 3
 
 ## calculate and extract sample statistics for test sample
-sampstats <- lavaan::lavCor(object = variables[testfolds[[3]], ],
+sampstats <- lavaan::lavCor(object = variables[testfolds[[f]], ],
                             ordered = ordered,
                             estimator = estimator,
                             missing = missing,
@@ -307,10 +292,10 @@ attr(sample.th, "th.idx") <- lavaan::lavInspect(sampstats, "th.idx")
 WLS.V <- lavaan::lavInspect(sampstats, "wls.v")
 NACOV <- lavaan::lavInspect(sampstats, "gamma")
 
+syntax <- cfa.syntax[[f]]
 
 ## run CFAs
-syntax <- cfa.syntax[[3]]
-cfa <- vector(mode = "list", length = length(syntax))
+mods <- vector(mode = "list", length = length(syntax))
 
 for(c in 1:length(syntax)){
 
@@ -326,25 +311,43 @@ for(c in 1:length(syntax)){
                        estimator = estimator,
                        parameterization = "delta")
 
-    cfa[[c]] <- fit
+    mods[[c]] <- fit
 
   } else {
 
-    cfa[[c]] <- NULL
+    mods[[c]] <- NULL
   }
 
 }
 
-# If largest model is NULL, cfa will be one element shorter than names(syntax)
-if(nchar(syntax[[length(syntax)]]) > 0){
-  names(cfa) <- names(syntax)
-} else{
-  names(cfa) <- names(syntax)[-length(syntax)]
+mods <- mods[lengths(mods) != 0] # dropping NULL elements
+names(mods) <- names(syntax)[which(nchar(syntax) > 0)]
+
+
+
+
+testcfa <- lapply(1:k, function(fold){
+
+   do.call(k_cfa, args = c(list(syntax = cfa.syntax[[fold]],
+                                variables = variables[testfolds[[fold]], ]),
+                           lavaan.args))
+})
+
+
+## Run CFAs
+cfas <- vector("list", length = k)
+for(fold in 1:k) {
+
+  # do.call(k_cfa, args = c(list(syntax = cfa.syntax[[fold]],
+  #                              variables = variables[testfolds[[fold]], ]),
+  #                         lavaan.args))
+  cfas[[fold]] <- k_cfa(syntax = cfa.syntax[[fold]],
+        variables = variables[testfolds[[fold]], ],
+        ordered = ordered,
+        estimator = estimator,
+        missing = missing)
+
 }
-
-cfa <- cfa[lengths(cfa) != 0] # dropping NULL elements
-
-
 
 
 set.seed(936639)
