@@ -47,10 +47,12 @@ also accepted to prompt estimation of the polychoric correlation matrix.}
 \item{...}{other arguments passed to \code{lavaan} functions. See \code{\link[lavaan]{lavOptions}}.}
 }
 \value{
-A two-element \code{list}:
+A four-element \code{list}:
 \itemize{
-\item \code{lavaan} CFA objects for each *k* fold
-\item all factor structures identified in the EFA
+\item **cfas** \code{lavaan} CFA objects for each *k* fold
+\item **cfa.syntax** syntax used to produce CFA objects
+\item **model.names** vector of names for CFA objects
+\item **efa.structures** all factor structures identified in the EFA
 }
 }
 \description{

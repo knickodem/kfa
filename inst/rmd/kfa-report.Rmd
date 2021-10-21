@@ -83,22 +83,33 @@ knit_print(best.flex)
 
 ```{r details, ft.align = "left", results = 'asis', warning = FALSE, message = FALSE, fig.height = 4, fig.width = 6}
 
+if(lavaan::lavInspect(models$cfas[[1]][[1]], "categorical")){
+  what <- "omega_h"
+  times <- 1
+  j <- 2
+
+} else {
+  what <- c("omega_h", "alpha")
+  times <- 2
+  j <- c(2, 5)
+}
+
 rel.map <- data.frame(col_keys = names(krels$reliabilities[[1]]),
-                      top = c("factor", rep(c("omega_h", "alpha"), each = 3)),
-                      bottom = c("factor", rep(c("mean", "range", "flag"), times = 2)))
+                      top = c("factor", rep(what, each = 3)),
+                      bottom = c("factor", rep(c("mean", "range", "flag"), times = times)))
 
 for(n in 1:m){
-  cat("##", model.names[[n]])
+  cat("##", mnames[[n]])
   cat("\n\n")
   cat("**Factor Structure**")
   cat("\n\n")
-  cat(gsub("\n", "\n\n", kstructures[kstructures$model == model.names[[n]],]$structure))
+  cat(gsub("\n", "\n\n", kstructures[kstructures$model == mnames[[n]],]$structure))
   cat("\n\n")
   ## find fold with lavaan object for the model
   for(f in 1:k){
-  if(model.names[[n]] %in% names(kfa$cfas[[f]])) break  
+  if(mnames[[n]] %in% names(models$cfas[[f]])) break  
 }
-    do.call(semPlot::semPaths, args = c(list(object = kfa$cfas[[f]][[n]],
+    do.call(semPlot::semPaths, args = c(list(object = models$cfas[[f]][[n]],
                                            color = list(lat = palette.colors(n = n + 1, palette = "Okabe-Ito",
                                                         recycle = TRUE)[-1]),
                                            title = FALSE),
@@ -123,7 +134,7 @@ for(n in 1:m){
   cat("**Scale Reliability Across Folds**")
   cat("\n\n")
   rel.flex <- flextable::flextable(krels$reliabilities[[n]])
-  rel.flex <- flextable::colformat_double(rel.flex, j = c(2, 5), digits = digits)
+  rel.flex <- flextable::colformat_double(rel.flex, j = j, digits = digits)
   rel.flex <- two_level_flex(rel.flex, mapping = rel.map, vert.cols = c("factor"), border = border)
   cat(knit_print(rel.flex))
   cat("Note: 'flag' is the number of folds the scale had a reliability <", rel.flag)
@@ -141,12 +152,12 @@ for(n in 1:m){
 ```{r appendix.fits, ft.align = "left", results='asis'}
 index <- if(sum(grepl("df", index)) == 0) c("df", index) else index
 
-ax <- length(index)*length(model.names)
+ax <- length(index)*length(mnames)
 if(ax <= 16){ # is the appendix a reasonable width?
   
   appendix.map <- data.frame(col_keys = names(appendix),
-                      top = c("fold", rep(model.names, each = length(index))),
-                      bottom = c("fold", rep(index, times = length(model.names))))
+                      top = c("fold", rep(mnames, each = length(index))),
+                      bottom = c("fold", rep(index, times = length(mnames))))
 
 appendix.flex <- appendix_wrapper(appendix, appendix.map, border, digits)
 appendix.flex
@@ -160,7 +171,7 @@ appendix1 <- appendix[1:colsplit]
 appendix2 <- appendix[c(1, (colsplit+1):length(appendix))]
 
 appendix1.map <- data.frame(col_keys = names(appendix1),
-                           top = c("fold", rep(model.names[1:modsplit], each = length(index))),
+                           top = c("fold", rep(mnames[1:modsplit], each = length(index))),
                            bottom = c("fold", rep(index, times = modsplit)))
 
 appendix1.flex <- appendix_wrapper(appendix1, appendix1.map, border, digits)
@@ -172,8 +183,8 @@ appendix1.flex
 ```{r appendix2, ft.align = "left", results='asis'}
 if(ax > 16){ 
   appendix2.map <- data.frame(col_keys = names(appendix2),
-                            top = c("fold", rep(model.names[(modsplit+1):length(model.names)], each = length(index))),
-                            bottom = c("fold", rep(index, times = length(model.names) - modsplit)))
+                            top = c("fold", rep(mnames[(modsplit+1):length(mnames)], each = length(index))),
+                            bottom = c("fold", rep(index, times = length(mnames) - modsplit)))
   appendix2.flex <- appendix_wrapper(appendix2, appendix2.map, border, digits)
   appendix2.flex
 }
@@ -183,7 +194,7 @@ if(ax > 16){
 ## All EFA Structures
 
 ```{r appendix.structures, results = 'asis'}
-strux <- kfa$efa.structures
+strux <- models$efa.structures
 for(n in 1:length(strux)){
   cat("### Factors:", n)
   cat("\n\n")

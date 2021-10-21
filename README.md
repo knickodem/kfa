@@ -2,10 +2,10 @@
 # kfa: K-Fold Cross Validation For Factor Analysis
 
 **kfa** provides utilities for examining the dimensionality of a set of
-variables to foster scale and instrument development. Harnessing a
-k-fold cross validation approach, **kfa** helps researchers compare
-possible factor structures and identify which structures are plausible
-and replicable across samples.
+variables to foster scale development. Harnessing a k-fold cross
+validation approach, **kfa** helps researchers compare possible factor
+structures and identify which structures are plausible and replicable
+across samples.
 
 ## Installation
 
@@ -46,7 +46,6 @@ utilizes the `parallel` and `foreach` packages for parallel processing.
 library(kfa)
 data("example")
 
-set.seed(1161) # set seed to obtain the same folds for replication
 mods <- kfa(variables = example,
                   k = NULL) # prompts power analysis to determine number of folds
 ```
@@ -63,16 +62,6 @@ kfa_report(mods, file.name = "example_kfa_report",
 ```
 
 ## Under Development and Consideration
-
-  - **Item Stability Index** - Akin to using Rubin’s rules to pool
-    parameter estimates over multiple imputations, future versions will
-    summarize the stability of the loading for each item across folds
-    for a given factor structure.
-
-  - **Overfitting Index** - In order to understand the replicability of
-    a factor structure across folds, we are considering approaches to
-    measure and summarize the degree to which a model is overfitting the
-    data within a fold.
 
   - **Clustered Data** - The package does not currently account for
     clustered data. Future versions will utilize the cluster argument

@@ -4,10 +4,10 @@
 \alias{model_structure}
 \title{Unique factor structures}
 \usage{
-model_structure(kfa, which = "cfa")
+model_structure(models, which = "cfa")
 }
 \arguments{
-\item{kfa}{An object returned from \code{\link[kfa]{kfa}}}
+\item{models}{An object returned from \code{\link[kfa]{kfa}}}
 
 \item{which}{Should the unique structures be extracted from the "cfa" \code{lavaan} or "efa" syntax?}
 }

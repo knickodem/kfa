@@ -2,8 +2,7 @@
 #'
 #' Generates a report summarizing the factor analytic results over k-folds.
 #'
-#' @param kfa An object returned from \code{\link[kfa]{kfa}} or otherwise defined list of
-#' lists where the inner list consists of \code{lavaan} objects.
+#' @param models An object returned from \code{\link[kfa]{kfa}}
 #' @param file.name Character; file name to create on disk.
 #' @param report.format File format of the report. Default is HTML ("html_document"). See \code{\link[rmarkdown]{render}} for other options.
 #' @param report.title Title of the report
@@ -17,50 +16,56 @@
 #'
 #' @export
 
-kfa_report <- function(kfa, file.name, report.title = file.name,
+kfa_report <- function(models, file.name, report.title = file.name,
                        report.format = "html_document", word.template = NULL,
                        index = c("chisq", "cfi", "rmsea"),
                        load.flag = .30, cor.flag = .90, rel.flag = .60,
                        digits = 2){
 
+  if(class(models) == "kfa"){
+    cfas <- models$cfas
+  } else {
+    stop("models must be of class 'kfa'.")
+  }
+
   ## analysis summary info
-  k <- length(kfa$cfas) # number of folds
-  model.names <- unique(unlist(lapply(kfa$cfas, names)))
-  fac.allow <- length(kfa$efa.structures)
-  fac.max <- max(as.numeric(substring(model.names[grepl("-factor", model.names)], 1, 1)))  # kfa naming convention "#-factor"; custom functions are assumed to have different convention
-  m <- max(unlist(lapply(kfa$cfas, length))) # number of models per fold (includes both efa AND custom structures); m == length(model.names)
-  nobs <- sum(unlist(lapply(kfa$cfas, function(x) lavaan::lavInspect(x[[1]], "nobs"))))
-  vnames <- dimnames(lavaan::lavInspect(kfa$cfas[[1]][[1]], "sampstat")$cov)[[1]]
+  k <- length(cfas) # number of folds
+  m <- max(unlist(lapply(cfas, length))) # number of models per fold (includes both efa AND custom structures); m == length(mnames)
+  mnames <- models$model.names # model names
+  fac.allow <- length(models$efa.structures)
+  fac.max <- max(as.numeric(substring(mnames[grepl("-factor", mnames)], 1, 1)))  # kfa naming convention "#-factor"; custom functions are assumed to have different convention
+  vnames <- dimnames(lavaan::lavInspect(cfas[[1]][[1]], "sampstat")$cov)[[1]] # variable names
   nvars <- length(vnames)
-  opts <- lavaan::lavInspect(kfa$cfas[[1]][[1]], "options") # estimation options; assumed to be the same for all models
+  nobs <- sum(unlist(lapply(cfas, function(x) lavaan::lavInspect(x[[1]], "nobs"))))
+  opts <- lavaan::lavInspect(cfas[[1]][[1]], "options") # estimation options; assumed to be the same for all models
 
   #### Model Fit ####
   ## summarizing fit statistics by fold
-  kfits <- k_model_fit(kfa, index = index, by.fold = TRUE) # dataframe for each fold
+  kfits <- k_model_fit(models, index = index, by.fold = TRUE) # dataframe for each fold
   fit.table <- agg_model_fit(kfits, index = index, digits = 2)
 
   ## best model in each fold
   # best.model <- best_model(kfits, index = index)
 
   ## creating appendix -  folds x model table of fit statistics
-  mfits <- k_model_fit(kfa, index = index, by.fold = FALSE)
+  mfits <- k_model_fit(models, index = index, by.fold = FALSE)
   appendix <- get_appendix(mfits, index = index)
 
   #### Parameters ####
   ## model structures
-  kstructures <- model_structure(kfa, which = "cfa")
+  kstructures <- model_structure(models, which = "cfa")
 
   ## loadings
-  klambdas <- agg_loadings(kfa, flag = load.flag, digits = digits)
+  klambdas <- agg_loadings(models, flag = load.flag, digits = digits)
 
   ## factor correlations
-  kcorrs <- agg_cors(kfa, flag = cor.flag)
+  kcorrs <- agg_cors(models, flag = cor.flag)
 
   ## score reliabilities
-  krels <- agg_rels(kfa, flag = rel.flag, digits = digits)
+  krels <- agg_rels(models, flag = rel.flag, digits = digits)
 
   ## flagged problems
-  flagged <- model_flags(kfa, kstructures, klambdas, kcorrs, krels)
+  flagged <- model_flags(models, kstructures, klambdas, kcorrs, krels)
 
   ## running report
   if(report.format == "word_document"){

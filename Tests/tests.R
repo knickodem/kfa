@@ -53,7 +53,7 @@ kstudent <- kfa(variables = studentdf,
                 k = NULL,
                 m = 5,
                 seed = 936639,
-               # custom.cfas = list(`Custom 2f` = custom2, Break = custom3),
+                custom.cfas = list(`Custom 2f` = custom2, Break = custom3),
                 rotation = "oblimin",
                 ordered = TRUE,
                 estimator = "DWLS",
@@ -122,13 +122,96 @@ BoxList <- GenerateBoxData (XYZ = AmzBoxes[,2:4],
                             LB = FALSE,
                             LBVal = 1,
                             Constant = 0)
-View(BoxList$BoxData)
 
 sim.boxes <- BoxList$BoxDataEME
+box2 <- paste0("b1 =~ ", paste(colnames(sim.boxes)[1:10], collapse = " + "),
+                          "\nb2 =~ ",paste(colnames(sim.boxes)[11:20], collapse = " + "))
 
-mods <- kfa(variables = sim.boxes,
-            k = NULL) # prompts power analysis to determine number of folds
+tictoc::tic()
+example <- kfa(variables = sim.boxes,
+            k = NULL, # prompts power analysis to determine number of folds
+            custom.cfas = box2)
+tictoc::toc()
 
+
+kfa_report(example, file.name = "example_kfa_report",
+           report.format = "html_document",
+           report.title = "K-fold Factor Analysis - Example")
+
+kfa <- example
+index = c("chisq", "cfi", "rmsea")
+load.flag = .30
+cor.flag = .90
+rel.flag = .60
+digits = 2
+
+## analysis summary info
+k <- length(kfa$cfas) # number of folds
+m <- max(unlist(lapply(kfa$cfas, length))) # number of models per fold (includes both efa AND custom structures); m == length(mnames)
+mnames <- unique(unlist(lapply(kfa$cfas, names))) # model names
+fac.allow <- length(kfa$efa.structures)
+fac.max <- max(as.numeric(substring(mnames[grepl("-factor", mnames)], 1, 1)))  # kfa naming convention "#-factor"; custom functions are assumed to have different convention
+vnames <- dimnames(lavaan::lavInspect(kfa$cfas[[1]][[1]], "sampstat")$cov)[[1]] # variable names
+nvars <- length(vnames)
+nobs <- sum(unlist(lapply(kfa$cfas, function(x) lavaan::lavInspect(x[[1]], "nobs"))))
+opts <- lavaan::lavInspect(kfa$cfas[[1]][[1]], "options") # estimation options; assumed to be the same for all models
+
+#### Model Fit ####
+## summarizing fit statistics by fold
+kfits <- k_model_fit(kfa, index = index, by.fold = TRUE) # dataframe for each fold
+fit.table <- agg_model_fit(kfits, index = index, digits = 2)
+
+## model structures
+kstructures <- model_structure(kfa, which = "cfa")
+
+## loadings
+klambdas <- agg_loadings(kfa, flag = load.flag, digits = digits)
+
+## factor correlations
+kcorrs <- agg_cors(kfa, flag = cor.flag)
+
+## score reliabilities
+krels <- agg_rels(kfa, flag = rel.flag, digits = digits)
+
+## flagged problems
+flagged <- model_flags(kfa, kstructures, klambdas, kcorrs, krels)
+
+
+cfas <- example$cfas
+mnames <- unique(unlist(lapply(cfas, names))) # model names
+flag <- .90
+
+kcorrs <- vector("list", m)
+kflag <- vector("integer", m)
+# Currently assumes the first element is a 1 factor model; need a more robust check
+kcorrs[[1]] <- NULL
+kflag[[1]] <- NA
+for(n in 2:m){
+  cor.lv <- vector("list", k) # latent variable correlation matrix
+  cor.flag <- vector("list", k) # count of correlations above flag threshold
+  for(f in 1:k){
+    if(mnames[[n]] %in% names(cfas[[f]])){
+      cor.lv[[f]] <- lavaan::lavInspect(cfas[[f]][[mnames[[n]]]], "cor.lv")
+      cor.flag[[f]] <- rowSums(cor.lv[[f]] > flag) - 1 # minus diagonal which will always be TRUE
+    }
+  }
+
+  ## count of folds with a correlation over flag threshold
+  fc <- unlist(cor.flag)
+  cflag <- tapply(fc, names(fc), function(x) sum(x > 0)) # for each factor
+  kflag[[n]] <- sum(unlist(lapply(cor.flag, sum)) > 0)      # for the model
+
+  ## mean correlation across folds
+  cor.lv <- cor.lv[lengths(cor.lv) != 0] # removes NULL elements for folds were model was not run
+  aggcorrs <- Reduce(`+`, cor.lv) / length(cor.lv)
+  aggcorrs[upper.tri(aggcorrs, diag = FALSE)] <- NA
+  aggcorrs <- cbind(data.frame(rn = row.names(aggcorrs)),
+                    aggcorrs, data.frame(flag = cflag))
+  kcorrs[[n]] <- aggcorrs
+
+}
+names(kcorrs) <- mnames
+names(kflag) <- mnames
 
 #########################################
 
@@ -229,8 +312,6 @@ names(efa.structures) <- paste0(1:m, "-factor")
 
 
 
-
-
 ## collect most common (mode) structure for each factor model to use in CFAs
 mode.structure <- rep(list(rep(list(""), m)), k) # creates list of lists framework needed for running cfas
 for(n in 1:m){  # replaces "" in the sublists with mode structure when appropriate given the values in x$folds
@@ -258,7 +339,6 @@ mode.structure <- lapply(mode.structure, function(x) {
 })
 
 
-
 if(!is.null(custom.cfas)){
   if(class(custom.cfas) != "list"){ # converting single object to named list
     custom.name <- deparse(substitute(custom.cfas))
@@ -272,67 +352,6 @@ if(!is.null(custom.cfas)){
 } else {
   cfa.syntax <- mode.structure
 }
-
-
-f <- 3
-
-## calculate and extract sample statistics for test sample
-sampstats <- lavaan::lavCor(object = variables[testfolds[[f]], ],
-                            ordered = ordered,
-                            estimator = estimator,
-                            missing = missing,
-                            output = "fit",
-                            cor.smooth = FALSE)
-
-sample.nobs <- lavaan::lavInspect(sampstats, "nobs")
-sample.cov <- lavaan::lavInspect(sampstats, "sampstat")$cov
-sample.mean <- lavaan::lavInspect(sampstats, "sampstat")$mean
-sample.th <- lavaan::lavInspect(sampstats, "sampstat")$th
-attr(sample.th, "th.idx") <- lavaan::lavInspect(sampstats, "th.idx")
-WLS.V <- lavaan::lavInspect(sampstats, "wls.v")
-NACOV <- lavaan::lavInspect(sampstats, "gamma")
-
-syntax <- cfa.syntax[[f]]
-
-## run CFAs
-mods <- vector(mode = "list", length = length(syntax))
-
-for(c in 1:length(syntax)){
-
-  if(nchar(syntax[[c]]) > 0){
-
-    fit <- lavaan::cfa(model = syntax[[c]],
-                       sample.cov = sample.cov,
-                       sample.nobs = sample.nobs,
-                       sample.mean = sample.mean,
-                       sample.th = sample.th,
-                       WLS.V = WLS.V,
-                       NACOV = NACOV,
-                       estimator = estimator,
-                       parameterization = "delta")
-
-    mods[[c]] <- fit
-
-  } else {
-
-    mods[[c]] <- NULL
-  }
-
-}
-
-mods <- mods[lengths(mods) != 0] # dropping NULL elements
-names(mods) <- names(syntax)[which(nchar(syntax) > 0)]
-
-
-
-
-testcfa <- lapply(1:k, function(fold){
-
-   do.call(k_cfa, args = c(list(syntax = cfa.syntax[[fold]],
-                                variables = variables[testfolds[[fold]], ]),
-                           lavaan.args))
-})
-
 
 ## Run CFAs
 cfas <- vector("list", length = k)
@@ -348,51 +367,6 @@ for(fold in 1:k) {
         missing = missing)
 
 }
-
-
-set.seed(936639)
-testefa <- kfa(variables = studentdf,
-                k = NULL,
-                m = 5,
-               efa.only = TRUE,
-                rotation = "oblimin",
-                ordered = TRUE,
-                estimator = "DWLS",
-                missing = "pairwise")
-
-efa.structures <- model_structure(testefa, which = "efa") # present in appendix
-
-# collect most common structure for each factor model to use in CFAs
-cfa.structures <- vector("list", length = 5)
-for(n in 1:m){
-  if(length(all.structures[[n]]) == 1){
-    cfa.structures[[n]] <- all.structures[[n]][[1]]$structure
-  } else {
-    # number of folds each structure was found; keep most common structure
-    num.folds <- unlist(lapply(all.structures[[n]], function(x) length(x$folds)))
-    cfa.structures[[n]] <- all.structures[[n]][[which(num.folds == max(num.folds))]]$structure
-  }
-}
-
-names(cfa.structures) <- as.character(1:m)
-
-
-
-
-k <- length(testefa)
-m <- max(unlist(lapply(testefa, length)))
-
-
-
-traincfa <- mclapply(1:k, function(fold){
-  k_cfa(efa = testefa[[fold]],
-        testset = studentdf[testfolds[[fold]], ],
-        ordered = ordered,
-        estimator = estimator,
-        missing = missing)
-})
-
-
 
 
 

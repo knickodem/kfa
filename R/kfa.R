@@ -31,10 +31,12 @@
 #' examine and the computation time. The \code{\link[parameters]{n_factors}} in the \code{parameters} package
 #' can assist with this decision.
 #'
-#' @return A two-element \code{list}:
+#' @return A four-element \code{list}:
 #' \itemize{
-#' \item \code{lavaan} CFA objects for each *k* fold
-#' \item all factor structures identified in the EFA
+#' \item **cfas** \code{lavaan} CFA objects for each *k* fold
+#' \item **cfa.syntax** syntax used to produce CFA objects
+#' \item **model.names** vector of names for CFA objects
+#' \item **efa.structures** all factor structures identified in the EFA
 #' }
 #'
 #' @export
@@ -183,13 +185,28 @@ kfa <- function(variables,
         #                              variables = variables[testfolds[[fold]], ]),
         #                         lavaan.args))
       }
+
+      ## gathering model names
+      mnames <- names(cfa.syntax[[1]])
+      empty <- vector("list", k)
+      for(f in 1:k){
+        empty[[f]] <- unlist(lapply(cfa.syntax[[f]], function(x) x == ""))
+      }
+
+      drop <- colSums(Reduce("rbind", empty)) == k
+      mnames <- mnames[!drop]
+
+      ## organizing output
       output <- list(cfas = cfas,
                      cfa.syntax = cfa.syntax,
+                     model.names = mnames,
                      efa.structures = efa.structures)
     },
     finally = {
       parallel::stopCluster(clusters)
     })
+
+  class(output) <- "kfa"
 
   return(output)
 }

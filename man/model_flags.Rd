@@ -4,10 +4,10 @@
 \alias{model_flags}
 \title{Flag model problems}
 \usage{
-model_flags(kfa, strux, loads, cors, rels)
+model_flags(models, strux, loads, cors, rels)
 }
 \arguments{
-\item{kfa}{An object returned from \code{\link[kfa]{kfa}}}
+\item{models}{An object returned from \code{\link[kfa]{kfa}}}
 
 \item{strux}{An object returned from \code{\link[kfa]{model_structures}} when \code{which = "cfa"}}
 

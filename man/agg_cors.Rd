@@ -4,10 +4,10 @@
 \alias{agg_cors}
 \title{Aggregated factor correlations}
 \usage{
-agg_cors(kfa, flag = 0.9, type = "factor")
+agg_cors(models, flag = 0.9, type = "factor")
 }
 \arguments{
-\item{kfa}{An object returned from \code{\link[kfa]{kfa}}}
+\item{models}{An object returned from \code{\link[kfa]{kfa}}}
 
 \item{flag}{threshold above which a factor correlation will be flagged}
 

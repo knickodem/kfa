@@ -4,10 +4,10 @@
 \alias{agg_loadings}
 \title{Aggregated factor loadings}
 \usage{
-agg_loadings(kfa, flag = 0.3, digits = 2)
+agg_loadings(models, flag = 0.3, digits = 2)
 }
 \arguments{
-\item{kfa}{An object returned from \code{\link[kfa]{kfa}}}
+\item{models}{An object returned from \code{\link[kfa]{kfa}}}
 
 \item{flag}{threshold below which loading will be flagged}
 

@@ -5,7 +5,7 @@
 \title{Creates summary report from a k-fold factor analysis}
 \usage{
 kfa_report(
-  kfa,
+  models,
   file.name,
   report.title = file.name,
   report.format = "html_document",
@@ -18,8 +18,7 @@ kfa_report(
 )
 }
 \arguments{
-\item{kfa}{An object returned from \code{\link[kfa]{kfa}} or otherwise defined list of
-lists where the inner list consists of \code{lavaan} objects.}
+\item{models}{An object returned from \code{\link[kfa]{kfa}}}
 
 \item{file.name}{Character; file name to create on disk.}
 

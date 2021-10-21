@@ -4,10 +4,10 @@
 \alias{k_model_fit}
 \title{Extract model fit}
 \usage{
-k_model_fit(kfa, index = c("chisq", "cfi", "rmsea"), by.fold = TRUE)
+k_model_fit(models, index = c("chisq", "cfi", "rmsea"), by.fold = TRUE)
 }
 \arguments{
-\item{kfa}{An object returned from \code{\link[kfa]{kfa}}}
+\item{models}{An object returned from \code{\link[kfa]{kfa}}}
 
 \item{index}{One or more fit indices to summarize in the report. The degrees of freedom are always reported. Default are "chisq", "cfi", and "rmsea".}
 

@@ -4,10 +4,10 @@
 \alias{agg_rels}
 \title{Aggregated scale reliabilities}
 \usage{
-agg_rels(kfa, flag = 0.6, digits = 2)
+agg_rels(models, flag = 0.6, digits = 2)
 }
 \arguments{
-\item{kfa}{An object returned from \code{\link[kfa]{kfa}}}
+\item{models}{An object returned from \code{\link[kfa]{kfa}}}
 
 \item{flag}{threshold below which reliability will be flagged}
 
