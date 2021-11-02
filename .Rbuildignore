@@ -2,4 +2,3 @@
 ^\.Rproj\.user$
 reports/*.Rmd
 tests/*.R
-inst/rmd/kfa-report.Rmd
