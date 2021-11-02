@@ -3,7 +3,7 @@
 \name{write_efa}
 \alias{write_efa}
 \alias{efa_cfa_syntax}
-\title{Convert to lavaan compatible factor analysis syntax}
+\title{Create factor analysis syntax}
 \usage{
 write_efa(nf, vnames)
 
@@ -41,6 +41,7 @@ character. Use \code{cat()} to best examine the returned syntax.
 }
 \examples{
 vnames <- paste("x", 1:10)
-write_efa(nf = 2, vnames = vnames)
+syntax <- write_efa(nf = 2, vnames = vnames)
+cat(syntax)
 
 }

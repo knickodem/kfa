@@ -1,4 +1,4 @@
-#' Convert to lavaan compatible factor analysis syntax
+#' Create factor analysis syntax
 #'
 #' \code{write_efa} converts variable names to exploratory factor analysis syntax whereas
 #' \code{efa_efa_syntax} uses the loadings matrix (presumably from an EFA) to generate confirmatory factory analysis syntax.
@@ -10,7 +10,8 @@
 #'
 #' @examples
 #' vnames <- paste("x", 1:10)
-#' write_efa(nf = 2, vnames = vnames)
+#' syntax <- write_efa(nf = 2, vnames = vnames)
+#' cat(syntax)
 #'
 #' @export
 
