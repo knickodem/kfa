@@ -121,9 +121,9 @@ kfa_report <- function(models, file.name, report.title = file.name,
   rmarkdown::render(input = template,
                     output_format = report.format,
                     output_file = file.name,
-                    output_options = list(toc = TRUE, toc_depth = 2,
-                                          always_allow_html = TRUE,
-                                          reference_docx = word.template))
+                    output_options = list(toc = TRUE, toc_depth = 2))
+                                          # always_allow_html = TRUE,
+                                          # reference_docx = word.template))
 }
 
 
