@@ -53,9 +53,12 @@ sim.mod <- "f1 =~ .7*x1 + .8*x2 + .3*x3 + .7*x4 + .6*x5 + .8*x6 + .4*x7
                 f2 ~~ .2*f3
                 f1 ~~ .2*f3
                 x9 ~~ .2*x10"
-sim.data <- lavaan::simulateData(model = sim.lav.mod, model.type = "cfa", std.lv = TRUE, sample.nobs = 900, seed = 1161)
+sim.data <- lavaan::simulateData(model = sim.mod,
+                                 model.type = "cfa", 
+                                 sample.nobs = 900,
+                                 seed = 1161)
 
-# test a custom 2-factor model
+# include a custom 2-factor model
 custom2f <- paste0("f1 =~ ", paste(colnames(sim.data)[1:10], collapse = " + "),
                    "\nf2 =~ ",paste(colnames(sim.data)[11:20], collapse = " + "))
 
@@ -67,7 +70,9 @@ mods <- kfa(variables = sim.data,
 `kfa_report()` then aggregates the CFA model fit, parameter estimates,
 and model-based reliability across folds for each factor structure
 extracted in `kfa()`. The results are then organized and exported via
-`rmarkdown`, such as the \[example report\] run below.
+`rmarkdown`, such as the [example
+report](https://htmlpreview.github.io/?https://github.com/knickodem/kfa/blob/main/README%20Example%20Reports/example_sim_kfa_report.html)
+run below.
 
 ``` r
 # Run report
