@@ -76,7 +76,7 @@ run below.
 
 ``` r
 # Run report
-kfa_report(example, file.name = "example_sim_kfa_report",
+kfa_report(mods, file.name = "example_sim_kfa_report",
            report.format = "html_document",
            report.title = "K-fold Factor Analysis - Example Sim")
 ```
