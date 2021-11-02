@@ -9,6 +9,7 @@ kfa_report(
   file.name,
   report.title = file.name,
   report.format = "html_document",
+  path = NULL,
   word.template = NULL,
   index = c("chisq", "cfi", "rmsea"),
   load.flag = 0.3,
@@ -25,6 +26,8 @@ kfa_report(
 \item{report.title}{Title of the report}
 
 \item{report.format}{File format of the report. Default is HTML ("html_document"). See \code{\link[rmarkdown]{render}} for other options.}
+
+\item{path}{Path of the directory where summary report will be saved. Default is working directory. \code{path} and \code{file.name} are combined to create final file path}
 
 \item{word.template}{File path to word document to use as a formatting template when \code{report.format = "word_document"}.}
 
@@ -43,4 +46,32 @@ a summary report of factor structures and model fit within and between folds
 }
 \description{
 Generates a report summarizing the factor analytic results over k-folds.
+}
+\examples{
+
+library(kfa)
+# simulate data based on a 3-factor model with lavaan
+sim.mod <- "f1 =~ .7*x1 + .8*x2 + .3*x3 + .7*x4 + .6*x5 + .8*x6 + .4*x7
+                f2 =~ .8*x8 + .7*x9 + .6*x10 + .5*x11 + .5*x12 + .7*x13 + .6*x14
+                f3 =~ .6*x15 + .5*x16 + .9*x17 + .4*x18 + .7*x19 + .5*x20
+                f1 ~~ .2*f2
+                f2 ~~ .2*f3
+                f1 ~~ .2*f3
+                x9 ~~ .2*x10"
+sim.data <- lavaan::simulateData(model = sim.mod, model.type = "cfa",
+                                 std.lv = TRUE, sample.nobs = 900, seed = 1161)
+
+# include a custom 2-factor model
+custom2f <- paste0("f1 =~ ", paste(colnames(sim.data)[1:10], collapse = " + "),
+                   "\nf2 =~ ",paste(colnames(sim.data)[11:20], collapse = " + "))
+
+mods <- kfa(variables = sim.data,
+            k = NULL, # prompts power analysis to determine number of folds
+            custom.cfas = custom2f)
+
+# Run report
+kfa_report(example, file.name = "example_sim_kfa_report",
+           report.format = "html_document",
+           report.title = "K-fold Factor Analysis - Example Sim")
+
 }

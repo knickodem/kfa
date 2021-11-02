@@ -27,7 +27,8 @@
 #'                 f2 ~~ .2*f3
 #'                 f1 ~~ .2*f3
 #'                 x9 ~~ .2*x10"
-#' sim.data <- lavaan::simulateData(model = sim.mod, model.type = "cfa", std.lv = TRUE, sample.nobs = 900, seed = 1161)
+#' sim.data <- lavaan::simulateData(model = sim.mod, model.type = "cfa",
+#'                                  std.lv = TRUE, sample.nobs = 900, seed = 1161)
 #'
 #' # include a custom 2-factor model
 #' custom2f <- paste0("f1 =~ ", paste(colnames(sim.data)[1:10], collapse = " + "),

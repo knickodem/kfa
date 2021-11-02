@@ -8,7 +8,7 @@
 #'
 #' @return character. Use \code{cat()} to best examine the returned syntax.
 #'
-#' @example
+#' @examples
 #' vnames <- paste("x", 1:10)
 #' write_efa(nf = 2, vnames = vnames)
 #'
