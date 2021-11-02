@@ -62,7 +62,7 @@ mods <- kfa(variables = sim.data,
 ```
 
 
-`kfa_report()` then aggregates the CFA model fit, parameter estimates, and model-based reliability across folds for each factor structure extracted in `kfa()`. The results are then organized and exported via `rmarkdown`, such as the [example report] run below.
+`kfa_report()` then aggregates the CFA model fit, parameter estimates, and model-based reliability across folds for each factor structure extracted in `kfa()`. The results are then organized and exported via `rmarkdown`, such as the [example report](https://htmlpreview.github.io/?https://github.com/knickodem/kfa/blob/main/README%20Example%20Reports/example_sim_kfa_report.html) run below.
 
 ```{r, eval = FALSE}
 # Run report
