@@ -77,8 +77,8 @@ run below.
 ``` r
 # Run report
 kfa_report(mods, file.name = "example_sim_kfa_report",
-           report.format = "html_document",
-           report.title = "K-fold Factor Analysis - Example Sim")
+           report.title = "K-fold Factor Analysis - Example Sim"
+           report.format = "html_document")
 ```
 
 ## Under Development and Consideration

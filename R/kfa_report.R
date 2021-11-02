@@ -4,8 +4,9 @@
 #'
 #' @param models An object returned from \code{\link[kfa]{kfa}}
 #' @param file.name Character; file name to create on disk.
-#' @param report.format File format of the report. Default is HTML ("html_document"). See \code{\link[rmarkdown]{render}} for other options.
 #' @param report.title Title of the report
+#' @param report.format File format of the report. Default is HTML ("html_document"). See \code{\link[rmarkdown]{render}} for other options.
+#' @param path Path of the directory where summary report will be saved. Default is working directory. \code{path} and \code{file.name} are combined to create final file path
 #' @param word.template File path to word document to use as a formatting template when \code{report.format = "word_document"}.
 #' @param index One or more fit indices to summarize in the report. The degrees of freedom are always reported. Default are "chisq", "cfi", and "rmsea".
 #' @param load.flag Factor loadings of variables below this value will be flagged. Default is .30
@@ -50,7 +51,8 @@
 #' @export
 
 kfa_report <- function(models, file.name, report.title = file.name,
-                       report.format = "html_document", word.template = NULL,
+                       report.format = "html_document",
+                       path = NULL, word.template = NULL,
                        index = c("chisq", "cfi", "rmsea"),
                        load.flag = .30, cor.flag = .90, rel.flag = .60,
                        digits = 2){
@@ -111,15 +113,14 @@ kfa_report <- function(models, file.name, report.title = file.name,
     word.template <- system.file("rmd", "kfa_word_template.docx", package = "kfa")
   }
 
-  # if(is.null(path)){
-  #   path <- getwd()
-  # }
+  if(is.null(path)){
+    path <- getwd()
+  }
+  file.name <- file.path(path, file.name)
   template <- system.file("rmd", "kfa-report.Rmd", package = "kfa")
-  # dir <- getwd()
   rmarkdown::render(input = template,
                     output_format = report.format,
                     output_file = file.name,
-                    output_dir = dir,
                     output_options = list(toc = TRUE, toc_depth = 2,
                                           always_allow_html = TRUE,
                                           reference_docx = word.template))
