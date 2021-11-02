@@ -102,12 +102,13 @@ kfa_report <- function(models, file.name, report.title = file.name,
 
   ## running report
   if(report.format == "word_document"){
-    if(is.null(word.template)){
-      word.template <- "kfa_word_template.docx"
-    }
     width <- 6.5
   } else {
     width <- NULL
+  }
+
+  if(is.null(word.template)){
+    word.template <- system.file("rmd", "kfa_word_template.docx", package = "kfa")
   }
 
   # if(is.null(path)){
