@@ -100,30 +100,28 @@ kfa_report <- function(models, file.name, report.title = file.name,
   ## flagged problems
   flagged <- model_flags(models, kstructures, klambdas, kcorrs, krels)
 
-  return(krels)
+  ## running report
+  if(report.format == "word_document"){
+    if(is.null(word.template)){
+      word.template <- "kfa_word_template.docx"
+    }
+    width <- 6.5
+  } else {
+    width <- NULL
+  }
 
-  # ## running report
-  # if(report.format == "word_document"){
-  #   if(is.null(word.template)){
-  #     word.template <- "kfa_word_template.docx"
-  #   }
-  #   width <- 6.5
-  # } else {
-  #   width <- NULL
+  # if(is.null(path)){
+  #   path <- getwd()
   # }
-  #
-  # # if(is.null(path)){
-  # #   path <- getwd()
-  # # }
-  # template <- system.file("rmd", "kfa-report.Rmd", package = "kfa")
-  # # dir <- getwd()
-  # rmarkdown::render(input = template,
-  #                   output_format = report.format,
-  #                   output_file = file.name,
-  #                   output_dir = dir,
-  #                   output_options = list(toc = TRUE, toc_depth = 2,
-  #                                         always_allow_html = TRUE,
-  #                                         reference_docx = word.template))
+  template <- system.file("rmd", "kfa-report.Rmd", package = "kfa")
+  # dir <- getwd()
+  rmarkdown::render(input = template,
+                    output_format = report.format,
+                    output_file = file.name,
+                    output_dir = dir,
+                    output_options = list(toc = TRUE, toc_depth = 2,
+                                          always_allow_html = TRUE,
+                                          reference_docx = word.template))
 }
 
 
