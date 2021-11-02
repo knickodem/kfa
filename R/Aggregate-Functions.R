@@ -8,6 +8,7 @@
 #'
 #' @return \code{data.frame} of mean factor loadings for each factor model and \code{vector} with count of folds with a flagged loading
 #'
+#' @import lavaan
 #' @export
 
 agg_loadings <- function(models, flag = .30, digits = 2){
@@ -366,90 +367,12 @@ get_appendix <- function(mfits, index = "all"){
 }
 
 
-#' Unique factor structures
-#'
-#' Extract unique factor structures across the k-folds
-#'
-#' @param models An object returned from \code{\link[kfa]{kfa}}
-#' @param which Should the unique structures be extracted from the "cfa" \code{lavaan} or "efa" syntax?
-#'
-#' @return \code{lavaan} syntax specifying the unique structures within each factor model in a \code{data.frame} when \code{which = "cfa"} or, when \code{which = "efa"}, a \code{list} containing the structure and the folds where the structure was identified
-
-model_structure <- function(models, which = "cfa"){
-
-  if(which == "cfa"){
-    syntax <- models$cfa.syntax
-  } else if(which == "efa"){
-    syntax <- models$efas
-  }
-
-  k <- length(syntax)
-
-  if(which == "efa"){
-    m <- max(unlist(lapply(syntax, length)))
-    kstructures <- vector("list", length = m)
-
-    # currently assumes 1-factor structure exists and is the same over folds
-    kstructures[[1]][[1]] <- list(structure = syntax[[1]][[1]], folds = 1:k)
-    for(n in 2:m){
-      structures <- vector("list", length = k)
-      for(f in 1:k){
-        structures[[f]] <- syntax[[f]][[n]]
-      }
-      kstructures[[n]] <- match_structure(structures)
-    }
-  } else if(which == "cfa"){
-
-    structures <- Reduce(rbind,
-                         lapply(1:k,function(x) data.frame(model = names(syntax[[x]]),
-                                                           structure = unlist(syntax[[x]]))))
-    kstructures <- unique(structures[structures$structure != "",])
-    # there is probably a more efficient way to add folds
-    folds <- as.data.frame(table(structures[structures$structure != "",]$structure))
-    names(folds) <- c("structure", "folds")
-
-    kstructures <- merge(kstructures, folds, by = "structure", all.x = TRUE, sort = FALSE)
-    kstructures[,c(2,1,3)]
-    kstructures$model <- factor(kstructures$model, levels = names(syntax[[1]]))
-    kstructures <- kstructures[order(kstructures$model),]
-
-    # row.names(kstructures) <- NULL
-  }
-
-  return(kstructures)
-}
-
-#' Match factor structures
-#'
-#' Internal function in model structures
-#'
-#' @param structures list of \code{lavaan} syntax
-#'
-#' @return For each unique structure, a \code{list} containing \code{lavaan} syntax specifying the factor structure and the folds where the structure was identified
-
-match_structure <- function(structures){
-
-  us <- unique(unlist(structures, use.names = FALSE))
-
-  slist <- vector("list", length = length(us))
-  for(u in seq_along(us)){
-
-    folds <- which(unlist(lapply(structures, function(x) x == us[[u]])))
-
-    slist[[u]] <- list(structure = us[[u]],
-                       folds = which(unlist(lapply(structures, function(x) x == us[[u]]))))
-  }
-
-  return(slist)
-}
-
-
 #' Flag model problems
 #'
 #' Internal function to create table of flag counts
 #'
 #' @param models An object returned from \code{\link[kfa]{kfa}}
-#' @param strux An object returned from \code{\link[kfa]{model_structures}} when \code{which = "cfa"}
+#' @param strux An object returned from \code{\link[kfa]{model_structure}} when \code{which = "cfa"}
 #' @param loads An object returned from \code{\link[kfa]{agg_loadings}}
 #' @param cors An object returned from \code{\link[kfa]{agg_cors}}
 #' @param rels An object returned from \code{\link[kfa]{agg_rels}}

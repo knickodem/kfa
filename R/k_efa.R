@@ -12,6 +12,10 @@
 #' @param ... other arguments passed to \code{lavaan} functions. See \code{\link[lavaan]{lavOptions}}.
 #'
 #' @return A list containing \code{lavaan} compatible CFA syntax.
+#'
+#' @import lavaan
+#' @importFrom GPArotation GPFoblq
+#' @importFrom GPArotation GPForth
 
 k_efa <- function(variables, m, rotation,
                   ordered, estimator, missing, ...){
@@ -68,8 +72,12 @@ k_efa <- function(variables, m, rotation,
                      "infomaxQ", "bifactorQ")){
 
     loadings <- lapply(efa.loadings[-1], function(x){
-      GPArotation::GPFoblq(x, method = rotation)$loadings
+      tryCatch(
+        expr = {GPArotation::GPFoblq(x, method = rotation)$loadings},
+        error = {return(x)}
+      )
     })
+
 
     # orthogonal rotations
   } else if(rotation %in% c("targetT", "pstT", "entropy","quartimax", "varimax",
@@ -78,7 +86,9 @@ k_efa <- function(variables, m, rotation,
                             "mccammon", "bifactorT")){
 
     loadings <- lapply(efa.loadings[-1], function(x){
-      GPArotation::GPForth(x, method = rotation)$loadings
+      tryCatch(expr = {GPArotation::GPForth(x, method = rotation)$loadings},
+               error = {return(x)}
+      )
     })
 
   } else {

@@ -38,27 +38,42 @@ Then for each fold:
 The factor analyses are run using the `lavaan` package with many of the
 `lavaan` estimation and missing data options available for use in
 `kfa()`. `kfa()` returns a list of lists with *k* outer elements for
-each fold and *m* inner elements, each containing a `lavaan` object. To
-expedite running *k* x *m* x 2 (EFA and CFA) models, the function
-utilizes the `parallel` and `foreach` packages for parallel processing.
+each fold and *m* inner elements for each replicable factor model, each
+containing a `lavaan` object. To expedite running *k* x *m* x 2 (EFA and
+CFA) models, the function utilizes the `parallel` and `foreach` packages
+for parallel processing.
 
 ``` r
 library(kfa)
-data("example")
+# simulate data based on a 3-factor model with lavaan
+sim.mod <- "f1 =~ .7*x1 + .8*x2 + .3*x3 + .7*x4 + .6*x5 + .8*x6 + .4*x7
+                f2 =~ .8*x8 + .7*x9 + .6*x10 + .5*x11 + .5*x12 + .7*x13 + .6*x14
+                f3 =~ .6*x15 + .5*x16 + .9*x17 + .4*x18 + .7*x19 + .5*x20
+                f1 ~~ .2*f2
+                f2 ~~ .2*f3
+                f1 ~~ .2*f3
+                x9 ~~ .2*x10"
+sim.data <- lavaan::simulateData(model = sim.lav.mod, model.type = "cfa", std.lv = TRUE, sample.nobs = 900, seed = 1161)
 
-mods <- kfa(variables = example,
-                  k = NULL) # prompts power analysis to determine number of folds
+# test a custom 2-factor model
+custom2f <- paste0("f1 =~ ", paste(colnames(sim.data)[1:10], collapse = " + "),
+                   "\nf2 =~ ",paste(colnames(sim.data)[11:20], collapse = " + "))
+
+mods <- kfa(variables = sim.data,
+            k = NULL, # prompts power analysis to determine number of folds
+            custom.cfas = custom2f)
 ```
 
-`kfa_report()` then aggregates the model fit, parameter estimates, and
-model-based reliability across folds for each factor structure extracted
-in `kfa()`. The results are then organized and exported via `rmarkdown`.
+`kfa_report()` then aggregates the CFA model fit, parameter estimates,
+and model-based reliability across folds for each factor structure
+extracted in `kfa()`. The results are then organized and exported via
+`rmarkdown`, such as the \[example report\] run below.
 
 ``` r
 # Run report
-kfa_report(mods, file.name = "example_kfa_report",
+kfa_report(example, file.name = "example_sim_kfa_report",
            report.format = "html_document",
-           report.title = "K-fold Factor Analysis - Example")
+           report.title = "K-fold Factor Analysis - Example Sim")
 ```
 
 ## Under Development and Consideration

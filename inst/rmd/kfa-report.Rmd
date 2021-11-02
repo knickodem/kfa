@@ -109,7 +109,7 @@ for(n in 1:m){
   for(f in 1:k){
   if(mnames[[n]] %in% names(models$cfas[[f]])) break  
 }
-    do.call(semPlot::semPaths, args = c(list(object = models$cfas[[f]][[n]],
+    do.call(semPlot::semPaths, args = c(list(object = models$cfas[[f]][[mnames[[n]]]],
                                            color = list(lat = palette.colors(n = n + 1, palette = "Okabe-Ito",
                                                         recycle = TRUE)[-1]),
                                            title = FALSE),

@@ -20,6 +20,7 @@
 #'
 #' MacCallum, R. C., Browne, M. W., & Sugawara, H. M. (1996). Power analysis and determination of sample size for covariance structure modeling. *Psychological Methods, 1*(2), 130–149. doi: 10.1037/1082989X.1.2.130
 #'
+#' @importFrom semTools findRMSEAsamplesize
 #' @export
 
 find_k <- function(variables, n, p, m = NULL, max.k = 10, min.n = 200,

@@ -1,4 +1,5 @@
-Reports/
+reports/
+tests/
 
 # History files
 .Rhistory
@@ -21,6 +22,7 @@ Reports/
 
 # RStudio files
 .Rproj.user/
+.Rproj.user*
 
 # produced vignettes
 vignettes/*.html

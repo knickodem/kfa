@@ -19,6 +19,7 @@
 #' polychoric correlations used in the factor analysis? When \code{FALSE} (default)
 #' the Pearson correlation matrix is used. A character vector of item names is
 #' also accepted to prompt estimation of the polychoric correlation matrix.
+#' @param estimator passed to \code{lavaan} functions. See \code{\link[lavaan]{lavCor}}.
 #' @param missing passed to \code{lavaan} functions
 #' @param ... other arguments to pass on to \code{lavaan}
 

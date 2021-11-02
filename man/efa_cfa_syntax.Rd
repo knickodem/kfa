@@ -18,22 +18,23 @@ write_efa(nf, vnames)
 \item{loadings}{matrix of factor loadings}
 
 \item{simple}{logical; Should the simple structure be returned (default)?
-If \code{FALSE}, items can cross load on multiple factors.}
+If \code{FALSE}, items can cross-load on multiple factors.}
 
 \item{threshold}{numeric between 0 and 1 indicating the minimum (absolute) value
 of the loading for an item on a factor.}
 
 \item{single.item}{character indicating how single-item factors should be treated.
 Use \code{"keep"} to keep them in the model when generating the CFA syntax, \code{"drop"}
-to remove them, or \code{"none"} indicating the CFA syntax should not be generated for this model.}
+to remove them, or \code{"none"} indicating the CFA syntax should not be generated for
+this model and \code{""} will be returned.}
 
 \item{nf}{integer; number of factors}
 
 \item{vnames}{character vector; names of variables to include in the efa}
 }
 \value{
-character. Use \code{cat} to best examine the returned syntax.
+character. Use \code{cat()} to best examine the returned syntax.
 }
 \description{
-Uses the matrix of loadings from an EFA to generate \code{lavaan} compatible CFA syntax.
+Uses the loadings matrix (presumably from an EFA) to generate \code{lavaan} compatible CFA syntax.
 }

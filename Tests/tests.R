@@ -107,14 +107,15 @@ kfa_report(kstudent,
 # -----  README Test --------
 library(fungible)
 data("AmzBoxes")
+data("Box20")
 
-BoxList <- GenerateBoxData (XYZ = AmzBoxes[,2:4],
+BoxList <- GenerateBoxData (XYZ = Box20,
                             BoxStudy = 20,
-                            Reliability = .75,
-                            ModApproxErrVar = .10,
+                            Reliability = .90,
+                            ModApproxErrVar = .01,
                             SampleSize = 900,
-                            NMinorFac = 50,
-                            epsTKL = .20,
+                            NMinorFac = 10,
+                            epsTKL = .01,
                             Seed = 1161,
                             SeedErrorFactors = 1611,
                             SeedMinorFactors = 6111,
@@ -128,15 +129,40 @@ box2 <- paste0("b1 =~ ", paste(colnames(sim.boxes)[1:10], collapse = " + "),
                           "\nb2 =~ ",paste(colnames(sim.boxes)[11:20], collapse = " + "))
 
 tictoc::tic()
-example <- kfa(variables = sim.boxes,
+example.box <- kfa(variables = sim.boxes[,c(1:3, 13:15, 18:20)],
             k = NULL, # prompts power analysis to determine number of folds
             custom.cfas = box2)
 tictoc::toc()
 
 
-kfa_report(example, file.name = "example_kfa_report",
+kfa_report(example.box, file.name = "example_boxes_kfa_report",
            report.format = "html_document",
-           report.title = "K-fold Factor Analysis - Example")
+           report.title = "K-fold Factor Analysis - Example Boxes")
+
+sim.lav.mod <- "f1 =~ .7*x1 + .8*x2 + .3*x3 + .7*x4 + .6*x5 + .8*x6 + .4*x7
+                f2 =~ .8*x8 + .7*x9 + .6*x10 + .5*x11 + .5*x12 + .7*x13 + .6*x14
+                f3 =~ .6*x15 + .5*x16 + .9*x17 + .4*x18 + .7*x19 + .5*x20
+                f1 ~~ .2*f2
+                f2 ~~ .2*f3
+                f1 ~~ .2*f3
+                x9 ~~ .2*x10"
+
+sim.lav <- lavaan::simulateData(model = sim.lav.mod, model.type = "cfa", std.lv = TRUE, sample.nobs = 900, seed = 1161)
+custom2f <- paste0("f1 =~ ", paste(colnames(sim.lav)[1:10], collapse = " + "),
+               "\nf2 =~ ",paste(colnames(sim.lav)[11:20], collapse = " + "))
+
+tictoc::tic()
+example <- kfa(variables = sim.lav,
+               k = NULL, # prompts power analysis to determine number of folds
+               custom.cfas = custom2f)
+tictoc::toc()
+
+kfa_report(example, file.name = "example_sim_kfa_report",
+           report.format = "html_document",
+           report.title = "K-fold Factor Analysis - Example Sim")
+
+
+
 
 kfa <- example
 index = c("chisq", "cfi", "rmsea")
@@ -275,7 +301,7 @@ semTools::findRMSEAsamplesize(rmsea0 = .05, rmseaA = .08, df = df, power = .80, 
 
 
 
-variables <- as.data.frame(sim.boxes)
+variables <- as.data.frame(sim.lav)
 k <- 4
 m <- 5
 rotation = "oblimin"
@@ -293,7 +319,7 @@ testfolds <- caret::createFolds(y = 1:nrow(variables),
                                 returnTrain = FALSE)
 
 testefa <- lapply(1:k, function(fold){
-  do.call(k_efa, args = c(list(variables = variables[!c(row.names(variables) %in% testfolds[[fold]]), ],
+  do.call(kfa::k_efa, args = c(list(variables = variables[!c(row.names(variables) %in% testfolds[[fold]]), ],
                                m = m),
                           lavaan.args))
   # k_efa(variables = variables[!c(row.names(variables) %in% testfolds[[fold]]), ],
@@ -423,46 +449,6 @@ do.call(semPlot::semPaths, args = c(list(object = kstudent[[1]][[3]]), plot.sett
 # cowplot::as_grob nor qgraph::as.ggraph currently do the conversion
 qgraph::as.ggraph(curiousplot)
 
-
-
-
-
-
-tictoc::tic()
-set.seed(231220)
-kteacher <- kfa(variables = teacherdf,
-                k = 5,
-                m = 10,
-                rotation = "oblimin",
-                ordered = TRUE,
-                estimator = "DWLS",
-                missing = "pairwise")
-tictoc::toc() # ~
-
-# Run report
-kfa_report(kteachers, file.name = "kfa_teachers",
-           report.format = "html_document",
-           report.title = "K-fold Factor Analysis - Lebenon Teachers")
-
-# tictoc::tic()
-# kprincipal <- kfa(variables = principaldf,
-#                      k = NULL,
-#                      m = 5,
-#                      rotation = "oblimin",
-#                      ordered = TRUE,
-#                      estimator = "DWLS",
-#                      missing = "pairwise")
-# tictoc::toc() #
-
-tictoc::tic()
-kcoach <- kfa(variables = coachdf,
-              k = NULL,
-              m = 10,
-              rotation = "oblimin",
-              ordered = TRUE,
-              estimator = "DWLS",
-              missing = "pairwise")
-tictoc::toc() #
 
 ##############################################
 

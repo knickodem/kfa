@@ -26,6 +26,8 @@ kfa_report(
 
 \item{report.format}{File format of the report. Default is HTML ("html_document"). See \code{\link[rmarkdown]{render}} for other options.}
 
+\item{word.template}{File path to word document to use as a formatting template when \code{report.format = "word_document"}.}
+
 \item{index}{One or more fit indices to summarize in the report. The degrees of freedom are always reported. Default are "chisq", "cfi", and "rmsea".}
 
 \item{load.flag}{Factor loadings of variables below this value will be flagged. Default is .30}

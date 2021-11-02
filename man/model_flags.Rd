@@ -9,7 +9,7 @@ model_flags(models, strux, loads, cors, rels)
 \arguments{
 \item{models}{An object returned from \code{\link[kfa]{kfa}}}
 
-\item{strux}{An object returned from \code{\link[kfa]{model_structures}} when \code{which = "cfa"}}
+\item{strux}{An object returned from \code{\link[kfa]{model_structure}} when \code{which = "cfa"}}
 
 \item{loads}{An object returned from \code{\link[kfa]{agg_loadings}}}
 
