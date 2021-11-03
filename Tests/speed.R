@@ -161,3 +161,133 @@
 #
 #
 # tictoc::tic.clearlog()
+# # ---- Using correlation matrix in lavaan -----------------
+# tictoc::tic()
+# kefa <- k_efa(variables = items,
+#               m = 5,
+#               rotation = "oblimin",
+#               ordered = names(items),
+#               estimator = "DWLS",
+#               missing = "pairwise")
+# tictoc::toc() # ~10 sec
+#
+# test <- as.data.frame(lapply(items, as.ordered))
+#
+# microbenchmark::microbenchmark(
+#   ## polychoric correlation matrix
+#   prelim = lavaan::lavCor(object = items,
+#                           ordered = names(items),
+#                           estimator = "DWLS",  # must specify estimator, otherwise defaults to none
+#                           missing = "pairwise",
+#                           output = "fit",
+#                           cor.smooth = FALSE), # could include a cluster =  argument
+#   poly = polycor::hetcor(data = as.data.frame(lapply(items,as.ordered)),
+#                          use = "pairwise.complete.obs",
+#                          std.err = FALSE),
+#   times = 20)
+#
+# prelim <- lavaan::lavCor(object = items,
+#                          ordered = names(items),
+#                          estimator = "DWLS",  # must specify estimator, otherwise defaults to none
+#                          missing = "pairwise",
+#                          meanstructure = TRUE,
+#                          output = "fit",
+#                          cor.smooth = FALSE)
+#
+#
+# start <- lavaan::lavInspect(prelim, "start") #
+# itrtns <- lavaan::lavInspect(prelim, "iterations")
+#
+# nobs <- lavaan::lavInspect(prelim, "nobs")
+# wlsv <- lavaan::lavInspect(prelim, "wls.v")
+# nacov <- lavaan::lavInspect(prelim, "gamma")
+# cormat <- lavaan::lavInspect(prelim, "sampstat")$cov # same as lavaan::lavInspect(prelim, "cor.ov")
+# means <- lavaan::lavInspect(prelim, "sampstat")$mean
+# th <- lavaan::lavInspect(prelim, "sampstat")$th # same values as lavaan::lavInspect(prelim, "est")$tau
+# attr(th, "th.idx") <- lavaan::lavInspect(prelim, "th.idx")
+#
+#
+# efa.mod <- write_efa(3, names(items))
+#
+# modtest <- lavaan::cfa(model = efa.mod,
+#                        sample.cov = cormat,
+#                        sample.nobs = nobs,
+#                        sample.mean = means,
+#                        sample.th = th,
+#                        WLS.V = wlsv,
+#                        NACOV = nacov,
+#                        std.lv = TRUE,
+#                        orthogonal = TRUE,
+#                        estimator = "DWLS",
+#                        parameterization = "delta",
+#                        se = "none")
+#
+#
+# lavaan::summary(modtest, standardized = TRUE)
+# modtestload <- lavaan::lavInspect(modtest, "est")$lambda
+#
+#
+# fatest <- psych::fa(cormat, 3, n.obs = nobs, rotate = "none")
+#
+#
+# ## fit efa with sample statistics
+# matonly <- lavaan::cfa(model = st.mod,
+#                        sample.cov = cormat,
+#                        sample.nobs = nobs,
+#                        sample.mean = means,
+#                        sample.th = th,
+#                        WLS.V = wlsv,
+#                        NACOV = nacov,
+#                        estimator = "DWLS",
+#                        parameterization = "delta",
+#                        se = "none")
+#
+# ## fit with full dataset
+# dat <- lavaan::cfa(model = st.mod,
+#                    data = items,
+#                    estimator = "DWLS",
+#                    missing = "pairwise",
+#                    ordered = names(items),
+#                    parameterization = "delta",
+#                    se = "none")
+#
+# ## Do the matrix/sample stats and data method produce the same results
+# all.equal(lavaan::parameterestimates(matonly, se = FALSE, zstat = FALSE, pvalue = FALSE, ci = FALSE),
+#           lavaan::parameterestimates(dat, se = FALSE, zstat = FALSE, pvalue = FALSE, ci = FALSE))
+#
+# # check <- dplyr::full_join(lavaan::parameterestimates(matonly, se = FALSE, zstat = FALSE, pvalue = FALSE, ci = FALSE),
+# #           lavaan::parameterestimates(dat, se = FALSE, zstat = FALSE, pvalue = FALSE, ci = FALSE),
+# #           by = c("lhs", "op", "rhs", "label"), suffix = c(".mat", ".dat"))
+#
+#
+#
+# #### Comparing time difference when cor matrix is provided or not ####
+# # expr       min       lq     mean   median       uq      max neval
+# # mat  7.232165 17.84711 17.84960 18.65208 19.65406 29.44586    20
+# # dat 13.979109 32.33991 32.04155 34.46950 36.70216 51.01137    20
+#
+# inputtype <- microbenchmark::microbenchmark(
+#   mat = lavaan::cfa(model = st.mod,
+#                     sample.cov = cormat,
+#                     sample.nobs = nobs,
+#                     sample.mean = means,
+#                     sample.th = th,
+#                     WLS.V = wlsv,
+#                     NACOV = nacov,
+#                     estimator = "DWLS",
+#                     parameterization = "delta",
+#                     se = "none",
+#                     test = "none"),
+#   dat = lavaan::cfa(model = st.mod,
+#                     data = items,
+#                     estimator = "DWLS",
+#                     missing = "pairwise",
+#                     ordered = names(items),
+#                     parameterization = "delta",
+#                     se = "none",
+#                     test = "none"),
+#   times = 20
+#
+# )
+#
+# ######################################

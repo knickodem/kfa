@@ -95,37 +95,40 @@ agg_cors <- function(models, flag = .90, type = "factor"){
   # Currently assumes the first element is a 1 factor model; need a more robust check
   kcorrs[[1]] <- NULL
   kflag[[1]] <- NA
-  for(n in 2:m){
-    cor.lv <- vector("list", k) # latent variable correlation matrix
-    cor.flag <- vector("list", k) # count of correlations above flag threshold
-    for(f in 1:k){
-      if(mnames[[n]] %in% names(cfas[[f]])){
-        cor.lv[[f]] <- lavaan::lavInspect(cfas[[f]][[mnames[[n]]]], "cor.lv")
-        cor.flag[[f]] <- rowSums(cor.lv[[f]] > flag) - 1 # minus diagonal which will always be TRUE
+  if(m > 1){
+    for(n in 2:m){
+      cor.lv <- vector("list", k) # latent variable correlation matrix
+      cor.flag <- vector("list", k) # count of correlations above flag threshold
+      for(f in 1:k){
+        if(mnames[[n]] %in% names(cfas[[f]])){
+          cor.lv[[f]] <- lavaan::lavInspect(cfas[[f]][[mnames[[n]]]], "cor.lv")
+          cor.flag[[f]] <- rowSums(cor.lv[[f]] > flag) - 1 # minus diagonal which will always be TRUE
+        }
       }
+
+      ## count of folds with a correlation over flag threshold
+      fc <- unlist(cor.flag)
+      cflag <- tapply(fc, names(fc), function(x) sum(x > 0)) # for each factor
+      kflag[[n]] <- sum(unlist(lapply(cor.flag, sum)) > 0)      # for the model
+
+      ## mean correlation across folds
+      cor.lv <- cor.lv[lengths(cor.lv) != 0] # removes NULL elements for folds were model was not run
+      aggcorrs <- Reduce(`+`, lapply(cor.lv, r2z)) / length(cor.lv) # pool results after Fisher's r to z
+      aggcorrs <- z2r(aggcorrs)
+      diag(aggcorrs) <- 1       # change diagonals from NaN to 1
+      aggcorrs[upper.tri(aggcorrs, diag = FALSE)] <- NA
+      aggcorrs <- cbind(data.frame(rn = row.names(aggcorrs)),
+                        aggcorrs, data.frame(flag = cflag))
+      kcorrs[[n]] <- aggcorrs
+
     }
-
-    ## count of folds with a correlation over flag threshold
-    fc <- unlist(cor.flag)
-    cflag <- tapply(fc, names(fc), function(x) sum(x > 0)) # for each factor
-    kflag[[n]] <- sum(unlist(lapply(cor.flag, sum)) > 0)      # for the model
-
-    ## mean correlation across folds
-    cor.lv <- cor.lv[lengths(cor.lv) != 0] # removes NULL elements for folds were model was not run
-    aggcorrs <- Reduce(`+`, lapply(cor.lv, r2z)) / length(cor.lv) # pool results after Fisher's r to z
-    aggcorrs <- z2r(aggcorrs)
-    diag(aggcorrs) <- 1       # change diagonals from NaN to 1
-    aggcorrs[upper.tri(aggcorrs, diag = FALSE)] <- NA
-    aggcorrs <- cbind(data.frame(rn = row.names(aggcorrs)),
-                      aggcorrs, data.frame(flag = cflag))
-    kcorrs[[n]] <- aggcorrs
-
+    names(kcorrs) <- mnames
+    names(kflag) <- mnames
   }
-  names(kcorrs) <- mnames
-  names(kflag) <- mnames
 
- return(list(correlations = kcorrs,
-             flag = kflag))
+
+  return(list(correlations = kcorrs,
+              flag = kflag))
 }
 
 #' Fisher's r to z transformation
@@ -250,8 +253,13 @@ k_model_fit <- function(models, index = c("chisq", "cfi", "rmsea"), by.fold = TR
   ## organize output by folds
     kfits <- vector("list", length = k)
     for(f in 1:k){
+      if(length(fits[[f]]) == 1){
+        fbind <- as.data.frame(matrix(data = fits[[f]][[1]], nrow = 1, dimnames = list(NULL, index)))
+      } else{
+        fbind <- as.data.frame(Reduce(rbind, fits[[f]]))
+      }
       fits.df <- cbind(data.frame(model = model.names[[f]]),
-                       as.data.frame(Reduce(rbind, fits[[f]])))
+                       fbind)
       row.names(fits.df) <- NULL
       kfits[[f]] <- fits.df
     }
@@ -356,8 +364,10 @@ get_appendix <- function(mfits, index = "all"){
 
   appendix <- mapply(appendix_prep, fits = mfits, suffix = names(mfits), MoreArgs = list(index = index), SIMPLIFY = FALSE)
   appendix.df <- appendix[[1]]
-  for(i in 2:length(mfits)){
-    appendix.df <- merge(appendix.df, appendix[[i]], by = "fold", all.x = TRUE)
+  if(length(mfits) > 1){
+    for(i in 2:length(mfits)){
+      appendix.df <- merge(appendix.df, appendix[[i]], by = "fold", all.x = TRUE)
+    }
   }
   appendix.df$fold <- factor(appendix.df$fold, levels = c(1:k, "Mean"))
   appendix.df <- appendix.df[order(appendix.df$fold),]
