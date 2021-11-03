@@ -35,7 +35,7 @@ write_efa <- function(nf, vnames){
 #' @param threshold numeric between 0 and 1 indicating the minimum (absolute) value
 #' of the loading for an item on a factor.
 #' @param single.item character indicating how single-item factors should be treated.
-#' Use \code{"keep"} to keep them in the model when generating the CFA syntax, \code{"drop"}
+#' Use \code{"keep"} (default) to keep them in the model when generating the CFA syntax, \code{"drop"}
 #' to remove them, or \code{"none"} indicating the CFA syntax should not be generated for
 #' this model and \code{""} will be returned.
 #'

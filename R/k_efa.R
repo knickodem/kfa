@@ -72,11 +72,12 @@ k_efa <- function(variables, m, rotation,
                      "infomaxQ", "bifactorQ")){
 
     loadings <- lapply(efa.loadings[-1], function(x){
-      tryCatch(
-        expr = {GPArotation::GPFoblq(x, method = rotation)$loadings},
-        error = {return(x)}
-      )
-    })
+        GPArotation::GPFoblq(x, method = rotation)$loadings})
+
+    # loadings <- lapply(efa.loadings[-1], function(x){
+    #   tryCatch(expr = {GPArotation::GPForth(x, method = rotation)$loadings},
+    #            error = {return(x)})
+    # })
 
 
     # orthogonal rotations

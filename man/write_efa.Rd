@@ -28,7 +28,7 @@ If \code{FALSE}, items can cross-load on multiple factors.}
 of the loading for an item on a factor.}
 
 \item{single.item}{character indicating how single-item factors should be treated.
-Use \code{"keep"} to keep them in the model when generating the CFA syntax, \code{"drop"}
+Use \code{"keep"} (default) to keep them in the model when generating the CFA syntax, \code{"drop"}
 to remove them, or \code{"none"} indicating the CFA syntax should not be generated for
 this model and \code{""} will be returned.}
 }
