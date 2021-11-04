@@ -117,21 +117,6 @@ efa_cfa_syntax <- function(loadings, simple = TRUE, threshold = NA,
 }
 
 
-#' @rdname efa_cfa_syntax
-#' @param nf integer; number of factors
-#' @param vnames character vector; names of variables to include in the efa
-#' @export
-
-write_efa <- function(nf, vnames){
-
-  syntax <- character(0)
-  for (f in seq_along(vnames)) {
-    syntax <- c(syntax, paste0("f", f, " =~ ", paste(vnames[f:length(vnames)], collapse = " + "), "\n"))
-    if (f == nf) break
-  }
-  syntax
-}
-
 #' Unique factor structures
 #'
 #' Extract unique factor structures across the k-folds
@@ -139,7 +124,9 @@ write_efa <- function(nf, vnames){
 #' @param models An object returned from \code{\link[kfa]{kfa}}
 #' @param which Should the unique structures be extracted from the "cfa" \code{lavaan} or "efa" syntax?
 #'
-#' @return \code{lavaan} syntax specifying the unique structures within each factor model in a \code{data.frame} when \code{which = "cfa"} or, when \code{which = "efa"}, a \code{list} containing the structure and the folds where the structure was identified
+#' @return \code{lavaan} syntax specifying the unique structures within each factor model
+#' in a \code{data.frame} when \code{which = "cfa"} or, when \code{which = "efa"}, a \code{list}
+#' containing the structure and the folds where the structure was identified
 
 model_structure <- function(models, which = "cfa"){
 

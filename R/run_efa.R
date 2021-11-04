@@ -24,6 +24,14 @@
 #' \code{ordered = TRUE}, the default is "DWLS". See \code{\link[lavaan]{lavaan}} for other options.
 #' @param missing default is "listwise". See \code{\link[lavaan]{lavaan}} for other options.
 #' @param ... other arguments passed to \code{lavaan} functions. See \code{\link[lavaan]{lavOptions}}.
+#'
+#' @return A three-element \code{list}:
+#' \itemize{
+#' \item **efas** \code{lavaan} object for each *m* model
+#' \item **loadings** (rotated) factor loading matrix for each *m* model
+#' \item **cfa.syntax** CFA syntax generated from loadings
+#' }
+#'
 #' @export
 
 run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblimin",
@@ -72,7 +80,7 @@ run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblim
   ## Running EFAs, comparing models, converting structure to CFA syntax
   # results objects
   efa.loadings <- vector(mode = "list", length = m)
-  mod.compare <- data.frame()
+  # mod.compare <- data.frame()
 
   for(nf in 1:m){
 
@@ -105,11 +113,13 @@ run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblim
                      "bentlerQ", "geominQ", "cfQ",
                      "infomaxQ", "bifactorQ")){
 
-    loadings <- lapply(efa.loadings, function(x){
-      if(ncol(x) > 1){
-        GPArotation::GPFoblq(x, method = rotation)$loadings
-      } else {x}
-    })
+    f <- function(x){
+      try <- tryCatch(expr = GPArotation::GPFoblq(x, method = rotation)$loadings,
+                      error = function(e) return(NA))
+      out <- if(is.na(try)){x} else {try}
+      return(out)
+    }
+    loadings <- lapply(efa.loadings[-1], f)
 
     # orthogonal rotations
   } else if(rotation %in% c("targetT", "pstT", "entropy","quartimax", "varimax",
@@ -117,11 +127,13 @@ run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblim
                             "geominT", "cfT", "infomaxT",
                             "mccammon", "bifactorT")){
 
-    loadings <- lapply(efa.loadings, function(x){
-      if(ncol(x) > 1){
-        GPArotation::GPForth(x, method = rotation)$loadings
-      } else {x}
-    })
+    f <- function(x){
+      try <- tryCatch(expr = GPArotation::GPForth(x, method = rotation)$loadings,
+                      error = function(e) return(NA))
+      out <- if(is.na(try)){x} else {try}
+      return(out)
+    }
+    loadings <- lapply(efa.loadings[-1], f)
 
   } else {
     loadings <- efa.loadings
@@ -136,9 +148,11 @@ run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblim
                    single.item = single.item)
   })
 
-  efaout <- list(syntax = cfa.syntax,
+  efaout <- list(efas = unrotated,
+                 loadings = loadings,       # list of rotated loadings as GPArotation object
+                 cfa.syntax = cfa.syntax)
                  # mod.compare = mod.compare, # data.frame of model comparisons results
-                 loadings = loadings)       # list of rotated loadings as GPArotation object
+
 
   return(efaout)
 

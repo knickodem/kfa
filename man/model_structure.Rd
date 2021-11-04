@@ -12,7 +12,9 @@ model_structure(models, which = "cfa")
 \item{which}{Should the unique structures be extracted from the "cfa" \code{lavaan} or "efa" syntax?}
 }
 \value{
-\code{lavaan} syntax specifying the unique structures within each factor model in a \code{data.frame} when \code{which = "cfa"} or, when \code{which = "efa"}, a \code{list} containing the structure and the folds where the structure was identified
+\code{lavaan} syntax specifying the unique structures within each factor model
+in a \code{data.frame} when \code{which = "cfa"} or, when \code{which = "efa"}, a \code{list}
+containing the structure and the folds where the structure was identified
 }
 \description{
 Extract unique factor structures across the k-folds

@@ -49,6 +49,14 @@ also accepted to prompt estimation of the polychoric correlation matrix.}
 
 \item{...}{other arguments passed to \code{lavaan} functions. See \code{\link[lavaan]{lavOptions}}.}
 }
+\value{
+A three-element \code{list}:
+\itemize{
+\item **efas** \code{lavaan} object for each *m* model
+\item **loadings** (rotated) factor loading matrix for each *m* model
+\item **cfa.syntax** CFA syntax generated from loadings
+}
+}
 \description{
 This function is intended for use on independent samples rather than integrated
 with k-fold cross-validation.

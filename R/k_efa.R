@@ -71,13 +71,13 @@ k_efa <- function(variables, m, rotation,
                      "bentlerQ", "geominQ", "cfQ",
                      "infomaxQ", "bifactorQ")){
 
-    loadings <- lapply(efa.loadings[-1], function(x){
-        GPArotation::GPFoblq(x, method = rotation)$loadings})
-
-    # loadings <- lapply(efa.loadings[-1], function(x){
-    #   tryCatch(expr = {GPArotation::GPForth(x, method = rotation)$loadings},
-    #            error = {return(x)})
-    # })
+    f <- function(x){
+      try <- tryCatch(expr = GPArotation::GPFoblq(x, method = rotation)$loadings,
+                      error = function(e) return(NA))
+      out <- if(is.na(try)){x} else {try}
+      return(out)
+    }
+    loadings <- lapply(efa.loadings[-1], f)
 
 
     # orthogonal rotations
@@ -86,11 +86,13 @@ k_efa <- function(variables, m, rotation,
                             "geominT", "cfT", "infomaxT",
                             "mccammon", "bifactorT")){
 
-    loadings <- lapply(efa.loadings[-1], function(x){
-      tryCatch(expr = {GPArotation::GPForth(x, method = rotation)$loadings},
-               error = {return(x)}
-      )
-    })
+    f <- function(x){
+      try <- tryCatch(expr = GPArotation::GPForth(x, method = rotation)$loadings,
+                      error = function(e) return(NA))
+      out <- if(is.na(try)){x} else {try}
+      return(out)
+    }
+    loadings <- lapply(efa.loadings[-1], f)
 
   } else {
     loadings <- efa.loadings[-1]

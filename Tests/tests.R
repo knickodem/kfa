@@ -8,20 +8,17 @@
 shortfile <- c("C:/Users/kylenick/University of North Carolina at Chapel Hill/Halpin, Peter Francis - UNC_stat_projets/EFA&CFA/")
 
 # -------   Full test on Peru data    --------------------
-library(dplyr)
 library(kfa)
 peru.orig <- read.delim(paste0(shortfile, "scaledim/combined_p1p3_cr_emo-nightly.tsv"))
-
-peru <- peru.orig %>%
-  filter(rowMeans(is.na(select(., starts_with("aemo")))) < 1) %>% # non-response across all items
-  select(cid_1, starts_with("aemo"))
+peru <- peru.orig[, grep("aemo", names(peru.orig))]
+peru <- peru[apply(is.na(peru), 1, mean) < 1, ]
 
 lapply(names(peru[-1]), function(x) table(peru[[x]]))
 
 tictoc::tic()
 
-peru.mods <- kfa(variables = peru[-1],
-                k = 5,
+peru.mods <- kfa(variables = peru,
+                k = 4,
                 m = 3,
                 seed = 165,
                 # custom.cfas = list(`Custom 2f` = custom2, Break = custom3),
@@ -38,6 +35,8 @@ kfa_report(peru.mods,
            report.title = "Caregiver Emotional Awareness and Expression",
            path = shortfile)
 tictoc::toc()
+
+find_k(peru[-1], m = 3)
 
 ########################################################################
 
@@ -192,7 +191,7 @@ testfolds <- caret::createFolds(y = 1:nrow(variables),
 # }
 # lapply(check, "[[", "syntax")
 
-breakpoint2 <- vector("list", length = k)
+breakpoint <- vector("list", length = k)
 for (fold in 1:k){
 ## calculate and extract sample statistics
 sampstats <- lavaan::lavCor(object = variables[!c(row.names(variables) %in% testfolds[[fold]]), ],
