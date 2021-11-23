@@ -1,5 +1,9 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
-reports/*.Rmd
+^README.Rmd
+cran-comments.md
+.Rhistory
+.gitignore
 tests/*.R
+reports/
 README Example Reports/

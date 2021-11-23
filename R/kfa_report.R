@@ -5,8 +5,8 @@
 #' @param models An object returned from \code{\link[kfa]{kfa}}
 #' @param file.name Character; file name to create on disk.
 #' @param report.title Title of the report
-#' @param report.format File format of the report. Default is HTML ("html_document"). See \code{\link[rmarkdown]{render}} for other options.
 #' @param path Path of the directory where summary report will be saved. Default is working directory. \code{path} and \code{file.name} are combined to create final file path
+#' @param report.format File format of the report. Default is HTML ("html_document"). See \code{\link[rmarkdown]{render}} for other options.
 #' @param word.template File path to word document to use as a formatting template when \code{report.format = "word_document"}.
 #' @param index One or more fit indices to summarize in the report. The degrees of freedom are always reported. Default are "chisq", "cfi", and "rmsea".
 #' @param load.flag Factor loadings of variables below this value will be flagged. Default is .30
@@ -18,8 +18,7 @@
 #'
 #' @examples
 #'
-#' library(kfa)
-#' # simulate data based on a 3-factor model with lavaan
+#' # simulate data based on a 3-factor model with standardized loadings
 #' sim.mod <- "f1 =~ .7*x1 + .8*x2 + .3*x3 + .7*x4 + .6*x5 + .8*x6 + .4*x7
 #'                 f2 =~ .8*x8 + .7*x9 + .6*x10 + .5*x11 + .5*x12 + .7*x13 + .6*x14
 #'                 f3 =~ .6*x15 + .5*x16 + .9*x17 + .4*x18 + .7*x19 + .5*x20
@@ -27,13 +26,16 @@
 #'                 f2 ~~ .2*f3
 #'                 f1 ~~ .2*f3
 #'                 x9 ~~ .2*x10"
-#' sim.data <- lavaan::simulateData(model = sim.mod, model.type = "cfa",
-#'                                  std.lv = TRUE, sample.nobs = 900, seed = 1161)
+#' set.seed(1161)
+#' sim.data <- simstandard::sim_standardized(sim.mod, n = 900,
+#'                                           latent = FALSE,
+#'                                           errors = FALSE)[c(2:9,1,10:20)]
 #'
 #' # include a custom 2-factor model
 #' custom2f <- paste0("f1 =~ ", paste(colnames(sim.data)[1:10], collapse = " + "),
 #'                    "\nf2 =~ ",paste(colnames(sim.data)[11:20], collapse = " + "))
-#'
+#' # Run analysis
+#' \dontrun{
 #' mods <- kfa(variables = sim.data,
 #'             k = NULL, # prompts power analysis to determine number of folds
 #'             custom.cfas = custom2f)
@@ -42,18 +44,25 @@
 #' kfa_report(example, file.name = "example_sim_kfa_report",
 #'            report.format = "html_document",
 #'            report.title = "K-fold Factor Analysis - Example Sim")
+#'            }
 #'
 #' @import lavaan
 #' @import rmarkdown
+#' @import flextable
 #' @importFrom knitr opts_chunk
 #' @importFrom knitr knit
 #' @importFrom knitr knit_print
+#' @importFrom officer fp_border
+#' @importFrom semPlot semPaths
+#' @importFrom simstandard sim_standardized
 #'
 #' @export
 
-kfa_report <- function(models, file.name, report.title = file.name,
+kfa_report <- function(models,
+                       file.name, report.title = file.name,
+                       path = NULL,
                        report.format = "html_document",
-                       path = NULL, word.template = NULL,
+                       word.template = NULL,
                        index = c("chisq", "cfi", "rmsea"),
                        load.flag = .30, cor.flag = .90, rel.flag = .60,
                        digits = 2){

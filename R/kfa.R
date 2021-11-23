@@ -10,7 +10,7 @@
 #' @param m integer; maximum number of factors to extract. Default is 4 items per factor.
 #' @param seed integer passed to \code{set.seed} when randomly selecting cases for each fold.
 #' @param custom.cfas a single object or named \code{list} of \code{lavaan} syntax specifying custom factor model(s).
-#' @param power.args named \code{list} of arguments to pass to \code{\link[semTools]{findRMSEAsamplesize}} when conducting power analysis in \code{\link[kfa]{find_k}}.
+#' @param power.args named \code{list} of arguments to pass to \code{\link[kfa]{find_k}} and \code{\link[semTools]{findRMSEAsamplesize}} when conducting power analysis to determine \code{k}.
 #' @param rotation character (case-sensitive); any rotation method listed in
 #' \code{\link[GPArotation]{rotations}} in the \code{GPArotation} package. Default is "oblimin".
 #' @param ordered logical; Should items be treated as ordinal and the
@@ -41,8 +41,7 @@
 #'
 #' @examples
 #'
-#' library(kfa)
-#' # simulate data based on a 3-factor model with lavaan
+#' # simulate data based on a 3-factor model with standardized loadings
 #' sim.mod <- "f1 =~ .7*x1 + .8*x2 + .3*x3 + .7*x4 + .6*x5 + .8*x6 + .4*x7
 #'                 f2 =~ .8*x8 + .7*x9 + .6*x10 + .5*x11 + .5*x12 + .7*x13 + .6*x14
 #'                 f3 =~ .6*x15 + .5*x16 + .9*x17 + .4*x18 + .7*x19 + .5*x20
@@ -50,16 +49,20 @@
 #'                 f2 ~~ .2*f3
 #'                 f1 ~~ .2*f3
 #'                 x9 ~~ .2*x10"
-#' sim.data <- lavaan::simulateData(model = sim.mod, model.type = "cfa",
-#'                                  std.lv = TRUE, sample.nobs = 900, seed = 1161)
+#' set.seed(1161)
+#' sim.data <- simstandard::sim_standardized(sim.mod, n = 900,
+#'                                           latent = FALSE,
+#'                                           errors = FALSE)[c(2:9,1,10:20)]
 #'
-#' # test a custom 2-factor model
+#' # include a custom 2-factor model
 #' custom2f <- paste0("f1 =~ ", paste(colnames(sim.data)[1:10], collapse = " + "),
 #'                    "\nf2 =~ ",paste(colnames(sim.data)[11:20], collapse = " + "))
-#'
+#' # Run analysis
+#' \dontrun{
 #' mods <- kfa(variables = sim.data,
 #'             k = NULL, # prompts power analysis to determine number of folds
 #'             custom.cfas = custom2f)
+#'             }
 #'
 #' @import foreach
 #' @importFrom caret createFolds
@@ -67,6 +70,7 @@
 #' @importFrom parallel detectCores
 #' @importFrom parallel makeCluster
 #' @importFrom parallel stopCluster
+#' @importFrom simstandard sim_standardized
 #' @export
 
 kfa <- function(variables,
@@ -108,6 +112,10 @@ kfa <- function(variables,
     k <- do.call(find_k, c(list(variables = variables, m = m), power.args))[[1]]
   }
 
+  if(k < 2 | k > 10){
+    stop('k must be > 1 and < 11')
+  }
+
   set.seed(seed)
 
   ## create folds
@@ -137,6 +145,8 @@ kfa <- function(variables,
       print(paste("Using", foreach::getDoParWorkers(), "cores for parallelization."))
 
       ## run EFAs and return lavaan syntax for CFAs
+      # utils::globalVariables(c("fold"), package = "kfa") # needed to satisfy CRAN check
+      fold <- NULL # try this for CRAN check instead
       efa <- foreach::foreach(fold = 1:k) %dopar% { # use %do% if we offer a parallel = FALSE option
 
         k_efa(variables = variables[!c(row.names(variables) %in% testfolds[[fold]]), ],

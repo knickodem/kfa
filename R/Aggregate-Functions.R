@@ -33,15 +33,16 @@ agg_loadings <- function(models, flag = .30, digits = 2){
     for(f in 1:k){
       if(n %in% names(cfas[[f]])){
       ## gather standardized loadings
-      lambdas[[f]] <- subset(lavaan::standardizedSolution(cfas[[f]][[n]], "std.lv", se = FALSE),
-                      op == "=~")
+       l.temp <- lavaan::standardizedSolution(cfas[[f]][[n]], "std.lv", se = FALSE)
+       lambdas[[f]] <- l.temp[l.temp$op == "=~",]
 
       # flag for model summary table
       load.flag[[f]] <- sum(lambdas[[f]]$est.std < flag)
 
       ## gather residual variances
-      thetas[[f]] <- subset(lavaan::parameterestimates(cfas[[f]][[n]], se = FALSE),
-                       op == "~~" & lhs %in% vnames & lhs == rhs)
+      t.temp <- lavaan::parameterestimates(cfas[[f]][[n]], se = FALSE)
+      thetas[[f]] <- t.temp[t.temp$op == "~~" & t.temp$lhs %in% vnames & t.temp$lhs == t.temp$rhs,]
+
 
       # flag for model summary table
       hey.flag[[f]] <- sum(thetas[[f]]$est < 0)

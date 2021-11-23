@@ -56,6 +56,23 @@ A three-element \code{list}:
 \item **loadings** (rotated) factor loading matrix for each *m* model
 \item **cfa.syntax** CFA syntax generated from loadings
 }
+
+#' @examples
+
+# simulate data based on a 3-factor model with standardized loadings
+sim.mod <- "f1 =~ .7*x1 + .8*x2 + .3*x3 + .7*x4 + .6*x5 + .8*x6 + .4*x7
+                f2 =~ .8*x8 + .7*x9 + .6*x10 + .5*x11 + .5*x12 + .7*x13 + .6*x14
+                f3 =~ .6*x15 + .5*x16 + .9*x17 + .4*x18 + .7*x19 + .5*x20
+                f1 ~~ .2*f2
+                f2 ~~ .2*f3
+                f1 ~~ .2*f3
+                x9 ~~ .2*x10"
+set.seed(1161)
+sim.data <- simstandard::sim_standardized(sim.mod, n = 900,
+                                          latent = FALSE,
+                                          errors = FALSE)[c(2:9,1,10:20)]
+# Run 1-, 2-, and 3-factor models
+efas <- run_efa(sim.data, m = 3)
 }
 \description{
 This function is intended for use on independent samples rather than integrated

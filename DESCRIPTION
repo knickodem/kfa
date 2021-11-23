@@ -2,12 +2,12 @@ Package: kfa
 Type: Package
 Title: K-Fold Cross Validation For Factor Analysis
 Version: 0.1.0
-Author: Kyle Nickodem and Peter Halpin
+Author: Kyle Nickodem [aut, cre] and Peter Halpin [aut]
 Maintainer: Kyle Nickodem <kyle.nickodem@gmail.com>
 Description: The package provides functions to explore possible factor structures for a set of variables and
 	helps identify plausible and replicable structures via k-fold cross validation.
 Depends:
-    R (>= 4.0)
+    R (>= 3.6)
 Imports:
   caret,
   doParallel,
@@ -18,11 +18,13 @@ Imports:
   lavaan (>= 0.6.9),
   officer,
   parallel,
-  Rcpp (>= 1.0.7),
   rmarkdown,
   semPlot,
-  semTools (>= 0.5.5)
-License: GPL (>= 3)
+  semTools (>= 0.5.5),
+  simstandard
+License: GPL (>= 3) + file LICENSE
 Encoding: UTF-8
 LazyData: true
+URL: <https://github.com/knickodem/kfa>
+BugReports: https://github.com/knickodem/kfa/issues
 RoxygenNote: 7.1.2
