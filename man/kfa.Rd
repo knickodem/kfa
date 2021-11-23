@@ -67,7 +67,7 @@ include all \code{variables} in \code{lavaan} compatible syntax. Thus, to test a
 a variable, have the variable load on to a factor while constraining the loading to 0.
 
 Deciding an appropriate *m* can be difficult, but is consequential for both the possible factor structures to
-examine and the computation time. The \code{\link[parameters]{n_factors}} in the \code{parameters} package
+examine and the computation time. The \code{n_factors} in the \code{parameters} package
 can assist with this decision.
 }
 \examples{
