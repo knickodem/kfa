@@ -7,3 +7,5 @@ cran-comments.md
 tests/*.R
 reports/
 README Example Reports/
+^CRAN-RELEASE$
+^LICENSE

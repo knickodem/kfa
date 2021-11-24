@@ -1,5 +1,7 @@
 reports/
 tests/
+^CRAN-RELEASE$
+^cran-comments.md$
 
 # History files
 .Rhistory
