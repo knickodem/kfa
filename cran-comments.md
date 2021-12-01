@@ -2,13 +2,14 @@
 
 This is a resubmission. In this version I have:
 
-* In Title field, changed 'For' to 'for' in accordance with title case
-* Changed Description field to start with Provides rather than 'The package'
-* Removed '+ file LICENSE' from License field and the file itself from the build
+* Edited the description field of DESCRIPTION file to include references with doi
+* Added data to package in order to add more examples in Rd-files for exported functions
+* Some examples take >5 seconds to run so changed dontrun{} to donttest{}
+* kfa_report example still uses dontrun{} because it produces html_document
 
 ## R CMD check results
 
-There were no ERRORs, WARNINGs, or NOTEs. 
+0 errors | 0 warnings  | 0 notes 
 
 ## Downstream dependencies
 

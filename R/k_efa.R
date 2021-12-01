@@ -74,7 +74,7 @@ k_efa <- function(variables, m, rotation,
     f <- function(x){
       try <- tryCatch(expr = GPArotation::GPFoblq(x, method = rotation)$loadings,
                       error = function(e) return(NA))
-      out <- if(is.na(try)){x} else {try}
+      out <- if(is.logical(try)) x else try
       return(out)
     }
     loadings <- lapply(efa.loadings[-1], f)
@@ -89,7 +89,7 @@ k_efa <- function(variables, m, rotation,
     f <- function(x){
       try <- tryCatch(expr = GPArotation::GPForth(x, method = rotation)$loadings,
                       error = function(e) return(NA))
-      out <- if(is.na(try)){x} else {try}
+      out <- if(is.logical(try)) x else try
       return(out)
     }
     loadings <- lapply(efa.loadings[-1], f)

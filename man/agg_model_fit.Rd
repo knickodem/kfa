@@ -19,3 +19,9 @@ agg_model_fit(kfits, index = c("chisq", "cfi", "rmsea"), digits = 2)
 \description{
 Summary table of model fit aggregated over k-folds
 }
+\examples{
+data(example.kfa)
+fits <- k_model_fit(example.kfa, by.fold = TRUE)
+agg_model_fit(fits)
+
+}

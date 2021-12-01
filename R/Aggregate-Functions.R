@@ -8,12 +8,21 @@
 #'
 #' @return \code{data.frame} of mean factor loadings for each factor model and \code{vector} with count of folds with a flagged loading
 #'
+#' @examples
+#' data(example.kfa)
+#' agg_loadings(example.kfa)
+#'
 #' @import lavaan
 #' @export
 
 agg_loadings <- function(models, flag = .30, digits = 2){
 
-  cfas <- models$cfas
+  if(class(models) == "kfa"){
+    cfas <- models$cfas
+  } else {
+    stop("models must be of class 'kfa'.")
+  }
+
   vnames <- dimnames(lavaan::lavInspect(cfas[[1]][[1]], "sampstat")$cov)[[1]] # variable names
   mnames <- models$model.names # model names
   m <- length(mnames) #max(unlist(lapply(cfas, length))) # maximum number of models per fold
@@ -81,11 +90,19 @@ agg_loadings <- function(models, flag = .30, digits = 2){
 #'
 #' @return a \code{data.frame} of mean factor correlations for each factor model and \code{vector} with count of folds with a flagged correlation
 #'
+#' #' @examples
+#' data(example.kfa)
+#' agg_cors(example.kfa)
+#'
 #' @export
 
 agg_cors <- function(models, flag = .90, type = "factor"){
 
-  cfas <- models$cfas
+  if(class(models) == "kfa"){
+    cfas <- models$cfas
+  } else {
+    stop("models must be of class 'kfa'.")
+  }
   mnames <- models$model.names # model names
   m <- length(mnames)
   k <- length(cfas)
@@ -162,11 +179,19 @@ z2r <- function(z){
 #'
 #' @return a \code{data.frame} of mean factor (scale) reliabilities for each factor model and \code{vector} with count of folds with a flagged reliability
 #'
+#' @examples
+#' data(example.kfa)
+#' agg_rels(example.kfa)
+#'
 #' @export
 
 agg_rels <- function(models, flag = .60, digits = 2){
 
-  cfas <- models$cfas
+  if(class(models) == "kfa"){
+    cfas <- models$cfas
+  } else {
+    stop("models must be of class 'kfa'.")
+  }
   mnames <- models$model.names # model names
   m <- length(mnames) #max(unlist(lapply(cfas, length))) # maximum number of models per fold
   k <- length(cfas) # number of folds
@@ -229,11 +254,24 @@ agg_rels <- function(models, flag = .60, digits = 2){
 #'
 #' @return \code{list} of data.frames with average model fit for each factor model
 #'
+#' @examples
+#' data(example.kfa)
+#'
+#' # customize fit indices to report
+#' k_model_fit(example.kfa, index = c("chisq", "cfi", "rmsea", "srmr"))
+#'
+#' # organize results by factor model rather than by fold
+#' k_model_fit(example.kfa, by.fold = FALSE)
+#'
 #' @export
 
 k_model_fit <- function(models, index = c("chisq", "cfi", "rmsea"), by.fold = TRUE){
 
-  cfas <- models$cfas
+  if(class(models) == "kfa"){
+    cfas <- models$cfas
+  } else {
+    stop("models must be of class 'kfa'.")
+  }
   k <- length(cfas) # number of folds
   m <- max(unlist(lapply(cfas, length))) # number of models per fold
   index <- if(sum(grepl("df", index)) == 0) c("df", index) else index
@@ -295,6 +333,11 @@ k_model_fit <- function(models, index = c("chisq", "cfi", "rmsea"), by.fold = TR
 #' @param digits integer; number of decimal places to display in the report.
 #'
 #' @return \code{data.frame} of aggregated model fit statistics
+#'
+#' @examples
+#' data(example.kfa)
+#' fits <- k_model_fit(example.kfa, by.fold = TRUE)
+#' agg_model_fit(fits)
 #'
 #' @export
 

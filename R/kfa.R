@@ -9,6 +9,7 @@
 #' @param k an integer between 2 and 10; number of folds in which to split the data. Default is \code{NULL} which determines k via \code{\link[kfa]{find_k}}.
 #' @param m integer; maximum number of factors to extract. Default is 4 items per factor.
 #' @param seed integer passed to \code{set.seed} when randomly selecting cases for each fold.
+#' @param cores integer; number of CPU cores to use for parallel processing. Default is \code{\link[parallel]{detectCores}} - 1.
 #' @param custom.cfas a single object or named \code{list} of \code{lavaan} syntax specifying custom factor model(s).
 #' @param power.args named \code{list} of arguments to pass to \code{\link[kfa]{find_k}} and \code{\link[semTools]{findRMSEAsamplesize}} when conducting power analysis to determine \code{k}.
 #' @param rotation character (case-sensitive); any rotation method listed in
@@ -31,7 +32,7 @@
 #' examine and the computation time. The \code{n_factors} in the \code{parameters} package
 #' can assist with this decision.
 #'
-#' @return A four-element \code{list}:
+#' @return An object of class \code{"kfa"}, which is a four-element \code{list}:
 #' \itemize{
 #' \item **cfas** \code{lavaan} CFA objects for each *k* fold
 #' \item **cfa.syntax** syntax used to produce CFA objects
@@ -57,16 +58,18 @@
 #' # include a custom 2-factor model
 #' custom2f <- paste0("f1 =~ ", paste(colnames(sim.data)[1:10], collapse = " + "),
 #'                    "\nf2 =~ ",paste(colnames(sim.data)[11:20], collapse = " + "))
-#' # Run analysis
-#' \dontrun{
+#'
+#' \donttest{
 #' mods <- kfa(variables = sim.data,
 #'             k = NULL, # prompts power analysis to determine number of folds
+#'             cores = 2,
 #'             custom.cfas = custom2f)
 #'             }
 #'
 #' @import foreach
 #' @importFrom caret createFolds
 #' @importFrom doParallel registerDoParallel
+#' @importFrom doParallel stopImplicitCluster
 #' @importFrom parallel detectCores
 #' @importFrom parallel makeCluster
 #' @importFrom parallel stopCluster
@@ -76,7 +79,7 @@
 kfa <- function(variables,
                 k = NULL,
                 m = floor(ncol(variables) / 4),
-                seed = 101,
+                seed = 101, cores = NULL,
                 custom.cfas = NULL,
                 power.args = list(rmsea0 = .05, rmseaA = .08),
                 rotation = "oblimin", ordered = FALSE,
@@ -138,7 +141,7 @@ kfa <- function(variables,
   tryCatch(  # used to stop the parallelization regardless of whether kfa runs successfully or breaks
     expr = {
 
-      cores <- parallel::detectCores() - 1
+      cores <- if(is.null(cores)|!is.numeric(cores)) parallel::detectCores() - 1 else cores
       clusters <- parallel::makeCluster(cores, type = cluster.type)
       doParallel::registerDoParallel(clusters)
 

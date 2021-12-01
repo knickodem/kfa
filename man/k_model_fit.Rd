@@ -19,3 +19,13 @@ k_model_fit(models, index = c("chisq", "cfi", "rmsea"), by.fold = TRUE)
 \description{
 Model fit indices extracted from k-folds
 }
+\examples{
+data(example.kfa)
+
+# customize fit indices to report
+k_model_fit(example.kfa, index = c("chisq", "cfi", "rmsea", "srmr"))
+
+# organize results by factor model rather than by fold
+k_model_fit(example.kfa, by.fold = FALSE)
+
+}

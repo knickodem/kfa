@@ -15,6 +15,10 @@ agg_cors(models, flag = 0.9, type = "factor")
 }
 \value{
 a \code{data.frame} of mean factor correlations for each factor model and \code{vector} with count of folds with a flagged correlation
+
+#' @examples
+data(example.kfa)
+agg_cors(example.kfa)
 }
 \description{
 The factor correlations aggregated over k-folds

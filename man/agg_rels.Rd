@@ -19,3 +19,8 @@ a \code{data.frame} of mean factor (scale) reliabilities for each factor model a
 \description{
 The factor reliabilities aggregated over k-folds
 }
+\examples{
+data(example.kfa)
+agg_rels(example.kfa)
+
+}

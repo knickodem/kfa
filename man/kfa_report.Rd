@@ -65,14 +65,16 @@ sim.data <- simstandard::sim_standardized(sim.mod, n = 900,
 # include a custom 2-factor model
 custom2f <- paste0("f1 =~ ", paste(colnames(sim.data)[1:10], collapse = " + "),
                    "\nf2 =~ ",paste(colnames(sim.data)[11:20], collapse = " + "))
-# Run analysis
-\dontrun{
+
+\donttest{
 mods <- kfa(variables = sim.data,
             k = NULL, # prompts power analysis to determine number of folds
+            cores = 2,
             custom.cfas = custom2f)
+            }
 
-# Run report
-kfa_report(example, file.name = "example_sim_kfa_report",
+\dontrun{
+kfa_report(mods, file.name = "example_sim_kfa_report",
            report.format = "html_document",
            report.title = "K-fold Factor Analysis - Example Sim")
            }

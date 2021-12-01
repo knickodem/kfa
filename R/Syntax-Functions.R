@@ -9,6 +9,7 @@
 #' @return character. Use \code{cat()} to best examine the returned syntax.
 #'
 #' @examples
+#' # write efa syntax
 #' vnames <- paste("x", 1:10)
 #' syntax <- write_efa(nf = 2, vnames = vnames)
 #' cat(syntax)
@@ -33,11 +34,17 @@ write_efa <- function(nf, vnames){
 #' @param simple logical; Should the simple structure be returned (default)?
 #' If \code{FALSE}, items can cross-load on multiple factors.
 #' @param threshold numeric between 0 and 1 indicating the minimum (absolute) value
-#' of the loading for an item on a factor.
+#' of the loading for an item on a factor. Must be specified when \code{simple = FALSE}
 #' @param single.item character indicating how single-item factors should be treated.
 #' Use \code{"keep"} (default) to keep them in the model when generating the CFA syntax, \code{"drop"}
 #' to remove them, or \code{"none"} indicating the CFA syntax should not be generated for
 #' this model and \code{""} will be returned.
+#'
+#' @examples
+#' # write cfa syntax
+#' loadings <- matrix(c(rep(.2, 3), rep(.6, 3), rep(.8, 3), rep(.3, 3)), ncol = 2)
+#' efa_cfa_syntax(loadings) # simple structure
+#' efa_cfa_syntax(loadings, simple = FALSE, threshold = .25) # allow cross-loadings
 #'
 #' @export
 

@@ -25,7 +25,7 @@ efa_cfa_syntax(
 If \code{FALSE}, items can cross-load on multiple factors.}
 
 \item{threshold}{numeric between 0 and 1 indicating the minimum (absolute) value
-of the loading for an item on a factor.}
+of the loading for an item on a factor. Must be specified when \code{simple = FALSE}}
 
 \item{single.item}{character indicating how single-item factors should be treated.
 Use \code{"keep"} (default) to keep them in the model when generating the CFA syntax, \code{"drop"}
@@ -40,8 +40,14 @@ character. Use \code{cat()} to best examine the returned syntax.
 \code{efa_efa_syntax} uses the loadings matrix (presumably from an EFA) to generate confirmatory factory analysis syntax.
 }
 \examples{
+# write efa syntax
 vnames <- paste("x", 1:10)
 syntax <- write_efa(nf = 2, vnames = vnames)
 cat(syntax)
+
+# write cfa syntax
+loadings <- matrix(c(rep(.2, 3), rep(.6, 3), rep(.8, 3), rep(.3, 3)), ncol = 2)
+efa_cfa_syntax(loadings) # simple structure
+efa_cfa_syntax(loadings, simple = FALSE, threshold = .25) # allow cross-loadings
 
 }

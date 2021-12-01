@@ -9,6 +9,7 @@ kfa(
   k = NULL,
   m = floor(ncol(variables)/4),
   seed = 101,
+  cores = NULL,
   custom.cfas = NULL,
   power.args = list(rmsea0 = 0.05, rmseaA = 0.08),
   rotation = "oblimin",
@@ -26,6 +27,8 @@ kfa(
 \item{m}{integer; maximum number of factors to extract. Default is 4 items per factor.}
 
 \item{seed}{integer passed to \code{set.seed} when randomly selecting cases for each fold.}
+
+\item{cores}{integer; number of CPU cores to use for parallel processing. Default is \code{\link[parallel]{detectCores}} - 1.}
 
 \item{custom.cfas}{a single object or named \code{list} of \code{lavaan} syntax specifying custom factor model(s).}
 
@@ -47,7 +50,7 @@ also accepted to prompt estimation of the polychoric correlation matrix.}
 \item{...}{other arguments passed to \code{lavaan} functions. See \code{\link[lavaan]{lavOptions}}.}
 }
 \value{
-A four-element \code{list}:
+An object of class \code{"kfa"}, which is a four-element \code{list}:
 \itemize{
 \item **cfas** \code{lavaan} CFA objects for each *k* fold
 \item **cfa.syntax** syntax used to produce CFA objects
@@ -88,10 +91,11 @@ sim.data <- simstandard::sim_standardized(sim.mod, n = 900,
 # include a custom 2-factor model
 custom2f <- paste0("f1 =~ ", paste(colnames(sim.data)[1:10], collapse = " + "),
                    "\nf2 =~ ",paste(colnames(sim.data)[11:20], collapse = " + "))
-# Run analysis
-\dontrun{
+
+\donttest{
 mods <- kfa(variables = sim.data,
             k = NULL, # prompts power analysis to determine number of folds
+            cores = 2,
             custom.cfas = custom2f)
             }
 

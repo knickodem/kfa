@@ -19,3 +19,8 @@ agg_loadings(models, flag = 0.3, digits = 2)
 \description{
 The factor loadings aggregated over k-folds
 }
+\examples{
+data(example.kfa)
+agg_loadings(example.kfa)
+
+}
