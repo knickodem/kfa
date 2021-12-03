@@ -15,8 +15,13 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Installation
 
 ```{r, eval = FALSE}
+# From CRAN
+install.packages("kfa")
+
+# Development version
 install.packages("remotes")
 remotes::install_github("knickodem/kfa")
+
 library(kfa)
 ```
 

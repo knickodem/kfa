@@ -18,4 +18,6 @@
 #' @examples
 #' data(example.kfa)
 #' agg_cors(example.kfa)
+#'
+#' @md
 "example.kfa"

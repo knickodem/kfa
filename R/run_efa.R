@@ -32,7 +32,7 @@
 #' \item **cfa.syntax** CFA syntax generated from loadings
 #' }
 #'
-#' #' @examples
+#' @examples
 #'
 #' # simulate data based on a 3-factor model with standardized loadings
 #' sim.mod <- "f1 =~ .7*x1 + .8*x2 + .3*x3 + .7*x4 + .6*x5 + .8*x6 + .4*x7
@@ -50,6 +50,7 @@
 #' efas <- run_efa(sim.data, m = 3)
 #'
 #' @export
+#' @md
 
 run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblimin",
                     simple = TRUE, threshold = NA, single.item = c("keep","drop", ""),
@@ -133,7 +134,7 @@ run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblim
     f <- function(x){
       try <- tryCatch(expr = GPArotation::GPFoblq(x, method = rotation)$loadings,
                       error = function(e) return(NA))
-      out <- if(is.na(try)){x} else {try}
+      out <- if(is.logical(try)) x else try
       return(out)
     }
     loadings <- lapply(efa.loadings[-1], f)
@@ -147,7 +148,7 @@ run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblim
     f <- function(x){
       try <- tryCatch(expr = GPArotation::GPForth(x, method = rotation)$loadings,
                       error = function(e) return(NA))
-      out <- if(is.na(try)){x} else {try}
+      out <- if(is.logical(try)) x else try
       return(out)
     }
     loadings <- lapply(efa.loadings[-1], f)

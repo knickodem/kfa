@@ -16,6 +16,8 @@
 #' @import lavaan
 #' @importFrom GPArotation GPFoblq
 #' @importFrom GPArotation GPForth
+#'
+#' @noRd
 
 k_efa <- function(variables, m, rotation,
                   ordered, estimator, missing, ...){
@@ -118,14 +120,16 @@ k_efa <- function(variables, m, rotation,
 
 #' standardized factor loadings
 #'
-#' Internal function for extracting standardized factor loadings from lavaan object
+#' Extract standardized factor loading matrix from lavaan object
 #'
 #' @param object a \code{lavaan} object
 #' @param type standardize on the latent variables (\code{"std.lv"}),
 #' latent and observed variables (\code{"std.all"}, default), or latent and observed variables
-#' but not exogenous variables (\code{"std.nox"}).See \code{\link[lavaan]{standardizedSolution}}.
+#' but not exogenous variables (\code{"std.nox"}). See \code{\link[lavaan]{standardizedSolution}}.
 #'
 #' @return A \code{matrix} of factor loadings
+#'
+#' @noRd
 
 get_std_loadings <- function(object, type = "std.all"){
 

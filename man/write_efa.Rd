@@ -2,52 +2,24 @@
 % Please edit documentation in R/Syntax-Functions.R
 \name{write_efa}
 \alias{write_efa}
-\alias{efa_cfa_syntax}
-\title{Create factor analysis syntax}
+\title{Write exploratory factor analysis syntax}
 \usage{
 write_efa(nf, vnames)
-
-efa_cfa_syntax(
-  loadings,
-  simple = TRUE,
-  threshold = NA,
-  single.item = c("keep", "drop", "none")
-)
 }
 \arguments{
 \item{nf}{integer; number of factors}
 
 \item{vnames}{character vector; names of variables to include in the efa}
-
-\item{loadings}{matrix of factor loadings}
-
-\item{simple}{logical; Should the simple structure be returned (default)?
-If \code{FALSE}, items can cross-load on multiple factors.}
-
-\item{threshold}{numeric between 0 and 1 indicating the minimum (absolute) value
-of the loading for an item on a factor. Must be specified when \code{simple = FALSE}}
-
-\item{single.item}{character indicating how single-item factors should be treated.
-Use \code{"keep"} (default) to keep them in the model when generating the CFA syntax, \code{"drop"}
-to remove them, or \code{"none"} indicating the CFA syntax should not be generated for
-this model and \code{""} will be returned.}
 }
 \value{
 character. Use \code{cat()} to best examine the returned syntax.
 }
 \description{
-\code{write_efa} converts variable names to exploratory factor analysis syntax whereas
-\code{efa_efa_syntax} uses the loadings matrix (presumably from an EFA) to generate confirmatory factory analysis syntax.
+Converts variable names to exploratory factor analysis syntax
 }
 \examples{
-# write efa syntax
 vnames <- paste("x", 1:10)
 syntax <- write_efa(nf = 2, vnames = vnames)
 cat(syntax)
-
-# write cfa syntax
-loadings <- matrix(c(rep(.2, 3), rep(.6, 3), rep(.8, 3), rep(.3, 3)), ncol = 2)
-efa_cfa_syntax(loadings) # simple structure
-efa_cfa_syntax(loadings, simple = FALSE, threshold = .25) # allow cross-loadings
 
 }

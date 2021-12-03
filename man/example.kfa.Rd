@@ -7,10 +7,10 @@
 \format{
 An object of class \code{"kfa"}, which is a four-element \code{list}:
 \itemize{
-\item **cfas** \code{lavaan} CFA objects for each *k* fold
-\item **cfa.syntax** syntax used to produce CFA objects
-\item **model.names** vector of names for CFA objects
-\item **efa.structures** all factor structures identified in the EFA
+\item \strong{cfas} \code{lavaan} CFA objects for each \emph{k} fold
+\item \strong{cfa.syntax} syntax used to produce CFA objects
+\item \strong{model.names} vector of names for CFA objects
+\item \strong{efa.structures} all factor structures identified in the EFA
 }
 }
 \usage{
@@ -25,5 +25,6 @@ kfa(sim.data, k = 2, m = 3) which tested 1-, 2-, and 3-factor structures over 2 
 \examples{
 data(example.kfa)
 agg_cors(example.kfa)
+
 }
 \keyword{datasets}

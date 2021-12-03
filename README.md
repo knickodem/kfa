@@ -10,8 +10,13 @@ across samples.
 ## Installation
 
 ``` r
+# From CRAN
+install.packages("kfa")
+
+# Development version
 install.packages("remotes")
 remotes::install_github("knickodem/kfa")
+
 library(kfa)
 ```
 

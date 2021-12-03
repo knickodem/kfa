@@ -4,18 +4,19 @@
 \alias{model_structure}
 \title{Unique factor structures}
 \usage{
-model_structure(models, which = "cfa")
+model_structure(models)
 }
 \arguments{
 \item{models}{An object returned from \code{\link[kfa]{kfa}}}
-
-\item{which}{Should the unique structures be extracted from the "cfa" \code{lavaan} or "efa" syntax?}
 }
 \value{
-\code{lavaan} syntax specifying the unique structures within each factor model
-in a \code{data.frame} when \code{which = "cfa"} or, when \code{which = "efa"}, a \code{list}
-containing the structure and the folds where the structure was identified
+\code{data.frame} with the number of folds the unique factor structure was tested for each factor model.
 }
 \description{
 Extract unique factor structures across the k-folds
+}
+\examples{
+data(example.kfa)
+model_structure(example.kfa)
+
 }

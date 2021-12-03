@@ -28,6 +28,7 @@
 #'
 #' @importFrom semTools findRMSEAsamplesize
 #' @export
+#' @md
 
 find_k <- function(variables, n, p, m = NULL, max.k = 10, min.n = 200,
                   rmsea0 = .05, rmseaA = .08, ...){

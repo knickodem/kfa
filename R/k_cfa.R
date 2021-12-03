@@ -12,6 +12,8 @@
 #' @return A list of \code{lavaan} objects
 #'
 #' @import lavaan
+#'
+#' @noRd
 
 k_cfa <- function(syntax, variables, ordered, estimator, missing, ...){
 

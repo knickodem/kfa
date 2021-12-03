@@ -74,7 +74,9 @@
 #' @importFrom parallel makeCluster
 #' @importFrom parallel stopCluster
 #' @importFrom simstandard sim_standardized
+#'
 #' @export
+#' @md
 
 kfa <- function(variables,
                 k = NULL,
@@ -167,10 +169,7 @@ kfa <- function(variables,
       }
 
       ## identifying unique structures
-      # formatting for use in model_structure
-      temp <- list(cfas = NULL,
-                   efas = efa)
-      efa.structures <- model_structure(temp, which = "efa")
+      efa.structures <- model_structure_efa(efa)
       names(efa.structures) <- paste0(1:m, "-factor")
 
       ## collect most common (mode) structure for each factor model to use in CFAs

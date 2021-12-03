@@ -100,7 +100,7 @@ kfa_report <- function(models,
 
   #### Parameters ####
   ## model structures
-  kstructures <- model_structure(models, which = "cfa")
+  kstructures <- model_structure(models)
 
   ## loadings
   klambdas <- agg_loadings(models, flag = load.flag, digits = digits)
@@ -151,6 +151,8 @@ kfa_report <- function(models,
 #' @return a \code{flextable} object
 #'
 #' @import flextable
+#'
+#' @noRd
 
 flextab_format <- function(df, bold.type = "none", width = NULL, digits = 2){
 
@@ -189,6 +191,8 @@ flextab_format <- function(df, bold.type = "none", width = NULL, digits = 2){
 #' @return a \code{flextable} object
 #'
 #' @import flextable
+#'
+#' @noRd
 
 two_level_flex <- function(flex, mapping, vert.cols, border){
 
@@ -219,6 +223,8 @@ two_level_flex <- function(flex, mapping, vert.cols, border){
 #' @return a \code{flextable} object
 #'
 #' @import flextable
+#'
+#' @noRd
 
 appendix_wrapper <- function(appendix, mapping, border, digits){
 

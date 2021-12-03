@@ -14,7 +14,7 @@ agg_rels(models, flag = 0.6, digits = 2)
 \item{digits}{integer; number of decimal places to display in the report.}
 }
 \value{
-a \code{data.frame} of mean factor (scale) reliabilities for each factor model and \code{vector} with count of folds with a flagged reliability
+\code{data.frame} of mean factor (scale) reliabilities for each factor model and \code{vector} with count of folds with a flagged reliability
 }
 \description{
 The factor reliabilities aggregated over k-folds

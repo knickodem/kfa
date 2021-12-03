@@ -39,7 +39,7 @@ find_k(
 named vector with the number of folds, sample size suggested by the power analysis, and the actual sample size used for determining k.
 }
 \description{
-This function is specifically for determining *k* in the context of factor analysis using
+This function is specifically for determining \emph{k} in the context of factor analysis using
 change in RMSEA as the criterion for identifying the optimal factor model.
 }
 \examples{
@@ -50,7 +50,7 @@ find_k(n = 900, p = 20, m = 3, rmsea0 = .03, rmseaA = .10)
 
 }
 \references{
-Curran, P. J., Bollen, K. A., Chen, F., Paxton, P., & Kirby, J. B. (2003). Finite sampling properties of the point estimates and confidence intervals of the RMSEA. *Sociological Methods & Research, 32*(2), 208-252. <doi:10.1177/0049124103256130>
+Curran, P. J., Bollen, K. A., Chen, F., Paxton, P., & Kirby, J. B. (2003). Finite sampling properties of the point estimates and confidence intervals of the RMSEA. \emph{Sociological Methods & Research, 32}(2), 208-252. \url{doi:10.1177/0049124103256130}
 
-MacCallum, R. C., Browne, M. W., & Sugawara, H. M. (1996). Power analysis and determination of sample size for covariance structure modeling. *Psychological Methods, 1*(2), 130–149. <doi:10.1037/1082989X.1.2.130>
+MacCallum, R. C., Browne, M. W., & Sugawara, H. M. (1996). Power analysis and determination of sample size for covariance structure modeling. \emph{Psychological Methods, 1}(2), 130–149. \url{doi:10.1037/1082989X.1.2.130}
 }

@@ -5,10 +5,10 @@ Version: 0.1.0
 Author: Kyle Nickodem [aut, cre] and Peter Halpin [aut]
 Maintainer: Kyle Nickodem <kyle.nickodem@gmail.com>
 Description: Provides functions to explore possible factor structures for a set of variables and
-	helps identify plausible and replicable structures via *k*-fold cross validation. The process 
+	helps identify plausible and replicable structures via k-fold cross validation. The process 
 	combines the exploratory and confirmatory factor analytic approach to scale development 
 	(Flora & Flake, 2017) <doi:10.1037/cbs0000069> with a cross validation technique that 
-	maximizes the available data. Also available are functions to determine *k* by drawing on 
+	maximizes the available data. Also available are functions to determine k by drawing on 
 	power analytic techniques for covariance structures (MacCallum, Browne, & Sugawara, 1996) 
 	<doi:10.1037/1082-989X.1.2.130>, generate model syntax, and summarize results in a report.
 Depends:
@@ -30,6 +30,6 @@ Imports:
 License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
-URL: <https://github.com/knickodem/kfa>
+URL: https://github.com/knickodem/kfa
 BugReports: https://github.com/knickodem/kfa/issues
 RoxygenNote: 7.1.2
