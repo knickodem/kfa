@@ -53,7 +53,7 @@
 #' @md
 
 run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblimin",
-                    simple = TRUE, threshold = NA, single.item = c("keep","drop", ""),
+                    simple = TRUE, threshold = NA, single.item = c("keep","drop", "none"),
                     ordered = FALSE, estimator = NULL, missing = "listwise", ...){
 
   variables <- as.data.frame(variables)
@@ -88,7 +88,6 @@ run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblim
 
   sample.nobs <- lavaan::lavInspect(sampstats, "nobs")
   sample.cov <- lavaan::lavInspect(sampstats, "sampstat")$cov
-  sample.mean <- lavaan::lavInspect(sampstats, "sampstat")$mean
   sample.th <- lavaan::lavInspect(sampstats, "sampstat")$th
   attr(sample.th, "th.idx") <- lavaan::lavInspect(sampstats, "th.idx")
   WLS.V <- lavaan::lavInspect(sampstats, "wls.v")
@@ -97,6 +96,7 @@ run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblim
 
   ## Running EFAs, comparing models, converting structure to CFA syntax
   # results objects
+  lav.objects <- vector(mode = "list", length = m)
   efa.loadings <- vector(mode = "list", length = m)
   # mod.compare <- data.frame()
 
@@ -105,10 +105,9 @@ run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblim
     ## write efa syntax
     efa.mod <- write_efa(nf = nf, vnames = names(variables))
 
-    unrotated <- lavaan::cfa(model = efa.mod,
+    lav.objects[[nf]] <- lavaan::cfa(model = efa.mod,
                              sample.cov = sample.cov,
                              sample.nobs = sample.nobs,
-                             sample.mean = sample.mean,
                              sample.th = sample.th,
                              WLS.V = WLS.V,
                              NACOV = NACOV,
@@ -121,7 +120,8 @@ run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblim
                              test = "none")
 
     # list of unrotated factor loadings
-    efa.loadings[[nf]] <- lavaan::lavInspect(unrotated, "est")$lambda
+    efa.loadings[[nf]] <- get_std_loadings(lav.objects[[nf]], type = "std.all")
+      #lavaan::lavInspect(lav.objects[[nf]], "est")$lambda
   }
 
   ## if chosen, applying rotation to standardized factor loadings for models where m > 1
@@ -166,8 +166,8 @@ run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblim
                    single.item = single.item)
   })
 
-  efaout <- list(efas = unrotated,
-                 loadings = loadings,       # list of rotated loadings as GPArotation object
+  efaout <- list(efas = lav.objects,
+                 loadings = loadings,
                  cfa.syntax = cfa.syntax)
                  # mod.compare = mod.compare, # data.frame of model comparisons results
 
@@ -180,11 +180,8 @@ run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblim
 
 # ## model comparison code
 # if(nf > 1){
-#   unrotated.a <- unrotated
-# }
-# if(nf > 1){
 #   ## compare models
-#   comp <- lavaan::lavTestLRT(unrotated.a, unrotated)
+#   comp <- lavaan::lavTestLRT(lav.objects[[nf-1]], lav.objects[[nf]])
 #
 #   ## save results
 #   tempdf <- data.frame(model = paste0(nf - 1, " v. ", nf),

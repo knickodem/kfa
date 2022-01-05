@@ -28,7 +28,6 @@ k_cfa <- function(syntax, variables, ordered, estimator, missing, ...){
 
   sample.nobs <- lavaan::lavInspect(sampstats, "nobs")
   sample.cov <- lavaan::lavInspect(sampstats, "sampstat")$cov
-  sample.mean <- lavaan::lavInspect(sampstats, "sampstat")$mean
   sample.th <- lavaan::lavInspect(sampstats, "sampstat")$th
   attr(sample.th, "th.idx") <- lavaan::lavInspect(sampstats, "th.idx")
   WLS.V <- lavaan::lavInspect(sampstats, "wls.v")
@@ -45,7 +44,6 @@ k_cfa <- function(syntax, variables, ordered, estimator, missing, ...){
       fit <- lavaan::cfa(model = syntax[[c]],
                          sample.cov = sample.cov,
                          sample.nobs = sample.nobs,
-                         sample.mean = sample.mean,
                          sample.th = sample.th,
                          WLS.V = WLS.V,
                          NACOV = NACOV,

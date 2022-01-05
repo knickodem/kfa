@@ -21,7 +21,7 @@ write_efa <- function(nf, vnames){
     syntax <- c(syntax, paste0("f", f, " =~ ", paste(vnames[f:length(vnames)], collapse = " + "), "\n"))
     if (f == nf) break
   }
-  syntax
+  return(syntax)
 }
 
 

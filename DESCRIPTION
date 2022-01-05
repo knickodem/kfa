@@ -33,3 +33,4 @@ LazyData: true
 URL: https://github.com/knickodem/kfa
 BugReports: https://github.com/knickodem/kfa/issues
 RoxygenNote: 7.1.2
+VignetteBuilder: knitr

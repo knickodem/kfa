@@ -66,7 +66,7 @@ on the test data.
 }
 \details{
 In order to be tested along with the EFA identified structures, each model supplied in \code{custom.cfas} must
-include all \code{variables} in \code{lavaan} compatible syntax. Thus, to test a model dropping when
+include all \code{variables} in \code{lavaan} compatible syntax. To test a model when dropping
 a variable, have the variable load on to a factor while constraining the loading to 0.
 
 Deciding an appropriate \emph{m} can be difficult, but is consequential for both the possible factor structures to

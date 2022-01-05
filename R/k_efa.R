@@ -33,7 +33,7 @@ k_efa <- function(variables, m, rotation,
 
   sample.nobs <- lavaan::lavInspect(sampstats, "nobs")
   sample.cov <- lavaan::lavInspect(sampstats, "sampstat")$cov
-  sample.mean <- lavaan::lavInspect(sampstats, "sampstat")$mean
+  # below not really necessary with ML estimator
   sample.th <- lavaan::lavInspect(sampstats, "sampstat")$th
   attr(sample.th, "th.idx") <- lavaan::lavInspect(sampstats, "th.idx")
   WLS.V <- lavaan::lavInspect(sampstats, "wls.v")
@@ -50,7 +50,6 @@ k_efa <- function(variables, m, rotation,
     unrotated <- lavaan::cfa(model = efa.mod,
                              sample.cov = sample.cov,
                              sample.nobs = sample.nobs,
-                             sample.mean = sample.mean,
                              sample.th = sample.th,
                              WLS.V = WLS.V,
                              NACOV = NACOV,
@@ -63,7 +62,9 @@ k_efa <- function(variables, m, rotation,
                              test = "none")
 
     # list of unrotated factor loadings
-    efa.loadings[[nf]] <- lavaan::lavInspect(unrotated, "est")$lambda
+    efa.loadings[[nf]] <- get_std_loadings(unrotated, type = "std.all") # LVs and OVs are standardized
+    #lavaan::lavInspect(unrotated, "est")$lambda # LVs are standardized, OVs are not
+
   }
 
   ## if chosen, applying rotation to standardized factor loadings for models where m > 1
@@ -120,33 +121,40 @@ k_efa <- function(variables, m, rotation,
 
 #' standardized factor loadings
 #'
-#' Extract standardized factor loading matrix from lavaan object
+#' Extract standardized factor loadings from lavaan object
 #'
 #' @param object a \code{lavaan} object
 #' @param type standardize on the latent variables (\code{"std.lv"}),
 #' latent and observed variables (\code{"std.all"}, default), or latent and observed variables
-#' but not exogenous variables (\code{"std.nox"}). See \code{\link[lavaan]{standardizedSolution}}.
+#' but not exogenous variables (\code{"std.nox"})? See \code{\link[lavaan]{standardizedSolution}}.
+#' @param df should loadings be returned as a \code{matrix} (default) or \code{data.frame}?
 #'
-#' @return A \code{matrix} of factor loadings
+#' @return A \code{matrix} or \code{data.frame} of factor loadings
 #'
-#' @noRd
+#' @export
 
-get_std_loadings <- function(object, type = "std.all"){
+get_std_loadings <- function(object, type = "std.all", df = FALSE){
 
   # extracting unrotated standardized results
-  params <- lavaan::standardizedSolution(object, type = type,
-                                         se = FALSE, zstat = FALSE, # Not needed so saves
-                                         pvalue = FALSE, ci = FALSE)# computation time
-  loaddf <- params[params$op == "=~",]
+  params <- lavaan::standardizedSolution(object, type = type, se = FALSE)
+  loaddf <- params[params$op == "=~", c(1, 3, 4)] # drops op column
 
   # loading matrix dimension names
   inames <- unique(loaddf$rhs) # item names
   fnames <- unique(loaddf$lhs) # factor names
 
-  # matrix of standardized factor loadings
-  loadmat <- matrix(loaddf$est.std,
-                    ncol = length(fnames), nrow = length(inames),
-                    byrow = FALSE, dimnames = list(inames, fnames))
+  # wide format
+  loads <- reshape(loaddf, direction  = "wide",
+                 idvar = "rhs", timevar = "lhs", v.names = "est.std")
+  loads[is.na(loads)] <- 0
 
-  return(loadmat)
+  if(df == FALSE){
+  # matrix of standardized factor loadings
+  loads <- as.matrix(loads[-1])
+  dimnames(loads) <- list(inames, fnames)
+  } else {
+    names(loads) <- c("variable", fnames)
+  }
+
+  return(loads)
 }

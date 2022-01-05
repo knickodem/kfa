@@ -10,7 +10,7 @@ run_efa(
   rotation = "oblimin",
   simple = TRUE,
   threshold = NA,
-  single.item = c("keep", "drop", ""),
+  single.item = c("keep", "drop", "none"),
   ordered = FALSE,
   estimator = NULL,
   missing = "listwise",

@@ -42,7 +42,7 @@ agg_loadings <- function(models, flag = .30, digits = 2){
     for(f in 1:k){
       if(n %in% names(cfas[[f]])){
       ## gather standardized loadings
-       l.temp <- lavaan::standardizedSolution(cfas[[f]][[n]], "std.lv", se = FALSE)
+       l.temp <- lavaan::standardizedSolution(cfas[[f]][[n]], "std.all", se = FALSE)
        lambdas[[f]] <- l.temp[l.temp$op == "=~",]
 
       # flag for model summary table

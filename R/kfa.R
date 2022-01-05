@@ -25,7 +25,7 @@
 #'
 #' @details
 #' In order to be tested along with the EFA identified structures, each model supplied in \code{custom.cfas} must
-#' include all \code{variables} in \code{lavaan} compatible syntax. Thus, to test a model dropping when
+#' include all \code{variables} in \code{lavaan} compatible syntax. To test a model when dropping
 #' a variable, have the variable load on to a factor while constraining the loading to 0.
 #'
 #' Deciding an appropriate *m* can be difficult, but is consequential for both the possible factor structures to
@@ -89,8 +89,8 @@ kfa <- function(variables,
 
   variables <- as.data.frame(variables)
 
-  # The ordered = TRUE functionality in lavaan is not currently equivalent to listing
-  # all items, so need to do it manually since I want this functionality for our users
+  # The ordered = TRUE functionality not available in lavCor (i.e., not currently equivalent to listing
+  # all items), so need to do it manually since I want this functionality for our users
   if(is.character(ordered)){
     if(is.null(estimator)){
       estimator <- "DWLS"
@@ -150,8 +150,7 @@ kfa <- function(variables,
       print(paste("Using", foreach::getDoParWorkers(), "cores for parallelization."))
 
       ## run EFAs and return lavaan syntax for CFAs
-      # utils::globalVariables(c("fold"), package = "kfa") # needed to satisfy CRAN check
-      fold <- NULL # try this for CRAN check instead
+      fold <- NULL # need this for CRAN check
       efa <- foreach::foreach(fold = 1:k) %dopar% { # use %do% if we offer a parallel = FALSE option
 
         k_efa(variables = variables[!c(row.names(variables) %in% testfolds[[fold]]), ],

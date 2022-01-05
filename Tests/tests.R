@@ -5,7 +5,7 @@
 # ###################################
 #
 #
-# shortfile <- c("C:/Users/kylenick/University of North Carolina at Chapel Hill/Halpin, Peter Francis - UNC_stat_projets/EFA&CFA/")
+shortfile <- c("C:/Users/kylenick/University of North Carolina at Chapel Hill/Halpin, Peter Francis - UNC_stat_projets/EFA&CFA/")
 #
 # # -------   Emotional Processes data    --------------------
 # library(kfa)
@@ -39,23 +39,95 @@
 # ########################################################################
 #
 # # -------   Full test on Lebanon data    --------------------
-# student <- read.csv(paste0(shortfile, "scaledim/student_survey-latest.csv"))
-# teacher <- read.csv(paste0(shortfile, "scaledim/teacher_survey-latest.csv"))
-# principal <- read.csv(paste0(shortfile, "scaledim/principal_survey-latest.csv"))
-# coach <- read.csv(paste0(shortfile, "scaledim/coach_survey-latest.csv"))
-#
-# ## item map
-# itemmaps <- lapply(c("Coach_survey", "Teacher Survey",
-#                      "Principal Survey", "Student Survey"), function(x){
-#                    readxl::read_excel(paste0(shortfile, "Item construct map_2020_10_25.xlsx"),
-#                                       sheet = x)})
-# names(itemmaps) <- c("coach", "teacher", "principal", "student")
-#
-# ## items for analysis
-# studentdf <- student[ ,names(student) %in% na.omit(itemmaps$student$`Variable Name`)]
-# teacherdf <- teacher[ ,names(teacher) %in% na.omit(itemmaps$teacher$`Variable Name`)]
-# principaldf <- principal[ ,names(principal) %in% na.omit(itemmaps$principal$`Variable Name`)]
-# coachdf <- coach[ ,names(coach) %in% na.omit(itemmaps$coach$`Variable Name`)]
+student <- read.csv(paste0(shortfile, "scaledim/student_survey-latest.csv"))
+teacher <- read.csv(paste0(shortfile, "scaledim/teacher_survey-latest.csv"))
+principal <- read.csv(paste0(shortfile, "scaledim/principal_survey-latest.csv"))
+coach <- read.csv(paste0(shortfile, "scaledim/coach_survey-latest.csv"))
+
+## item map
+itemmaps <- lapply(c("Coach_survey", "Teacher Survey",
+                     "Principal Survey", "Student Survey"), function(x){
+                   readxl::read_excel(paste0(shortfile, "Documentation/Item construct map_2020_10_25.xlsx"),
+                                      sheet = x)})
+names(itemmaps) <- c("coach", "teacher", "principal", "student")
+
+## items for analysis
+studentdf <- student[ ,names(student) %in% na.omit(itemmaps$student$`Variable Name`)]
+teacherdf <- teacher[ ,names(teacher) %in% na.omit(itemmaps$teacher$`Variable Name`)]
+principaldf <- principal[ ,names(principal) %in% na.omit(itemmaps$principal$`Variable Name`)]
+coachdf <- coach[ ,names(coach) %in% na.omit(itemmaps$coach$`Variable Name`)]
+
+
+
+
+fa.s <- lavaan::lavCor(studentdf,
+                       # ordered = names(studentdf),
+                       std.ov = TRUE,
+                       estimator = "ML",
+                       missing = "listwise",
+                       output = "cor",
+                       cor.smooth = FALSE)
+ss.m <- lavaan::lavInspect(fa.m, "sampstat")
+
+fa.wd <- lavaan::lavCor(studentdf,
+                        ordered = names(studentdf)[[1]],
+                        estimator = "DWLS",
+                        missing = "listwise",
+                        output = "fit",
+                        cor.smooth = FALSE)
+ss.wd <- lavaan::lavInspect(fa.wd, "sampstat")
+identical(ss.wd$cov, ss.wn$cov)
+lavaan::lavInspect(fa.m, "options")$estimator
+
+
+sample.nobs <- lavaan::lavInspect(fa.s, "nobs")
+sample.cov <- lavaan::lavInspect(fa.s, "sampstat")$cov
+sample.th <- lavaan::lavInspect(fa.s, "sampstat")$th
+attr(sample.th, "th.idx") <- lavaan::lavInspect(fa.s, "th.idx")
+WLS.V <- lavaan::lavInspect(fa.s, "wls.v")
+NACOV <- lavaan::lavInspect(fa.s, "gamma")
+
+check <- lavaan::lavInspect(fa.s, "sampstat")$cov
+lavaan::lavInspect(fa.m, "options")$std.ov
+
+## write efa syntax
+efa.mod <- write_efa(nf = 3, vnames = names(studentdf))
+
+efa.s <- lavaan::cfa(model = efa.mod,
+                     sample.cov = fa.s,
+                     sample.nobs = sample.nobs,
+                     sample.th = sample.th,
+                     # WLS.V = WLS.V,
+                     # NACOV = NACOV,
+                     std.lv = TRUE,
+                     orthogonal = TRUE,
+                     estimator = "ML",
+                     missing = "listwise",
+                     parameterization = "delta",
+                     se = "none",
+                     test = "none")
+
+lavaan::summary(efa.m.orig, standardized = TRUE) # ML with WLS.V and NACOV; un = std.lv != std.all
+lavaan::summary(efa.m.no, standardized = TRUE)
+all.equal(lavaan::standardizedsolution(efa.m.orig, type = "std.lv"),
+          lavaan::standardizedsolution(efa.m.no, type = "std.lv")) # using WLS.V and NACOV does not matter with ML and cov matrix
+lavaan::summary(efa.s, standardized = TRUE) # ML with WLS.V and NACOV; un = std.lv = std.all
+all.equal(lavaan::standardizedsolution(efa.m.orig, type = "std.all"),
+          lavaan::standardizedsolution(efa.s, type = "std.all"))
+all.equal(round(kfa:::get_std_loadings(efa.m.orig, type = "std.all"),4), # std.all = cor
+          round(kfa:::get_std_loadings(efa.s, type = "std.all"), 4))
+
+
+
+check.m <- run_efa(studentdf)
+check.w <- run_efa(studentdf, ordered = TRUE)
+
+lavaan::lavInspect(check.w$efas[[2]], "options")$estimator
+
+
+round(kfa:::get_std_loadings(check.m$efas[[2]]), 3)
+
+
 #
 #
 #
