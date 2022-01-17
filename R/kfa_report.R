@@ -2,16 +2,17 @@
 #'
 #' Generates a report summarizing the factor analytic results over k-folds.
 #'
-#' @param models An object returned from \code{\link[kfa]{kfa}}
-#' @param file.name Character; file name to create on disk.
-#' @param report.title Title of the report
-#' @param path Path of the directory where summary report will be saved. Default is working directory. \code{path} and \code{file.name} are combined to create final file path
-#' @param report.format File format of the report. Default is HTML ("html_document"). See \code{\link[rmarkdown]{render}} for other options.
-#' @param word.template File path to word document to use as a formatting template when \code{report.format = "word_document"}.
-#' @param index One or more fit indices to summarize in the report. The degrees of freedom are always reported. Default are "chisq", "cfi", and "rmsea".
-#' @param load.flag Factor loadings of variables below this value will be flagged. Default is .30
-#' @param cor.flag Factor correlations above this value will be flagged. Default is .90
-#' @param rel.flag Factor (scale) reliabilities below this value will be flagged. Default is .60.
+#' @param models an object returned from \code{\link[kfa]{kfa}}
+#' @param file.name character; file name to create on disk.
+#' @param report.title character; title of the report
+#' @param path character; path of the directory where summary report will be saved. Default is working directory. \code{path} and \code{file.name} are combined to create final file path
+#' @param report.format character; file format of the report. Default is HTML ("html_document"). See \code{\link[rmarkdown]{render}} for other options.
+#' @param word.template character; file path to word document to use as a formatting template when \code{report.format = "word_document"}.
+#' @param index character; one or more fit indices to summarize in the report. Use \code{\link[kfa]{index_available}} to see choices.
+#' Chi-square value and degrees of freedom are always reported. Default is CFI and RMSEA (naive, scaled, or robust version depends on estimator used in \code{models}).
+#' @param load.flag numeric; factor loadings of variables below this value will be flagged. Default is .30
+#' @param cor.flag numeric; factor correlations above this value will be flagged. Default is .90
+#' @param rel.flag numeric; factor (scale) reliabilities below this value will be flagged. Default is .60.
 #' @param digits integer; number of decimal places to display in the report.
 #'
 #' @return a summary report of factor structures and model fit within and between folds
@@ -65,7 +66,7 @@ kfa_report <- function(models,
                        path = NULL,
                        report.format = "html_document",
                        word.template = NULL,
-                       index = c("chisq", "cfi", "rmsea"),
+                       index = "default",
                        load.flag = .30, cor.flag = .90, rel.flag = .60,
                        digits = 2){
 
@@ -89,14 +90,14 @@ kfa_report <- function(models,
   #### Model Fit ####
   ## summarizing fit statistics by fold
   kfits <- k_model_fit(models, index = index, by.fold = TRUE) # dataframe for each fold
-  fit.table <- agg_model_fit(kfits, index = index, digits = 2)
+  fit.table <- agg_model_fit(kfits, index = "all", digits = 2)
 
   ## best model in each fold
   # best.model <- best_model(kfits, index = index)
 
   ## creating appendix -  folds x model table of fit statistics
   mfits <- k_model_fit(models, index = index, by.fold = FALSE)
-  appendix <- get_appendix(mfits, index = index)
+  appendix <- get_appendix(mfits, index = "all")
 
   #### Parameters ####
   ## model structures

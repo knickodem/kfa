@@ -1,9 +1,38 @@
+#' Available Fit Indices
+#'
+#' Shows the fit indices available from \code{\link[kfa]{kfa}} object to report in \code{\link[kfa]{kfa_report}}
+#'
+#' @param models an object returned from \code{\link[kfa]{kfa}}
+#'
+#' @return character vector of index names
+#'
+#' @examples
+#' data(example.kfa)
+#' index_available(example.kfa)
+#'
+#' @export
+
+index_available <- function(models){
+  if(class(models) == "kfa"){
+    cfas <- models$cfas
+  } else {
+    stop("models must be of class 'kfa'.")
+  }
+  # c("gfi","agfi","pgfi") throw error when missing = "fiml" (maybe other times too)
+  # they are not included in the "default" selections though; see source code for lavaan::fitmeasures
+  all <- tryCatch(expr = lavaan::fitmeasures(cfas[[1]][[1]]), # assumes 1-factor model in first fold is valid
+                  error = function(e) return(lavaan::fitmeasures(cfas[[1]][[1]], fit.measures = "default")))
+  avlbl <- all[!is.na(all)]
+  return(names(avlbl))
+}
+
 #' Extract model fit
 #'
 #' Model fit indices extracted from k-folds
 #'
-#' @param models An object returned from \code{\link[kfa]{kfa}}
-#' @param index One or more fit indices to summarize in the report. The degrees of freedom are always reported. Default are "chisq", "cfi", and "rmsea".
+#' @param models an object returned from \code{\link[kfa]{kfa}}
+#' @param index character; one or more fit indices to summarize in the report. Use \code{\link[kfa]{index_available}} to see choices.
+#' Chi-square value and degrees of freedom are always reported. Default is CFI and RMSEA (naive, scaled, or robust version depends on estimator used in \code{models}).
 #' @param by.fold Should each element in the returned lists be a fold (default) or a factor model?
 #'
 #' @return \code{list} of data.frames with average model fit for each factor model
@@ -19,7 +48,7 @@
 #'
 #' @export
 
-k_model_fit <- function(models, index = c("chisq", "cfi", "rmsea"), by.fold = TRUE){
+k_model_fit <- function(models, index = "default", by.fold = TRUE){
 
   if(class(models) == "kfa"){
     cfas <- models$cfas
@@ -28,7 +57,23 @@ k_model_fit <- function(models, index = c("chisq", "cfi", "rmsea"), by.fold = TR
   }
   k <- length(cfas) # number of folds
   m <- max(unlist(lapply(cfas, length))) # number of models per fold
-  index <- if(sum(grepl("df", index)) == 0) c("df", index) else index
+  all.index <- index_available(models)
+  if("default" %in% index){
+    if(sum(grepl("robust", all.index)) > 0){
+      index <- c("chisq.scaled", "df.scaled", "cfi.robust", "rmsea.robust")
+    } else if(sum(grepl("scaled", all.index)) > 0){
+      index <- c("chisq.scaled", "df.scaled", "cfi.scaled", "rmsea.scaled")
+    } else{
+      index <- c("chisq", "df", "cfi", "rmsea")
+    }
+  } else{
+    # if a scaled or robust index is requested, report scaled chisq and df
+    csqdf <- if(sum(grepl("robust|scaled", index)) > 0) c("chisq.scaled", "df.scaled") else c("chisq", "df")
+    index <- c(csqdf, index[!index %in% c("chisq", "df", "chisq.scaled", "df.scaled")]) # ensuring chisq and df are 1) in index and 2) listed first
+    if(all(index %in% all.index) == FALSE){
+      stop("one or more 'index' values not available from 'models'. Use index_available() to view choices.")
+    }
+  }
 
   ## extract fit for every model in each fold
   fits <- vector("list", length = k)
@@ -82,11 +127,11 @@ k_model_fit <- function(models, index = c("chisq", "cfi", "rmsea"), by.fold = TR
 #'
 #' Summary table of model fit aggregated over k-folds
 #'
-#' @param kfits An object returned from \code{\link[kfa]{k_model_fit}} when \code{by.folds = TRUE}
-#' @param index Character vector of one or more fit indices to summarize in the report. Indices
-#' must be present in the \code{kfits} object extracted in \code{\link[kfa]{k_model_fit}}.
-#' Default is \code{"all"} indices present in \code{kfits}. Degrees of freedom are always reported.
-#' @param digits Integer; number of decimal places to display in the report.
+#' @param kfits an object returned from \code{\link[kfa]{k_model_fit}} when \code{by.folds = TRUE}
+#' @param index character; one or more fit indices to summarize. Indices
+#' must be present in the \code{kfits} object. Default is \code{"all"} indices present in \code{kfits}.
+#' Chi-square value and degrees of freedom are always reported.
+#' @param digits integer; number of decimal places to display in the report
 #'
 #' @return \code{data.frame} of aggregated model fit statistics
 #'
@@ -99,30 +144,37 @@ k_model_fit <- function(models, index = c("chisq", "cfi", "rmsea"), by.fold = TR
 
 agg_model_fit <- function(kfits, index = "all", digits = 2){
 
-  if(length(index) == 1){
-    if(index == "all"){
-      index <- names(kfits[[1]])[!(names(kfits[[1]]) %in% c("model", "df"))]
-    }
+  if("all" %in% index){
+    index <- names(kfits[[1]])[!(names(kfits[[1]]) %in% c("model"))]
+  } else if(all(index %in% names(kfits[[1]])) == FALSE){
+    stop("'index' must be fit measure(s) present in 'kfits'")
   }
 
-  if(sum(!index %in% names(kfits[[1]])) > 0){
-    stop("index must be fit measure(s) extracted in kfits")
-  }
+  ## if robust or scaled fit index requested, report scaled chisq and df, otherwise naive
+  if(sum(grepl("robust|scaled", index)) > 0){
 
-  index <- index[index != "df"] # df is added automatically so don't need to loop through it
+    chisq <- "chisq.scaled"
+    df <- "df.scaled"
+
+  } else{
+    chisq <- "chisq"
+    df <- "df"
+  }
+  index <- index[!index %in% c("chisq", "df", "chisq.scaled", "df.scaled")]
+
   bdf <- Reduce(rbind, kfits)
-  degf <- tapply(bdf[["df"]], bdf$model, mean) # named (by model) vector of degrees of freedom
-  fit <- data.frame(model = names(degf),
+  degf <- tapply(bdf[[df]], bdf$model, mean)
+  fit <- data.frame(model = names(degf), # names will be alphabetical order unlike unique(bdf$model)
                     df = degf)
-  for(i in index){
+  names(fit)[[2]] <- df
+
+  for(i in c(chisq, index)){ # need chisq to be in the loop to get mean and range
 
     agg <- data.frame(model = names(degf),
                       mean = tapply(bdf[[i]], bdf$model, mean),
                       range = paste(format(round(tapply(bdf[[i]], bdf$model, min), digits = digits), nsmall = digits), "-",
                                     format(round(tapply(bdf[[i]], bdf$model, max), digits = digits), nsmall = digits)))
-    # hist = tapply(bdf[[index]], bdf$factors, function(x) skimr::skim(x)[["numeric.hist"]])
     names(agg) <- c("model", paste(c("mean", "range"), i, sep = "."))
-
 
     # joining into single table
     fit <- merge(x = fit, y = agg, by = "model", all.x = TRUE, sort = FALSE)
@@ -133,22 +185,22 @@ agg_model_fit <- function(kfits, index = "all", digits = 2){
 
 #' Internal appendix function
 #'
-#' Prepare model fit results for appendix table
+#' Adds mean row to model fit data.frame in preparation for appendix table
 #'
-#' @param fits An element from the list object returned from \code{\link[kfa]{k_model_fit}} when \code{by.folds = FALSE}
-#' @param index One or more fit indices to include in the appendix table. Default is \code{"all"} indices present in \code{fits}.
-#' Degrees of freedom are always reported.
+#' @param fits an element from the list object returned from \code{\link[kfa]{k_model_fit}} when \code{by.folds = FALSE}
+#' @param index one or more fit indices to include in the appendix table
 #' @param suffix character to append to column names
 #'
-#' @return \code{data.frame} of model fit by fold, factor model, and fit index
+#' @return \code{data.frame} of model fit by fold and fit index
 #'
 #' @noRd
 
 appendix_prep <- function(fits, index, suffix){
 
-  fits <- fits[c("fold", "df", index)]
+  # Note. 'index' value is determined in get_appendix
+  fits <- fits[c("fold", index)]
   fits <- rbind(fits, cbind(data.frame(fold = "Mean", data.frame(t(colMeans(fits[-1]))))))
-  names(fits) <- c("fold", paste(c("df", index), suffix, sep = "."))
+  names(fits) <- c("fold", paste(index, suffix, sep = "."))
   return(fits)
 }
 
@@ -156,8 +208,8 @@ appendix_prep <- function(fits, index, suffix){
 #'
 #' Comprehensive model fit table
 #'
-#' @param mfits An object returned from \code{\link[kfa]{k_model_fit}} when \code{by.folds = FALSE}
-#' @param index One or more fit indices to include in the appendix table. Default is \code{"all"} indices present in \code{mfits}. The degrees of freedom are always reported.
+#' @param mfits an object returned from \code{\link[kfa]{k_model_fit}} when \code{by.folds = FALSE}
+#' @param index one or more fit indices to include in the appendix table. Default is \code{"all"} indices present in \code{mfits}.
 #'
 #' @return \code{data.frame} of model fit by fold, factor model, and fit index
 #'
@@ -167,14 +219,15 @@ get_appendix <- function(mfits, index = "all"){
 
   k <- max(unlist(lapply(mfits, nrow))) # number of folds
 
-  if(length(index) == 1){
-    if(index == "all"){
-      index <- names(mfits[[1]])[!(names(mfits[[1]]) %in% c("fold", "df"))]
-    }
-  }
+  # # If need to identify type of chisq and df
+  # chisq <- names(mfits[[1]])[grepl("chisq", names(mfits[[1]]))] # naive or scaled?
+  # df <- names(mfits[[1]])[grepl("df", names(mfits[[1]]))]
 
-  if(sum(!index %in% names(mfits[[1]])) > 0){
-    stop("index must be fit measure(s) extracted in mfits")
+  #Note. get_appendix is currently internal, so "all" %in% index is always TRUE
+  if("all" %in% index){
+    index <- names(mfits[[1]])[!(names(mfits[[1]]) %in% c("fold"))]
+  } else if(all(index %in% names(mfits[[1]])) == FALSE){
+    stop("'index' must be fit measure(s) present in 'mfits'")
   }
 
   appendix <- mapply(appendix_prep, fits = mfits, suffix = names(mfits), MoreArgs = list(index = index), SIMPLIFY = FALSE)

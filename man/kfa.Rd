@@ -42,10 +42,10 @@ polychoric correlations used in the factor analysis? When \code{FALSE} (default)
 the Pearson correlation matrix is used. A character vector of item names is
 also accepted to prompt estimation of the polychoric correlation matrix.}
 
-\item{estimator}{if \code{ordered = FALSE}, the default is "ML". If
-\code{ordered = TRUE}, the default is "DWLS". See \code{\link[lavaan]{lavaan}} for other options.}
+\item{estimator}{if \code{ordered = FALSE}, the default is "MLMVS". If
+\code{ordered = TRUE}, the default is "WLSMV". See \code{\link[lavaan]{lavOptions}} for other options.}
 
-\item{missing}{default is "listwise". See \code{\link[lavaan]{lavaan}} for other options.}
+\item{missing}{default is "listwise". See \code{\link[lavaan]{lavOptions}} for other options.}
 
 \item{...}{other arguments passed to \code{lavaan} functions. See \code{\link[lavaan]{lavOptions}}.}
 }

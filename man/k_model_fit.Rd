@@ -4,12 +4,13 @@
 \alias{k_model_fit}
 \title{Extract model fit}
 \usage{
-k_model_fit(models, index = c("chisq", "cfi", "rmsea"), by.fold = TRUE)
+k_model_fit(models, index = "default", by.fold = TRUE)
 }
 \arguments{
-\item{models}{An object returned from \code{\link[kfa]{kfa}}}
+\item{models}{an object returned from \code{\link[kfa]{kfa}}}
 
-\item{index}{One or more fit indices to summarize in the report. The degrees of freedom are always reported. Default are "chisq", "cfi", and "rmsea".}
+\item{index}{character; one or more fit indices to summarize in the report. Use \code{\link[kfa]{index_available}} to see choices.
+Chi-square value and degrees of freedom are always reported. Default is CFI and RMSEA (naive, scaled, or robust version depends on estimator used in \code{models}).}
 
 \item{by.fold}{Should each element in the returned lists be a fold (default) or a factor model?}
 }

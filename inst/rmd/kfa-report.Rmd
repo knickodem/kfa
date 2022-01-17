@@ -43,14 +43,16 @@ date: "`r format(Sys.Date(), '%B %d, %Y')`"
 **Fit across folds by factor model**
 
 ```{r model fit, ft.align = "left", results='asis'}
-index <- index[index != "df"] 
-fit.map <- data.frame(col_keys = names(fit.table),
-                      top = c("model", "df", rep(index, each = 2)),
-                      bottom = c("model", "df", rep(c("mean", "range"), times = length(index))))
+ftn <- names(fit.table)
+df <- ftn[grepl("df", ftn)] # naive or scaled?
+index <- unique(gsub("mean.|range.", "", ftn[!ftn %in% c("model", df)]))
+fit.map <- data.frame(col_keys = ftn,
+                      top = c("model", df, rep(index, each = 2)),
+                      bottom = c("model", df, rep(c("mean", "range"), times = length(index))))
 
 fit.flex <- flextable::flextable(fit.table)
 fit.flex <- flextable::colformat_double(fit.flex, j = -c(1,2), digits = digits)
-fit.flex <- two_level_flex(fit.flex, mapping = fit.map, vert.cols = c("model", "df"), border = border)
+fit.flex <- two_level_flex(fit.flex, mapping = fit.map, vert.cols = c("model", df), border = border)
 knit_print(fit.flex)
 ```
 
@@ -150,7 +152,8 @@ for(n in 1:m){
 ## Within Fold Model Fit
 
 ```{r appendix.fits, ft.align = "left", results='asis'}
-index <- if(sum(grepl("df", index)) == 0) c("df", index) else index
+index <- names(appendix)[!names(appendix) %in% "fold"]
+index <- unique(sub(".[^.]*$", "", index))
 
 ax <- length(index)*length(mnames)
 if(ax <= 16){ # is the appendix a reasonable width?
@@ -165,7 +168,7 @@ appendix.flex
   
 } else { # If not, split into two tables 
 
-  modsplit <- floor(16/length(index))
+modsplit <- floor(16/length(index))
 colsplit <- 1+length(index)*modsplit
 appendix1 <- appendix[1:colsplit]
 appendix2 <- appendix[c(1, (colsplit+1):length(appendix))]

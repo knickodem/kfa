@@ -11,7 +11,7 @@ kfa_report(
   path = NULL,
   report.format = "html_document",
   word.template = NULL,
-  index = c("chisq", "cfi", "rmsea"),
+  index = "default",
   load.flag = 0.3,
   cor.flag = 0.9,
   rel.flag = 0.6,
@@ -19,25 +19,26 @@ kfa_report(
 )
 }
 \arguments{
-\item{models}{An object returned from \code{\link[kfa]{kfa}}}
+\item{models}{an object returned from \code{\link[kfa]{kfa}}}
 
-\item{file.name}{Character; file name to create on disk.}
+\item{file.name}{character; file name to create on disk.}
 
-\item{report.title}{Title of the report}
+\item{report.title}{character; title of the report}
 
-\item{path}{Path of the directory where summary report will be saved. Default is working directory. \code{path} and \code{file.name} are combined to create final file path}
+\item{path}{character; path of the directory where summary report will be saved. Default is working directory. \code{path} and \code{file.name} are combined to create final file path}
 
-\item{report.format}{File format of the report. Default is HTML ("html_document"). See \code{\link[rmarkdown]{render}} for other options.}
+\item{report.format}{character; file format of the report. Default is HTML ("html_document"). See \code{\link[rmarkdown]{render}} for other options.}
 
-\item{word.template}{File path to word document to use as a formatting template when \code{report.format = "word_document"}.}
+\item{word.template}{character; file path to word document to use as a formatting template when \code{report.format = "word_document"}.}
 
-\item{index}{One or more fit indices to summarize in the report. The degrees of freedom are always reported. Default are "chisq", "cfi", and "rmsea".}
+\item{index}{character; one or more fit indices to summarize in the report. Use \code{\link[kfa]{index_available}} to see choices.
+Chi-square value and degrees of freedom are always reported. Default is CFI and RMSEA (naive, scaled, or robust version depends on estimator used in \code{models}).}
 
-\item{load.flag}{Factor loadings of variables below this value will be flagged. Default is .30}
+\item{load.flag}{numeric; factor loadings of variables below this value will be flagged. Default is .30}
 
-\item{cor.flag}{Factor correlations above this value will be flagged. Default is .90}
+\item{cor.flag}{numeric; factor correlations above this value will be flagged. Default is .90}
 
-\item{rel.flag}{Factor (scale) reliabilities below this value will be flagged. Default is .60.}
+\item{rel.flag}{numeric; factor (scale) reliabilities below this value will be flagged. Default is .60.}
 
 \item{digits}{integer; number of decimal places to display in the report.}
 }

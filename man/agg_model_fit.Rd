@@ -7,13 +7,13 @@
 agg_model_fit(kfits, index = "all", digits = 2)
 }
 \arguments{
-\item{kfits}{An object returned from \code{\link[kfa]{k_model_fit}} when \code{by.folds = TRUE}}
+\item{kfits}{an object returned from \code{\link[kfa]{k_model_fit}} when \code{by.folds = TRUE}}
 
-\item{index}{Character vector of one or more fit indices to summarize in the report. Indices
-must be present in the \code{kfits} object extracted in \code{\link[kfa]{k_model_fit}}.
-Default is \code{"all"} indices present in \code{kfits}. Degrees of freedom are always reported.}
+\item{index}{character; one or more fit indices to summarize. Indices
+must be present in the \code{kfits} object. Default is \code{"all"} indices present in \code{kfits}.
+Chi-square value and degrees of freedom are always reported.}
 
-\item{digits}{Integer; number of decimal places to display in the report.}
+\item{digits}{integer; number of decimal places to display in the report}
 }
 \value{
 \code{data.frame} of aggregated model fit statistics

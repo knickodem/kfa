@@ -18,9 +18,9 @@
 #' polychoric correlations used in the factor analysis? When \code{FALSE} (default)
 #' the Pearson correlation matrix is used. A character vector of item names is
 #' also accepted to prompt estimation of the polychoric correlation matrix.
-#' @param estimator if \code{ordered = FALSE}, the default is "ML". If
-#' \code{ordered = TRUE}, the default is "DWLS". See \code{\link[lavaan]{lavaan}} for other options.
-#' @param missing default is "listwise". See \code{\link[lavaan]{lavaan}} for other options.
+#' @param estimator if \code{ordered = FALSE}, the default is "MLMVS". If
+#' \code{ordered = TRUE}, the default is "WLSMV". See \code{\link[lavaan]{lavOptions}} for other options.
+#' @param missing default is "listwise". See \code{\link[lavaan]{lavOptions}} for other options.
 #' @param ... other arguments passed to \code{lavaan} functions. See \code{\link[lavaan]{lavOptions}}.
 #'
 #' @details
@@ -91,20 +91,21 @@ kfa <- function(variables,
 
   # The ordered = TRUE functionality not available in lavCor (i.e., not currently equivalent to listing
   # all items), so need to do it manually since I want this functionality for our users
-  if(is.character(ordered)){
-    if(is.null(estimator)){
-      estimator <- "DWLS"
+  if(is.logical(ordered)){
+    if(ordered == FALSE){
+      ordered <- NULL
+      if(is.null(estimator)){
+        estimator <- "MLMVS"
+      }
+    } else if(ordered == TRUE){
+      ordered <- names(variables)
+      if(is.null(estimator)){
+        estimator <- "WLSMV"
+      }
     }
-  }
-  if(ordered == TRUE){
-    ordered <- names(variables)
+  } else if(is.character(ordered)){
     if(is.null(estimator)){
-      estimator <- "DWLS"
-    }
-  } else if(ordered == FALSE){
-    ordered <- NULL
-    if(is.null(estimator)){
-      estimator <- "ML"
+      estimator <- "WLSMV"
     }
   }
 
