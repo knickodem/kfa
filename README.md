@@ -4,6 +4,8 @@
 [![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/kfa)](https://cran.r-project.org/package=kfa)
 [![metacran
 downloads](https://cranlogs.r-pkg.org/badges/kfa)](https://cran.r-project.org/package=kfa)
+[![metacran
+downloads](https://cranlogs.r-pkg.org/badges/grand-total/kfa)](https://cran.r-project.org/package=kfa)
 
 **kfa** provides utilities for examining the dimensionality of a set of
 variables to foster scale development. Harnessing a k-fold cross

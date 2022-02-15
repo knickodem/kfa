@@ -129,6 +129,7 @@ kfa_report <- function(models,
   if(is.null(path)){
     path <- getwd()
   }
+  report.title <- report.title # Unless already specified by user, sets report.title = file.name b/f path gets added
   file.name <- file.path(path, file.name)
   template <- system.file("rmd", "kfa-report.Rmd", package = "kfa")
   rmarkdown::render(input = template,

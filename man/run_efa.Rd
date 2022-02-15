@@ -11,6 +11,8 @@ run_efa(
   simple = TRUE,
   threshold = NA,
   single.item = c("keep", "drop", "none"),
+  identified = TRUE,
+  constrain0 = FALSE,
   ordered = FALSE,
   estimator = NULL,
   missing = "listwise",
@@ -18,7 +20,7 @@ run_efa(
 )
 }
 \arguments{
-\item{variables}{a \code{data.frame} (or convertible to a \code{data.frame}) of variables to factor analyze}
+\item{variables}{a \code{data.frame} (or convertible to a \code{data.frame}) of variables (i.e., items) to factor analyze}
 
 \item{m}{integer; maximum number of factors to extract. Default is 4 items per factor.}
 
@@ -36,6 +38,11 @@ of the loading for an item on a factor.}
 Use \code{"keep"} (default) to keep them in the model when generating the CFA syntax, \code{"drop"}
 to remove them, or \code{"none"} indicating the CFA syntax should not be generated for
 this model and \code{""} will be returned.}
+
+\item{identified}{logical; Should identification check for rotational uniqueness a la Millsap (2001) be performed?}
+
+\item{constrain0}{logical; Should variable(s) with all loadings below \code{threshold} still be included in model syntax?
+If \code{TRUE}, variable(s) will load onto first factor with the loading constrained to 0.}
 
 \item{ordered}{logical; Should items be treated as ordinal and the
 polychoric correlations used in the factor analysis? When \code{FALSE} (default)

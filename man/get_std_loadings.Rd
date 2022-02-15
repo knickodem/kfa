@@ -2,7 +2,7 @@
 % Please edit documentation in R/k_efa.R
 \name{get_std_loadings}
 \alias{get_std_loadings}
-\title{standardized factor loadings}
+\title{Standardized factor loadings matrix}
 \usage{
 get_std_loadings(object, type = "std.all", df = FALSE)
 }
@@ -20,4 +20,14 @@ A \code{matrix} or \code{data.frame} of factor loadings
 }
 \description{
 Extract standardized factor loadings from lavaan object
+}
+\examples{
+data(HolzingerSwineford1939, package = "lavaan")
+HS.model <- ' visual  =~ x1 + x2 + x3
+              textual =~ x4 + x5 + x6
+              speed   =~ x7 + x8 + x9 '
+
+fit <- cfa(HS.model, data = HolzingerSwineford1939)
+get_std_loadings(fit)
+
 }

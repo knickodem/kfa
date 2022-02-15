@@ -17,22 +17,12 @@
 
 k_cfa <- function(syntax, variables, ordered, estimator, missing, ...){
 
-  ## calculate and extract sample statistics for test sample
-  sampstats <- lavaan::lavCor(object = variables,
-                              ordered = ordered,
-                              estimator = estimator,
-                              missing = missing,
-                              output = "fit",
-                              cor.smooth = FALSE,
-                              ...)
-
-  sample.nobs <- lavaan::lavInspect(sampstats, "nobs")
-  sample.cov <- lavaan::lavInspect(sampstats, "sampstat")$cov
-  # sample.mean <- lavaan::lavInspect(sampstats, "sampstat")$mean
-  sample.th <- lavaan::lavInspect(sampstats, "sampstat")$th
-  attr(sample.th, "th.idx") <- lavaan::lavInspect(sampstats, "th.idx")
-  WLS.V <- lavaan::lavInspect(sampstats, "wls.v")
-  NACOV <- lavaan::lavInspect(sampstats, "gamma")
+  ## calculate and extract sample statistics
+  sampstats <- sample_stats(variables = variables,
+                            ordered = ordered,
+                            estimator = estimator,
+                            missing = missing,
+                            ...)
 
 
   ## run CFAs
@@ -43,12 +33,11 @@ k_cfa <- function(syntax, variables, ordered, estimator, missing, ...){
     if(nchar(syntax[[c]]) > 0){
 
       fit <- lavaan::cfa(model = syntax[[c]],
-                         sample.cov = sample.cov,
-                         sample.nobs = sample.nobs,
-                         sample.th = sample.th,
-                         # sample.mean = sample.mean,
-                         WLS.V = WLS.V,
-                         NACOV = NACOV,
+                         sample.cov = sampstats$cov,
+                         sample.nobs = sampstats$nobs,
+                         sample.th = sampstats$th,
+                         WLS.V = sampstats$wls.v,
+                         NACOV = sampstats$nacov,
                          estimator = estimator,
                          missing = missing,
                          parameterization = "delta")

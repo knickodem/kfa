@@ -13,6 +13,8 @@ kfa(
   custom.cfas = NULL,
   power.args = list(rmsea0 = 0.05, rmseaA = 0.08),
   rotation = "oblimin",
+  simple = TRUE,
+  threshold = NA,
   ordered = FALSE,
   estimator = NULL,
   missing = "listwise",
@@ -20,9 +22,9 @@ kfa(
 )
 }
 \arguments{
-\item{variables}{a \code{data.frame} (or convertible to a \code{data.frame}) of variables to factor analyze}
+\item{variables}{a \code{data.frame} (or convertible to a \code{data.frame}) of variables (i.e., items) to factor analyze}
 
-\item{k}{an integer between 2 and 10; number of folds in which to split the data. Default is \code{NULL} which determines k via \code{\link[kfa]{find_k}}.}
+\item{k}{number of folds in which to split the data. Default is \code{NULL} which determines k via \code{\link[kfa]{find_k}}.}
 
 \item{m}{integer; maximum number of factors to extract. Default is 4 items per factor.}
 
@@ -36,6 +38,11 @@ kfa(
 
 \item{rotation}{character (case-sensitive); any rotation method listed in
 \code{\link[GPArotation]{rotations}} in the \code{GPArotation} package. Default is "oblimin".}
+
+\item{simple}{logical; Should the simple structure be returned (default) when converting EFA results to CFA syntax?
+If \code{FALSE}, items can cross-load on multiple factors.}
+
+\item{threshold}{numeric between 0 and 1 indicating the minimum (absolute) value of the loading for a variable on a factor when converting EFA results to CFA syntax. Must be specified when \code{simple = FALSE}.}
 
 \item{ordered}{logical; Should items be treated as ordinal and the
 polychoric correlations used in the factor analysis? When \code{FALSE} (default)
@@ -67,7 +74,7 @@ on the test data.
 \details{
 In order to be tested along with the EFA identified structures, each model supplied in \code{custom.cfas} must
 include all \code{variables} in \code{lavaan} compatible syntax. To test a model when dropping
-a variable, have the variable load on to a factor while constraining the loading to 0.
+a variable, have the variable load on to one factor while constraining the loading to 0.
 
 Deciding an appropriate \emph{m} can be difficult, but is consequential for both the possible factor structures to
 examine and the computation time. The \code{n_factors} in the \code{parameters} package

@@ -41,33 +41,76 @@ agg_loadings <- function(models, flag = .30, digits = 2){
     hey.flag <- vector("integer", k)
     for(f in 1:k){
       if(n %in% names(cfas[[f]])){
-      ## gather standardized loadings
-       l.temp <- lavaan::standardizedSolution(cfas[[f]][[n]], "std.all", se = FALSE)
-       lambdas[[f]] <- l.temp[l.temp$op == "=~",]
+        ## gather standardized loadings
+        l.temp <- lavaan::standardizedSolution(cfas[[f]][[n]], "std.all", se = FALSE)
+        lambdas[[f]] <- l.temp[l.temp$op == "=~",]
 
-      # flag for model summary table
-      load.flag[[f]] <- sum(lambdas[[f]]$est.std < flag)
+        # flag for model summary table
+        load.flag[[f]] <- sum(lambdas[[f]]$est.std < flag)
 
-      ## gather residual variances
-      t.temp <- lavaan::parameterestimates(cfas[[f]][[n]], se = FALSE)
-      thetas[[f]] <- t.temp[t.temp$op == "~~" & t.temp$lhs %in% vnames & t.temp$lhs == t.temp$rhs,]
+        ## gather residual variances
+        t.temp <- lavaan::parameterestimates(cfas[[f]][[n]], se = FALSE)
+        thetas[[f]] <- t.temp[t.temp$op == "~~" & t.temp$lhs %in% vnames & t.temp$lhs == t.temp$rhs,]
 
-
-      # flag for model summary table
-      hey.flag[[f]] <- sum(thetas[[f]]$est < 0)
+        # flag for model summary table
+        hey.flag[[f]] <- sum(thetas[[f]]$est < 0)
       }
     }
     lambdas <- do.call("rbind", lambdas)
     thetas <- do.call("rbind", thetas)
 
+    # identifying cross-loading items
+    byfactor <- tapply(lambdas$est.std, INDEX = list(lambdas$lhs, lambdas$rhs), sum) # most any function will do; we do not use the value in the cells, only care if NA
+    cls <- names(which(apply(byfactor, 2, function(x) sum(!is.na(x)) > 1))) # cross-loading variables
 
-    klambdas[[n]] <- data.frame(variable = vnames,
-                                mean = tapply(lambdas$est.std, lambdas$rhs, mean),
-                                range = paste(format(round(tapply(lambdas$est.std, lambdas$rhs, min), digits = digits), nsmall = digits), "-",
-                                                format(round(tapply(lambdas$est.std, lambdas$rhs, max), digits = digits), nsmall = digits)),
-                                `loading flag` = tapply(lambdas$est.std, lambdas$rhs, function(x) sum(x < flag)),
-                                `heywood flag` = tapply(thetas$est, thetas$rhs, function(x) sum(x < 0)),
-                                check.names = FALSE)
+    if(length(cls) > 0){ # only search for cross-loading secondary factor if needed
+
+      # is.na(lambdas$est.std) <- !lambdas$est.std # converts 0 to NA; don't need to do this though b/c the variable would be constrained in all folds
+      lambdas$f.v <- paste(lambdas$lhs, lambdas$op, lambdas$rhs) # adds column of factor by variable strings
+
+      fv.means <- tapply(lambdas$est.std, lambdas$f.v, mean) # mean loading for each factor-variable pair
+      ord <- lapply(cls, function(x) sort(fv.means[grepl(x, names(fv.means))], decreasing = TRUE)) # ordering means
+      p <- unlist(lapply(ord, function(x) names(x)[[1]])) # extracting primary factor
+      s <- unlist(lapply(ord, function(x) names(x)[[2]])) # extracting secondary factor
+      # need both p and s in case there are tertiary cross-loadings, which we will not report
+
+      primary <- lambdas[!lambdas$rhs %in% cls | lambdas$f.v %in% p,]
+      secondary <- lambdas[lambdas$f.v %in% s,]
+
+
+      primary.df <- data.frame(mean = tapply(primary$est.std, primary$rhs, mean),
+                               range = paste(format(round(tapply(primary$est.std, primary$rhs, min), digits = digits), nsmall = digits), "-",
+                                             format(round(tapply(primary$est.std, primary$rhs, max), digits = digits), nsmall = digits)),
+                               `loading flag` = tapply(primary$est.std, primary$rhs, function(x) sum(x < flag)),
+                               `heywood flag` = tapply(thetas$est, thetas$rhs, function(x) sum(x < 0)),
+                               check.names = FALSE)
+      primary.df <- cbind(data.frame(variable = row.names(primary.df)), primary.df)
+
+      # note: secondary does not have heywood flag b/c that is a variable level indicator, not variable by factor level indicator
+      secondary.df <- data.frame(mean.s = tapply(secondary$est.std, secondary$rhs, mean),
+                                 range.s = paste(format(round(tapply(secondary$est.std, secondary$rhs, min), digits = digits), nsmall = digits), "-",
+                                                 format(round(tapply(secondary$est.std, secondary$rhs, max), digits = digits), nsmall = digits)),
+                                 `loading flag.s` = tapply(secondary$est.std, secondary$rhs, function(x) sum(x < flag)),
+                                 check.names = FALSE)
+      secondary.df <- cbind(data.frame(variable = row.names(secondary.df)), secondary.df)
+
+      kl <- merge(primary.df, secondary.df, by = "variable", all = TRUE)
+      kl$variable <- factor(kl$variable, levels = vnames)
+      # row.names(kl) <- NULL
+      klambdas[[n]] <- kl[order(kl$variable),]
+
+    } else {
+
+      kl <- data.frame(mean = tapply(lambdas$est.std, lambdas$rhs, mean),
+                       range = paste(format(round(tapply(lambdas$est.std, lambdas$rhs, min), digits = digits), nsmall = digits), "-",
+                                     format(round(tapply(lambdas$est.std, lambdas$rhs, max), digits = digits), nsmall = digits)),
+                       `loading flag` = tapply(lambdas$est.std, lambdas$rhs, function(x) sum(x < flag)),
+                       `heywood flag` = tapply(thetas$est, thetas$rhs, function(x) sum(x < 0)),
+                       check.names = FALSE)
+      # order dataframe by vnames
+      kl <- cbind(data.frame(variable = factor(row.names(kl), levels = vnames)), kl)
+      klambdas[[n]] <- kl[order(kl$variable),]
+    }
 
     ## count of folds with a loading under flag threshold
     lflag[[n]] <- sum(load.flag > 0)
@@ -135,9 +178,11 @@ agg_cors <- function(models, flag = .90, type = "factor"){
       aggcorrs <- z2r(aggcorrs)
       diag(aggcorrs) <- 1       # change diagonals from NaN to 1
       aggcorrs[upper.tri(aggcorrs, diag = FALSE)] <- NA
-      aggcorrs <- cbind(data.frame(rn = row.names(aggcorrs)),
-                        aggcorrs, data.frame(flag = cflag))
-      kcorrs[[n]] <- aggcorrs
+      fnames <- row.names(aggcorrs)  # correct order of factor names; cflag names are alphabetical
+      aggcorrs <- cbind(data.frame(rn = fnames), aggcorrs)
+      aggcorrs <- merge(aggcorrs, data.frame(rn = names(cflag), flag = cflag), by = "rn", all = TRUE)
+      aggcorrs$rn <- factor(aggcorrs$rn, levels = fnames)
+      kcorrs[[n]] <- aggcorrs[order(aggcorrs$rn),]
 
     }
     names(kcorrs) <- mnames
@@ -226,7 +271,7 @@ agg_rels <- function(models, flag = .60, digits = 2){
       fnames <- dimnames(aos)[[1]] # should be the equivalent of rep(fn, nrow(aos))
     }
 
-    rdf <- data.frame(factor = fn)
+    rdf <- data.frame(factor = sort(fn)) # need to use sort b/c that is the order tapply will output
     for(w in 1:length(what)){
       test <- data.frame(mean = tapply(aos[, w], fnames, mean),
                          range = paste(format(round(tapply(aos[, w], fnames, min), digits = digits), nsmall = digits), "-",
@@ -236,7 +281,8 @@ agg_rels <- function(models, flag = .60, digits = 2){
       rdf <- cbind(rdf, test)
 
     }
-    krels[[n]] <- rdf
+    rdf$factor <- factor(rdf$factor, levels = fn) #### FINSIH HERE####
+    krels[[n]] <- rdf[order(rdf$factor),]
 
     ## count of folds with a reliabilities below flag threshold
     kflag[[n]] <- sum(rel.flag > 0)

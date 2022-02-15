@@ -6,7 +6,7 @@ flextable::set_flextable_defaults(fonts_ignore = TRUE)
 
 plot.settings <- list(what = "std", whatLabels = "no", layout = "tree",
                         intercepts = FALSE, residuals = FALSE, thresholds = FALSE,
-                        cut = load.flag, posCol = c("#BF0000","#000000"), fade = FALSE,
+                        fade = FALSE, posCol = c("#BF0000"), # "#000000"), cut = load.flag, # can update to more nuanced coloring of plots
                         # edge.color = , # could create custom function to utilize this argument
                         weighted = TRUE, negDashed = TRUE, esize = 5,
                         manifests = vnames, reorder = FALSE)

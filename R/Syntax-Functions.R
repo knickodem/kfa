@@ -1,6 +1,6 @@
 #' Write exploratory factor analysis syntax
 #'
-#' Converts variable names to exploratory factor analysis syntax
+#' Converts variable names to lavaan compatible exploratory factor analysis syntax
 #'
 #' @param nf integer; number of factors
 #' @param vnames character vector; names of variables to include in the efa
@@ -29,7 +29,7 @@ write_efa <- function(nf, vnames){
 
 #' Write confirmatory factor analysis syntax
 #'
-#' Uses the loadings matrix, presumably from an exploratory factor analysis, to generate confirmatory factory analysis syntax.
+#' Uses the factor loadings matrix, presumably from an exploratory factor analysis, to generate lavaan compatible confirmatory factory analysis syntax.
 #'
 #' @param loadings matrix of factor loadings
 #' @param simple logical; Should the simple structure be returned (default)?
@@ -40,6 +40,9 @@ write_efa <- function(nf, vnames){
 #' Use \code{"keep"} (default) to keep them in the model when generating the CFA syntax, \code{"drop"}
 #' to remove them, or \code{"none"} indicating the CFA syntax should not be generated for
 #' this model and \code{""} will be returned.
+#' @param identified logical; Should identification check for rotational uniqueness a la Millsap (2001) be performed?
+#' @param constrain0 logical; Should variable(s) with all loadings below \code{threshold} still be included in model syntax?
+#' If \code{TRUE}, variable(s) will load onto first factor with the loading constrained to 0.
 #'
 #' @examples
 #' loadings <- matrix(c(rep(.2, 3), rep(.6, 3), rep(.8, 3), rep(.3, 3)), ncol = 2)
@@ -49,7 +52,8 @@ write_efa <- function(nf, vnames){
 #' @export
 
 efa_cfa_syntax <- function(loadings, simple = TRUE, threshold = NA,
-                           single.item = c("keep", "drop", "none")){
+                           single.item = c("keep", "drop", "none"),
+                           identified = TRUE, constrain0 = FALSE){
 
   if(simple == FALSE & is.na(threshold)){
     stop("threshold must be supplied when simple = FALSE")
@@ -60,6 +64,7 @@ efa_cfa_syntax <- function(loadings, simple = TRUE, threshold = NA,
 
     vnames <- paste0("v", 1:dim(loadings)[[1]]) # variable
     fnames <- paste0("f", 1:dim(loadings)[[2]]) # factor
+    dimnames(loadings) <- list(vnames, fnames) # only really needed when identified == TRUE
 
   } else {
 
@@ -67,19 +72,40 @@ efa_cfa_syntax <- function(loadings, simple = TRUE, threshold = NA,
     fnames <- dimnames(loadings)[[2]] # factor
   }
 
+  # obtaining pattern matrix with NAs elsewhere
+  loadings.max <- loadings
   if(simple == TRUE){
     # largest (absolute) loading for each item
     maxload <- apply(abs(loadings), 1, max)
-  } else {
-    maxload <- c(rep(NA, length(vnames)))
+    for(v in 1:length(vnames)){
+
+      thresh <- max(maxload[[v]], threshold, na.rm = TRUE)
+      loadings.max[v, ][abs(loadings.max[v, ]) < thresh] <- NA
+    }
+  } else{
+    loadings.max <- t(apply(loadings.max, 1, function(x) ifelse(abs(x) < threshold, NA, x)))
   }
 
-  # obtaining simple structure matrix with NAs elsewhere
-  loadings.max <- loadings
-  for(v in 1:length(vnames)){
+  # if not rotationally unique, "" is returned
+  if(identified == TRUE){
 
-    thresh <- max(maxload[[v]], threshold, na.rm = TRUE)
-    loadings.max[v, ][abs(loadings.max[v, ]) < thresh] <- NA
+    # list of variable names for each factor
+    all.items <- apply(loadings.max, 2, function(x) names(x[!is.na(x)]), simplify = FALSE)
+
+    # is
+    id.check <- vector("logical", length(all.items))
+    for(i in 1:length(all.items)){
+      id.check[[i]] <- any(!all.items[[i]] %in% unlist(all.items[-i]))
+    }
+    if(!all(id.check)){
+      cfa.syntax <- ""
+      return(cfa.syntax)
+    }
+  }
+
+  if(constrain0 == TRUE){
+    # Any loadings below threshold on all factors?
+    dropped <- which(rowSums(is.na(loadings.max)) == ncol(loadings.max))
   }
 
   # returns vector with each element being the lavaan syntax identifying the factor
@@ -89,6 +115,9 @@ efa_cfa_syntax <- function(loadings, simple = TRUE, threshold = NA,
                     paste0(fnames[[fn]], " =~ ",
                            paste(vnames[!is.na(loadings.max[,fn])],
                                  collapse = " + ")))
+    if(fn == 1 & constrain0 == TRUE){
+      cfa.syntax <- if(length(dropped) > 0) paste(cfa.syntax, "+", paste(paste0("0*", names(dropped)), collapse = " + ")) else cfa.syntax
+    }
   }
 
   # What to do with single item factors?
