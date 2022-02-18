@@ -1,0 +1,13 @@
+citHeader("To cite kfa in publications use:")
+
+citEntry(
+  entry    = "Manual",
+  title    = "kfa: K-Fold Cross Validation for Factor Analysis",
+  author   = as.person("Kyle Nickodem [aut, cre], Peter Halpin [aut]"),
+  year     = "2022",
+  note     = "R package version 0.1.0",
+  url      = "https://CRAN.R-project.org/package=kfa",
+  textVersion = paste(
+
+  )
+)

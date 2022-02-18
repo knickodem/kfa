@@ -134,7 +134,7 @@ k_efa <- function(variables, m, rotation,
 #'               textual =~ x4 + x5 + x6
 #'               speed   =~ x7 + x8 + x9 '
 #'
-#' fit <- cfa(HS.model, data = HolzingerSwineford1939)
+#' fit <- lavaan::cfa(HS.model, data = HolzingerSwineford1939)
 #' get_std_loadings(fit)
 #'
 #' @export
@@ -150,7 +150,7 @@ get_std_loadings <- function(object, type = "std.all", df = FALSE){
   fnames <- unique(loaddf$lhs) # factor names
 
   # wide format
-  loads <- reshape(loaddf, direction  = "wide",
+  loads <- stats::reshape(loaddf, direction  = "wide",
                  idvar = "rhs", timevar = "lhs", v.names = "est.std")
   loads[is.na(loads)] <- 0
 

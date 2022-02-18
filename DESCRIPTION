@@ -1,7 +1,7 @@
 Package: kfa
 Type: Package
 Title: K-Fold Cross Validation for Factor Analysis
-Version: 0.1.0
+Version: 0.2.0
 Author: Kyle Nickodem [aut, cre] and Peter Halpin [aut]
 Maintainer: Kyle Nickodem <kyle.nickodem@gmail.com>
 Description: Provides functions to explore possible factor structures for a set of variables and
@@ -33,4 +33,3 @@ LazyData: true
 URL: https://github.com/knickodem/kfa
 BugReports: https://github.com/knickodem/kfa/issues
 RoxygenNote: 7.1.2
-VignetteBuilder: knitr

@@ -6,7 +6,7 @@ flextable::set_flextable_defaults(fonts_ignore = TRUE)
 
 plot.settings <- list(what = "std", whatLabels = "no", layout = "tree",
                         intercepts = FALSE, residuals = FALSE, thresholds = FALSE,
-                        fade = FALSE, posCol = c("#BF0000"), # "#000000"), cut = load.flag, # can update to more nuanced coloring of plots
+                        fade = FALSE, posCol = c("#000000"), # "#BF0000"), cut = load.flag, # can update to more nuanced coloring of plots
                         # edge.color = , # could create custom function to utilize this argument
                         weighted = TRUE, negDashed = TRUE, esize = 5,
                         manifests = vnames, reorder = FALSE)
@@ -105,7 +105,7 @@ for(n in 1:m){
   cat("\n\n")
   cat("**Factor Structure**")
   cat("\n\n")
-  cat(gsub("\n", "\n\n", kstructures[kstructures$model == mnames[[n]],]$structure))
+  cat(gsub("0\\*", "0\\\\*",gsub("\n", "\n\n", kstructures[kstructures$model == mnames[[n]],]$structure)))
   cat("\n\n")
   ## find fold with lavaan object for the model
   for(f in 1:k){
@@ -119,7 +119,21 @@ for(n in 1:m){
   cat("\n\n")
   cat("**Standardized Loading Across Folds**")
   cat("\n\n")
-  lambda.flex <- flextab_format(klambdas$loadings[[n]], bold.type = "none", digits = digits)
+  if(ncol(klambdas$loadings[[n]]) == 8){
+    
+      load.map <- data.frame(col_keys = names(klambdas$loadings[[n]]),
+                      top = c("variable", rep("primary factor", 3), "heywood flag", rep("secondary factor", 3)),
+                      bottom = c("variable", c("mean", "range", "loading flag", "heywood flag", "mean", "range", "loading flag")))
+      lambda.flex <- flextable::flextable(klambdas$loadings[[n]])
+      lambda.flex <- flextable::colformat_double(lambda.flex,
+                                                 j = which(unlist(lapply(klambdas$loadings[[n]], is.numeric))),
+                                                 digits = digits)
+      lambda.flex <- two_level_flex(lambda.flex, mapping = load.map,
+                                    vert.cols = c("variable", "heywood flag"), border = border)
+    
+  } else{
+      lambda.flex <- flextab_format(klambdas$loadings[[n]], bold.type = "none", digits = digits)
+  }
   cat(knit_print(lambda.flex))
   cat("Note: loadings flagged when <", load.flag, "in a fold. 'heywood flag' is the number of folds the variable's estimated residual variance was negative")
   cat("\n\n")

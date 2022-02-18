@@ -34,6 +34,7 @@ agg_loadings <- function(models, flag = .30, digits = 2){
   names(lflag) <- mnames
   hflag <- vector("integer", m)  # heywood case flag
   names(hflag) <- mnames
+
   for(n in mnames){
     lambdas <- vector("list", k)
     thetas <- vector("list", k)
@@ -94,7 +95,7 @@ agg_loadings <- function(models, flag = .30, digits = 2){
                                  check.names = FALSE)
       secondary.df <- cbind(data.frame(variable = row.names(secondary.df)), secondary.df)
 
-      kl <- merge(primary.df, secondary.df, by = "variable", all = TRUE)
+      kl <- merge(primary.df, secondary.df, by = "variable", all = TRUE, sort = FALSE) # sorting has to happen in next lines
       kl$variable <- factor(kl$variable, levels = vnames)
       # row.names(kl) <- NULL
       klambdas[[n]] <- kl[order(kl$variable),]
@@ -152,9 +153,11 @@ agg_cors <- function(models, flag = .90, type = "factor"){
 
 
   kcorrs <- vector("list", m)
+  names(kcorrs) <- mnames
   kflag <- vector("integer", m)
+  names(kflag) <- mnames
+
   # Currently assumes the first element is a 1 factor model; need a more robust check
-  kcorrs[[1]] <- NULL
   kflag[[1]] <- NA
   if(m > 1){
     for(n in 2:m){
@@ -178,15 +181,12 @@ agg_cors <- function(models, flag = .90, type = "factor"){
       aggcorrs <- z2r(aggcorrs)
       diag(aggcorrs) <- 1       # change diagonals from NaN to 1
       aggcorrs[upper.tri(aggcorrs, diag = FALSE)] <- NA
-      fnames <- row.names(aggcorrs)  # correct order of factor names; cflag names are alphabetical
-      aggcorrs <- cbind(data.frame(rn = fnames), aggcorrs)
-      aggcorrs <- merge(aggcorrs, data.frame(rn = names(cflag), flag = cflag), by = "rn", all = TRUE)
-      aggcorrs$rn <- factor(aggcorrs$rn, levels = fnames)
-      kcorrs[[n]] <- aggcorrs[order(aggcorrs$rn),]
-
+      aggcorrs <- cbind(data.frame(rn = row.names(aggcorrs)), aggcorrs)
+      # cflag names are alphabetical, rather than original factor order so must merge with sort = F
+      aggcorrs <- merge(aggcorrs, data.frame(rn = names(cflag), flag = cflag),
+                        by = "rn", all = TRUE, sort = FALSE)
+      kcorrs[[n]] <- aggcorrs
     }
-    names(kcorrs) <- mnames
-    names(kflag) <- mnames
   }
 
 
@@ -249,7 +249,9 @@ agg_rels <- function(models, flag = .60, digits = 2){
   what <- if(lavaan::lavInspect(cfas[[1]][[1]], "categorical")) "omega3" else c("omega3", "alpha")
 
   krels <- vector("list", m)
+  names(krels) <- mnames
   kflag <- vector("integer", m)
+  names(kflag) <- mnames
   for(n in 1:m){
     rels <- vector("list", k)
     rel.flag <- vector("integer", k)
@@ -281,14 +283,12 @@ agg_rels <- function(models, flag = .60, digits = 2){
       rdf <- cbind(rdf, test)
 
     }
-    rdf$factor <- factor(rdf$factor, levels = fn) #### FINSIH HERE####
+    rdf$factor <- factor(rdf$factor, levels = fn)
     krels[[n]] <- rdf[order(rdf$factor),]
 
     ## count of folds with a reliabilities below flag threshold
     kflag[[n]] <- sum(rel.flag > 0)
   }
-  names(krels) <- mnames
-  names(kflag) <- mnames
 
   return(list(reliabilities = krels,
               flag = kflag))
@@ -333,10 +333,12 @@ model_flags <- function(models, strux, loads, cors, rels){
 
   # flagged if either indicates an improper solution
   temp <- c(unlist(cnvgd) == FALSE, unlist(hey) == FALSE)
-  improper <-tapply(temp, names(temp), sum)
+  improper <-tapply(temp, names(temp), sum) # orders output alphabetically
+  # adjust order to match model.names and other flags
+  improper <- improper[order(factor(names(improper), levels=models$model.names))]
 
   ## joining flags into data.frame
-  flags <- data.frame(model = models$model.names,  # assumes first fold contains all models in the same order as other folds
+  flags <- data.frame(model = models$model.names,
                       `improper solution` = improper,
                       `heywood item` = loads$heywood,
                       `low loading` = loads$flag,
