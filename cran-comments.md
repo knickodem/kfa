@@ -1,11 +1,15 @@
-## Resubmission
+## kfa 0.2.0
 
-This is a resubmission. In this version I have:
+## Reason
 
-* Edited the description field of DESCRIPTION file to include references with doi
-* Added data to package in order to add more examples in Rd-files for exported functions
-* Some examples take >5 seconds to run so changed dontrun{} to donttest{}
-* kfa_report example still uses dontrun{} because it produces html_document
+Multiple user facing and background updates since CRAN version 0.1.0 in December 2021.
+
+## Test environments
+
+* local windows 10 (R 4.1.1)
+* Windows Server 2022, R-devel, 64 bit
+* Ubuntu Linux 20.04.1 LTS, R-release, GCC
+* Fedora Linux, R-devel, clang, gfortran
 
 ## R CMD check results
 
