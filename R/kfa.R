@@ -112,6 +112,11 @@ kfa <- function(variables,
     }
   }
 
+  ## cross-loading check
+  if(simple == FALSE & is.na(threshold)){
+    stop("threshold must be supplied when simple = FALSE")
+  }
+
   # # Not used at the moment
   # lavaan.args <- c(list(rotation = rotation, ordered = ordered,
   #                       estimator = estimator, missing = missing, list(...)))
