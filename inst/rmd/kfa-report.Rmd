@@ -42,7 +42,7 @@ date: "`r format(Sys.Date(), '%B %d, %Y')`"
 
 **Fit across folds by factor model**
 
-```{r model fit, ft.align = "left", results='asis'}
+```{r modelfit, ft.align = "left", results='asis'}
 ftn <- names(fit.table)
 df <- ftn[grepl("df", ftn)] # naive or scaled?
 index <- unique(gsub("mean.|range.", "", ftn[!ftn %in% c("model", df)]))
@@ -66,7 +66,7 @@ knit_print(flagged.flex)
 ```
 
 *Notes:*  
-'mode structure' is the number of folds the EFA identified the mode (most common) structure. Thus, "mode structure" will be `r k` when the same structure was identified in every fold and < `r k` when multiple factor structures were identified. The value in "mode structure" is maximum for all remaining columns. The mode structure was used in the CFA. See Appendix for all structures.  
+'mode structure' is the number of folds the EFA identified the mode (most common) structure. This structure was then used in the CFA. 'mode structure' will be `r k` when the same structure was identified in every fold and < `r k` when multiple factor structures were identified. The value in 'mode structure' is the maximum value for all remaining columns. See Appendix for all structures.  
 'improper solution' is the number of folds with non-convergence or a non-positive definite matrix.  
 'high factor correlation' threshold set to `r cor.flag`.  
 'low scale reliability' threshold set to `r rel.flag` with $\omega_h$.  
@@ -74,7 +74,7 @@ knit_print(flagged.flex)
 blanks = not applicable  
 
 
-```{r best model, ft.align = "left", results='asis', eval=FALSE}
+```{r bestmodel, ft.align = "left", results='asis', eval=FALSE}
 cat("**Best model in each fold by fit index**")
 best.flex <- flextab_format(best.model, bold.type = "none", digits = digits)
 knit_print(best.flex)
@@ -128,11 +128,13 @@ for(n in 1:m){
       lambda.flex <- flextable::colformat_double(lambda.flex,
                                                  j = which(unlist(lapply(klambdas$loadings[[n]], is.numeric))),
                                                  digits = digits)
+      lambda.flex <- flextable::align(lambda.flex, i = NULL, j = 1, align = "left", part = "body")
       lambda.flex <- two_level_flex(lambda.flex, mapping = load.map,
                                     vert.cols = c("variable", "heywood flag"), border = border)
     
   } else{
       lambda.flex <- flextab_format(klambdas$loadings[[n]], bold.type = "none", digits = digits)
+      lambda.flex <- flextable::align(lambda.flex, i = NULL, j = 1, align = "left", part = "body")
   }
   cat(knit_print(lambda.flex))
   cat("Note: loadings flagged when <", load.flag, "in a fold. 'heywood flag' is the number of folds the variable's estimated residual variance was negative")
@@ -165,7 +167,7 @@ for(n in 1:m){
 
 ## Within Fold Model Fit
 
-```{r appendix.fits, ft.align = "left", results='asis'}
+```{r appendixfits, ft.align = "left", results='asis'}
 index <- names(appendix)[!names(appendix) %in% "fold"]
 index <- unique(sub(".[^.]*$", "", index))
 
@@ -210,7 +212,7 @@ if(ax > 16){
 
 ## All EFA Structures
 
-```{r appendix.structures, results = 'asis'}
+```{r appendixstructures, results = 'asis'}
 strux <- models$efa.structures
 for(n in 1:length(strux)){
   cat("### Factors:", n)

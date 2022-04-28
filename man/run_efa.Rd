@@ -68,6 +68,13 @@ A three-element \code{list}:
 This function is intended for use on independent samples rather than integrated
 with k-fold cross-validation.
 }
+\details{
+When converting EFA results to CFA syntax (via \code{\link[kfa]{efa_cfa_syntax}}), the simple structure is
+defined as each variable loading onto a single factor. This is determined using the largest factor loading for each variable.
+When \code{simple = FALSE}, variables are allowed to cross-load on multiple factors. All pathways with loadings above the \code{threshold} are
+retained in this case. However, allowing cross-loading variables can result in model under-identification.
+An identification check is run by default, but can be turned off by setting \code{identified = FALSE}.
+}
 \examples{
 
 # simulate data based on a 3-factor model with standardized loadings
@@ -85,4 +92,7 @@ sim.data <- simstandard::sim_standardized(sim.mod, n = 900,
 # Run 1-, 2-, and 3-factor models
 efas <- run_efa(sim.data, m = 3)
 
+}
+\references{
+Millsap, R. E. (2001). When trivial constraints are not trivial: The choice of uniqueness constraints in confirmatory factor analysis. \emph{Structural Equation Modeling, 8}(1), 1-17. \doi{10.1207/S15328007SEM0801_1}
 }

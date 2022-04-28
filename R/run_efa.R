@@ -28,12 +28,22 @@
 #' @param missing default is "listwise". See \code{\link[lavaan]{lavaan}} for other options.
 #' @param ... other arguments passed to \code{lavaan} functions. See \code{\link[lavaan]{lavOptions}}.
 #'
+#' @details
+#' When converting EFA results to CFA syntax (via \code{\link[kfa]{efa_cfa_syntax}}), the simple structure is
+#' defined as each variable loading onto a single factor. This is determined using the largest factor loading for each variable.
+#' When \code{simple = FALSE}, variables are allowed to cross-load on multiple factors. All pathways with loadings above the \code{threshold} are
+#' retained in this case. However, allowing cross-loading variables can result in model under-identification.
+#' An identification check is run by default, but can be turned off by setting \code{identified = FALSE}.
+#'
 #' @return A three-element \code{list}:
 #' \itemize{
 #' \item **efas** \code{lavaan} object for each *m* model
 #' \item **loadings** (rotated) factor loading matrix for each *m* model
 #' \item **cfa.syntax** CFA syntax generated from loadings
 #' }
+#'
+#' @references
+#' Millsap, R. E. (2001). When trivial constraints are not trivial: The choice of uniqueness constraints in confirmatory factor analysis. *Structural Equation Modeling, 8*(1), 1-17. \doi{10.1207/S15328007SEM0801_1}
 #'
 #' @examples
 #'

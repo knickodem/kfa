@@ -1,4 +1,4 @@
-#' Conducts k-fold cross validation for factor analysis.
+#' Conducts k-fold cross validation for factor analysis
 #'
 #' The function splits the data into *k* folds. For each fold,
 #' EFAs are run on the training data and the simple structure for each model
@@ -16,7 +16,8 @@
 #' \code{\link[GPArotation]{rotations}} in the \code{GPArotation} package. Default is "oblimin".
 #' @param simple logical; Should the simple structure be returned (default) when converting EFA results to CFA syntax?
 #' If \code{FALSE}, items can cross-load on multiple factors.
-#' @param threshold numeric between 0 and 1 indicating the minimum (absolute) value of the loading for a variable on a factor when converting EFA results to CFA syntax. Must be specified when \code{simple = FALSE}.
+#' @param threshold numeric between 0 and 1 indicating the minimum (absolute) value of the loading for a variable on a factor
+#' when converting EFA results to CFA syntax. Must be specified when \code{simple = FALSE}.
 #' @param ordered logical; Should items be treated as ordinal and the
 #' polychoric correlations used in the factor analysis? When \code{FALSE} (default)
 #' the Pearson correlation matrix is used. A character vector of item names is
@@ -27,13 +28,19 @@
 #' @param ... other arguments passed to \code{lavaan} functions. See \code{\link[lavaan]{lavOptions}}.
 #'
 #' @details
-#' In order to be tested along with the EFA identified structures, each model supplied in \code{custom.cfas} must
-#' include all \code{variables} in \code{lavaan} compatible syntax. To test a model when dropping
-#' a variable, have the variable load on to one factor while constraining the loading to 0.
+#' In order for \code{custom.cfas} to be tested along with the EFA identified structures, each model supplied in \code{custom.cfas} must
+#' include all \code{variables} in \code{lavaan} compatible syntax.
 #'
 #' Deciding an appropriate *m* can be difficult, but is consequential for both the possible factor structures to
-#' examine and the computation time. The \code{n_factors} in the \code{parameters} package
-#' can assist with this decision.
+#' examine, the power analysis to determine *k*, and overall computation time.
+#' The \code{n_factors} in the \code{parameters} package can assist with this decision.
+#'
+#' When converting EFA results to CFA syntax (via \code{\link[kfa]{efa_cfa_syntax}}), the simple structure is
+#' defined as each variable loading onto a single factor. This is determined using the largest factor loading for each variable.
+#' When \code{simple = FALSE}, variables are allowed to cross-load on multiple factors. All pathways with loadings above the \code{threshold} are
+#' retained in this case. However, allowing cross-loading variables can result in model under-identification.
+#' The \code{\link[kfa]{efa_cfa_syntax}}) function conducts an identification check (i.e., \code{identified = TRUE}) and
+#' under-identified models are not run in the CFA portion of the analysis.
 #'
 #' @return An object of class \code{"kfa"}, which is a four-element \code{list}:
 #' \itemize{
