@@ -5,11 +5,12 @@
 \title{Conducts exploratory factor analysis}
 \usage{
 run_efa(
-  variables,
-  m = floor(ncol(variables)/4),
+  data,
+  variables = names(data),
+  m = floor(ncol(data)/4),
   rotation = "oblimin",
   simple = TRUE,
-  threshold = NA,
+  min.loading = NA,
   single.item = c("keep", "drop", "none"),
   identified = TRUE,
   constrain0 = FALSE,
@@ -20,28 +21,30 @@ run_efa(
 )
 }
 \arguments{
-\item{variables}{a \code{data.frame} (or convertible to a \code{data.frame}) of variables (i.e., items) to factor analyze}
+\item{data}{a\code{data.frame} containing the variables (i.e., items) to factor analyze}
+
+\item{variables}{character vector of column names in \code{data} indicating the variables to factor analyze. Default is to use all columns.}
 
 \item{m}{integer; maximum number of factors to extract. Default is 4 items per factor.}
 
 \item{rotation}{character (case-sensitive); any rotation method listed in
-\code{\link[GPArotation]{rotations}} in the \code{GPArotation} package.
-Default is "oblimin".}
+\code{\link[GPArotation]{rotations}} in the \code{GPArotation} package. Default is "oblimin".}
 
-\item{simple}{logical; Should the most simple structure be returned (default)?
-If \code{FALSE}, items can cross load on multiple factors.}
+\item{simple}{logical; Should the simple structure be returned (default) when converting EFA results to CFA syntax?
+If \code{FALSE}, items can cross-load on multiple factors.}
 
-\item{threshold}{numeric between 0 and 1 indicating the minimum (absolute) value
-of the loading for an item on a factor.}
+\item{min.loading}{numeric between 0 and 1 indicating the minimum (absolute) value of the loading for a variable on a factor
+when converting EFA results to CFA syntax. Must be specified when \code{simple = FALSE}.}
 
 \item{single.item}{character indicating how single-item factors should be treated.
 Use \code{"keep"} (default) to keep them in the model when generating the CFA syntax, \code{"drop"}
 to remove them, or \code{"none"} indicating the CFA syntax should not be generated for
-this model and \code{""} will be returned.}
+this model and \code{""} is returned.}
 
-\item{identified}{logical; Should identification check for rotational uniqueness a la Millsap (2001) be performed?}
+\item{identified}{logical; Should identification check for rotational uniqueness a la Millsap (2001) be performed?
+If the model is not identified \code{""} is returned.}
 
-\item{constrain0}{logical; Should variable(s) with all loadings below \code{threshold} still be included in model syntax?
+\item{constrain0}{logical; Should variable(s) with all loadings below \code{min.loading} still be included in model syntax?
 If \code{TRUE}, variable(s) will load onto first factor with the loading constrained to 0.}
 
 \item{ordered}{logical; Should items be treated as ordinal and the
@@ -49,10 +52,10 @@ polychoric correlations used in the factor analysis? When \code{FALSE} (default)
 the Pearson correlation matrix is used. A character vector of item names is
 also accepted to prompt estimation of the polychoric correlation matrix.}
 
-\item{estimator}{if \code{ordered = FALSE}, the default is "ML". If
-\code{ordered = TRUE}, the default is "DWLS". See \code{\link[lavaan]{lavaan}} for other options.}
+\item{estimator}{if \code{ordered = FALSE}, the default is "MLMVS". If
+\code{ordered = TRUE}, the default is "WLSMV". See \code{\link[lavaan]{lavOptions}} for other options.}
 
-\item{missing}{default is "listwise". See \code{\link[lavaan]{lavaan}} for other options.}
+\item{missing}{default is "listwise". See \code{\link[lavaan]{lavOptions}} for other options.}
 
 \item{...}{other arguments passed to \code{lavaan} functions. See \code{\link[lavaan]{lavOptions}}.}
 }
@@ -71,8 +74,8 @@ with k-fold cross-validation.
 \details{
 When converting EFA results to CFA syntax (via \code{\link[kfa]{efa_cfa_syntax}}), the simple structure is
 defined as each variable loading onto a single factor. This is determined using the largest factor loading for each variable.
-When \code{simple = FALSE}, variables are allowed to cross-load on multiple factors. All pathways with loadings above the \code{threshold} are
-retained in this case. However, allowing cross-loading variables can result in model under-identification.
+When \code{simple = FALSE}, variables are allowed to cross-load on multiple factors. In this case, all pathways with loadings
+above the \code{min.loading} are retained. However, allowing cross-loading variables can result in model under-identification.
 An identification check is run by default, but can be turned off by setting \code{identified = FALSE}.
 }
 \examples{

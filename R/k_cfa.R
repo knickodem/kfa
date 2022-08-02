@@ -2,12 +2,7 @@
 #'
 #' Runs CFA for models identified from a previous EFA.
 #'
-#' @param syntax A (named) list of \code{lavaan} syntax specifying the CFA models to run.
-#' @param variables a \code{data.frame} of variables to factor analyze.
-#' @param ordered passed to \code{lavaan} functions. See \code{\link[lavaan]{lavCor}}.
-#' @param estimator passed to \code{lavaan} functions. See \code{\link[lavaan]{lavCor}}.
-#' @param missing passed to \code{lavaan} functions. See \code{\link[lavaan]{lavCor}}.
-#' @param ... other arguments passed to \code{lavaan} functions. See \code{\link[lavaan]{lavOptions}}.
+#' @inheritParams kfa
 #'
 #' @return A list of \code{lavaan} objects
 #'
@@ -15,10 +10,11 @@
 #'
 #' @noRd
 
-k_cfa <- function(syntax, variables, ordered, estimator, missing, ...){
+k_cfa <- function(syntax, data, variables, ordered, estimator, missing, ...){
 
   ## calculate and extract sample statistics
-  sampstats <- sample_stats(variables = variables,
+  sampstats <- sample_stats(data = data,
+                            variables = variables,
                             ordered = ordered,
                             estimator = estimator,
                             missing = missing,
@@ -36,6 +32,8 @@ k_cfa <- function(syntax, variables, ordered, estimator, missing, ...){
                          sample.cov = sampstats$cov,
                          sample.nobs = sampstats$nobs,
                          sample.th = sampstats$th,
+                         # sample.mean = sampstats$mean,
+                         meanstructure = FALSE,
                          WLS.V = sampstats$wls.v,
                          NACOV = sampstats$nacov,
                          estimator = estimator,

@@ -15,7 +15,7 @@
 #' @param rel.flag numeric; factor (scale) reliabilities below this value will be flagged. Default is .60.
 #' @param digits integer; number of decimal places to display in the report.
 #'
-#' @return a summary report of factor structures and model fit within and between folds
+#' @return A summary report of factor structures and model fit within and between folds.
 #'
 #' @examples
 #'
@@ -91,6 +91,9 @@ kfa_report <- function(models,
   ## summarizing fit statistics by fold
   kfits <- k_model_fit(models, index = index, by.fold = TRUE) # dataframe for each fold
   fit.table <- agg_model_fit(kfits, index = "all", digits = 2)
+  # adjust model order to match model.names and other output
+  fit.table <- fit.table[order(factor(fit.table$model, levels=mnames)),]
+
 
   ## best model in each fold
   # best.model <- best_model(kfits, index = index)

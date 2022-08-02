@@ -1,6 +1,6 @@
 #' Write exploratory factor analysis syntax
 #'
-#' Converts variable names to lavaan compatible exploratory factor analysis syntax
+#' Converts variable names to lavaan-compatible exploratory factor analysis syntax
 #'
 #' @param nf integer; number of factors
 #' @param vnames character vector; names of variables to include in the efa
@@ -31,18 +31,15 @@ write_efa <- function(nf, vnames){
 #'
 #' Uses the factor loadings matrix, presumably from an exploratory factor analysis, to generate \code{lavaan} compatible confirmatory factory analysis syntax.
 #'
+#' @inheritParams kfa
 #' @param loadings matrix of factor loadings
-#' @param simple logical; Should the simple structure be returned (default)?
-#' If \code{FALSE}, items can cross-load on multiple factors.
-#' @param threshold numeric between 0 and 1 indicating the minimum (absolute) value
-#' of the loading for an item on a factor. Must be specified when \code{simple = FALSE}
 #' @param single.item character indicating how single-item factors should be treated.
 #' Use \code{"keep"} (default) to keep them in the model when generating the CFA syntax, \code{"drop"}
 #' to remove them, or \code{"none"} indicating the CFA syntax should not be generated for
 #' this model and \code{""} is returned.
 #' @param identified logical; Should identification check for rotational uniqueness a la Millsap (2001) be performed?
 #' If the model is not identified \code{""} is returned.
-#' @param constrain0 logical; Should variable(s) with all loadings below \code{threshold} still be included in model syntax?
+#' @param constrain0 logical; Should variable(s) with all loadings below \code{min.loading} still be included in model syntax?
 #' If \code{TRUE}, variable(s) will load onto first factor with the loading constrained to 0.
 #'
 #' @references
@@ -51,17 +48,17 @@ write_efa <- function(nf, vnames){
 #' @examples
 #' loadings <- matrix(c(rep(.2, 3), rep(.6, 3), rep(.8, 3), rep(.3, 3)), ncol = 2)
 #' efa_cfa_syntax(loadings) # simple structure
-#' efa_cfa_syntax(loadings, simple = FALSE, threshold = .25) # allow cross-loadings and check if model is identified
-#' efa_cfa_syntax(loadings, simple = FALSE, threshold = .25, identified = FALSE) # ignore identification check
+#' efa_cfa_syntax(loadings, simple = FALSE, min.loading = .25) # allow cross-loadings and check if model is identified
+#' efa_cfa_syntax(loadings, simple = FALSE, min.loading = .25, identified = FALSE) # ignore identification check
 #'
 #' @export
 
-efa_cfa_syntax <- function(loadings, simple = TRUE, threshold = NA,
+efa_cfa_syntax <- function(loadings, simple = TRUE, min.loading = NA,
                            single.item = c("keep", "drop", "none"),
                            identified = TRUE, constrain0 = FALSE){
 
-  if(simple == FALSE & is.na(threshold)){
-    stop("threshold must be supplied when simple = FALSE")
+  if(simple == FALSE & is.na(min.loading)){
+    stop("min.loading must be supplied when simple = FALSE")
   }
 
   # item and factor names
@@ -84,11 +81,11 @@ efa_cfa_syntax <- function(loadings, simple = TRUE, threshold = NA,
     maxload <- apply(abs(loadings), 1, max)
     for(v in 1:length(vnames)){
 
-      thresh <- max(maxload[[v]], threshold, na.rm = TRUE)
+      thresh <- max(maxload[[v]], min.loading, na.rm = TRUE)
       loadings.max[v, ][abs(loadings.max[v, ]) < thresh] <- NA
     }
   } else{
-    loadings.max <- t(apply(loadings.max, 1, function(x) ifelse(abs(x) < threshold, NA, x)))
+    loadings.max <- t(apply(loadings.max, 1, function(x) ifelse(abs(x) < min.loading, NA, x)))
   }
 
   # if not rotationally unique, "" is returned
@@ -109,7 +106,7 @@ efa_cfa_syntax <- function(loadings, simple = TRUE, threshold = NA,
   }
 
   if(constrain0 == TRUE){
-    # Any loadings below threshold on all factors?
+    # Any loadings below min.loading on all factors?
     dropped <- which(rowSums(is.na(loadings.max)) == ncol(loadings.max))
   }
 
@@ -205,7 +202,7 @@ model_structure <- function(models){
 #'
 #' Extract unique factor structures across the k-folds from exploratory factor analysis
 #'
-#' @param syntax list containing \code{lavaan} compatible CFA syntax returned from \code{\link[kfa]{k_efa}}
+#' @param syntax list containing \code{lavaan}-compatible CFA syntax returned from \code{\link[kfa]{k_efa}}
 #'
 #' @return \code{list} containing the structure and the folds where the structure was identified
 #'

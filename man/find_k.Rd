@@ -17,7 +17,8 @@ find_k(
 )
 }
 \arguments{
-\item{variables}{a \code{data.frame} (or convertible to a \code{data.frame}) with variables to factor analyze in columns and observations in rows.}
+\item{variables}{a \code{data.frame} (or convertible to a \code{data.frame}) with variables to factor analyze in columns and observations in rows.
+The power analysis assumes all observations have complete data. Use \code{n} argument or remove rows manually to account for missingness.}
 
 \item{n}{integer; number of observations. Ignored if \code{variables} is provided.}
 
@@ -36,7 +37,7 @@ find_k(
 \item{...}{other arguments passed to \code{\link[semTools]{findRMSEAsamplesize}}.}
 }
 \value{
-named vector with the number of folds, sample size suggested by the power analysis, and the actual sample size used for determining k.
+named vector with the number of folds (k), sample size suggested by the power analysis (power.n), and the actual sample size used for determining k (actual.n).
 }
 \description{
 This function is specifically for determining \emph{k} in the context of factor analysis using

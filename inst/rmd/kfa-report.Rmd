@@ -19,8 +19,6 @@ title: "`r report.title`"
 date: "`r format(Sys.Date(), '%B %d, %Y')`"
 ---
 
-\newpage
-
 # Overview
 
 **# of folds:** `r k`
@@ -37,6 +35,8 @@ date: "`r format(Sys.Date(), '%B %d, %Y')`"
 **Estimation:** `r opts$estimator`
 
 **Missing Data:** `r opts$missing`
+
+\newpage
 
 # Model Summary
 
@@ -80,6 +80,7 @@ best.flex <- flextab_format(best.model, bold.type = "none", digits = digits)
 knit_print(best.flex)
 ```
 
+\newpage
 
 # Model Details
 
@@ -105,7 +106,7 @@ for(n in 1:m){
   cat("\n\n")
   cat("**Factor Structure**")
   cat("\n\n")
-  cat(gsub("0\\*", "0\\\\*",gsub("\n", "\n\n", kstructures[kstructures$model == mnames[[n]],]$structure)))
+  cat(gsub("\n", "\n\n", kstructures[kstructures$model == mnames[[n]],]$structure))
   cat("\n\n")
   ## find fold with lavaan object for the model
   for(f in 1:k){

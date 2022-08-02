@@ -7,7 +7,7 @@
 efa_cfa_syntax(
   loadings,
   simple = TRUE,
-  threshold = NA,
+  min.loading = NA,
   single.item = c("keep", "drop", "none"),
   identified = TRUE,
   constrain0 = FALSE
@@ -16,11 +16,11 @@ efa_cfa_syntax(
 \arguments{
 \item{loadings}{matrix of factor loadings}
 
-\item{simple}{logical; Should the simple structure be returned (default)?
+\item{simple}{logical; Should the simple structure be returned (default) when converting EFA results to CFA syntax?
 If \code{FALSE}, items can cross-load on multiple factors.}
 
-\item{threshold}{numeric between 0 and 1 indicating the minimum (absolute) value
-of the loading for an item on a factor. Must be specified when \code{simple = FALSE}}
+\item{min.loading}{numeric between 0 and 1 indicating the minimum (absolute) value of the loading for a variable on a factor
+when converting EFA results to CFA syntax. Must be specified when \code{simple = FALSE}.}
 
 \item{single.item}{character indicating how single-item factors should be treated.
 Use \code{"keep"} (default) to keep them in the model when generating the CFA syntax, \code{"drop"}
@@ -30,7 +30,7 @@ this model and \code{""} is returned.}
 \item{identified}{logical; Should identification check for rotational uniqueness a la Millsap (2001) be performed?
 If the model is not identified \code{""} is returned.}
 
-\item{constrain0}{logical; Should variable(s) with all loadings below \code{threshold} still be included in model syntax?
+\item{constrain0}{logical; Should variable(s) with all loadings below \code{min.loading} still be included in model syntax?
 If \code{TRUE}, variable(s) will load onto first factor with the loading constrained to 0.}
 }
 \description{
@@ -39,8 +39,8 @@ Uses the factor loadings matrix, presumably from an exploratory factor analysis,
 \examples{
 loadings <- matrix(c(rep(.2, 3), rep(.6, 3), rep(.8, 3), rep(.3, 3)), ncol = 2)
 efa_cfa_syntax(loadings) # simple structure
-efa_cfa_syntax(loadings, simple = FALSE, threshold = .25) # allow cross-loadings and check if model is identified
-efa_cfa_syntax(loadings, simple = FALSE, threshold = .25, identified = FALSE) # ignore identification check
+efa_cfa_syntax(loadings, simple = FALSE, min.loading = .25) # allow cross-loadings and check if model is identified
+efa_cfa_syntax(loadings, simple = FALSE, min.loading = .25, identified = FALSE) # ignore identification check
 
 }
 \references{

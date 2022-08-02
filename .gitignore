@@ -50,3 +50,6 @@ docs/
 # translation temp files
 po/*~
 inst/doc
+
+# shiny (for now)
+shiny/

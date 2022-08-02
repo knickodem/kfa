@@ -2,18 +2,7 @@
 #'
 #' Conducts a sequence of EFAs and converts the resulting factor structure into \code{lavaan} compatible CFA syntax.
 #'
-#' @param variables a \code{data.frame} of variables (i.e., items) to factor analyze.
-#' @param m an integer; maximum number of factors to extract.
-#' @param rotation character (case-sensitive); any rotation method listed in
-#' \code{\link[GPArotation]{rotations}} in the \code{GPArotation} package.
-#' @param simple logical; Should the simple structure be returned (default)?
-#' If \code{FALSE}, items can cross-load on multiple factors.
-#' @param threshold numeric between 0 and 1 indicating the minimum (absolute) value
-#' of the loading for a variable on a factor. Must be specified when \code{simple = FALSE}
-#' @param ordered passed to \code{lavaan} functions. See \code{\link[lavaan]{lavCor}}.
-#' @param estimator passed to \code{lavaan} functions. See \code{\link[lavaan]{lavCor}}.
-#' @param missing passed to \code{lavaan} functions. See \code{\link[lavaan]{lavCor}}.
-#' @param ... other arguments passed to \code{lavaan} functions. See \code{\link[lavaan]{lavOptions}}.
+#' @inheritParams kfa
 #'
 #' @return A list containing \code{lavaan} compatible CFA syntax.
 #'
@@ -23,12 +12,13 @@
 #'
 #' @noRd
 
-k_efa <- function(variables, m, rotation,
-                  simple, threshold,
+k_efa <- function(data, variables, m, rotation,
+                  simple, min.loading,
                   ordered, estimator, missing, ...){
 
   ## calculate and extract sample statistics
-  sampstats <- sample_stats(variables = variables,
+  sampstats <- sample_stats(data = data,
+                            variables = variables,
                             ordered = ordered,
                             estimator = estimator,
                             missing = missing,
@@ -40,12 +30,14 @@ k_efa <- function(variables, m, rotation,
   for(nf in 2:m){
 
     ## write efa syntax
-    efa.mod <- write_efa(nf = nf, vnames = names(variables))
+    efa.mod <- write_efa(nf = nf, vnames = variables)
 
     unrotated <- lavaan::cfa(model = efa.mod,
                              sample.cov = sampstats$cov,
                              sample.nobs = sampstats$nobs,
                              sample.th = sampstats$th,
+                             # sample.mean = sampstats$mean,
+                             meanstructure = FALSE,
                              WLS.V = sampstats$wls.v,
                              NACOV = sampstats$nacov,
                              std.lv = TRUE,
@@ -101,14 +93,14 @@ k_efa <- function(variables, m, rotation,
   cfa.syntax <- lapply(loadings, function(x){
     efa_cfa_syntax(loadings = x,
                    simple = simple,
-                   threshold = threshold,
+                   min.loading = min.loading,
                    single.item = "none",
                    identified = TRUE,
                    constrain0 = TRUE)
   })
 
   ## adding the 1-factor model as first element in cfa syntax list
-  onefac <- paste0("f1 =~ ", paste(names(variables), collapse = " + "))
+  onefac <- paste0("f1 =~ ", paste(variables, collapse = " + ")) # faster than write_efa
   cfa.syntax <- c(list(onefac), cfa.syntax)
 
   return(cfa.syntax)
@@ -169,23 +161,20 @@ get_std_loadings <- function(object, type = "std.all", df = FALSE){
 #'
 #' Gather sample statistics for EFA and CFA models using lavCor
 #'
-#' @param variables a \code{data.frame} of variables to factor analyze.
-#' @param ordered passed to \code{lavaan} functions. See \code{\link[lavaan]{lavCor}}.
-#' @param estimator passed to \code{lavaan} functions. See \code{\link[lavaan]{lavCor}}.
-#' @param missing passed to \code{lavaan} functions. See \code{\link[lavaan]{lavCor}}.
-#' @param ... other arguments passed to \code{lavaan} functions. See \code{\link[lavaan]{lavOptions}}.
+#' @inheritParams kfa
 #'
 #' @noRd
 
-sample_stats <- function(variables, ordered, estimator, missing, ...){
+sample_stats <- function(data, variables, ordered, estimator, missing, ...){
 
   ## calculate and extract sample statistics for test sample
-  sampstats <- lavaan::lavCor(object = variables,
+  # NOTE: using lavaan directly; lavCor, cfa, etc. are just wrappers around lavaan
+  # Requires specifying an arbitrary model
+  sampstats <- lavaan::lavaan(model = paste0("f1 =~ ", paste(variables, collapse = " + ")), # faster than write_efa
+                              data = data,
                               ordered = ordered,
                               estimator = estimator,
                               missing = missing,
-                              output = "fit",
-                              cor.smooth = FALSE,
                               ...)
 
   sample.th <- lavaan::lavInspect(sampstats, "sampstat")$th

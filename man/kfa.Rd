@@ -5,16 +5,17 @@
 \title{Conducts k-fold cross validation for factor analysis}
 \usage{
 kfa(
-  variables,
+  data,
+  variables = names(data),
   k = NULL,
-  m = floor(ncol(variables)/4),
+  m = floor(length(variables)/4),
   seed = 101,
   cores = NULL,
   custom.cfas = NULL,
   power.args = list(rmsea0 = 0.05, rmseaA = 0.08),
   rotation = "oblimin",
   simple = TRUE,
-  threshold = NA,
+  min.loading = NA,
   ordered = FALSE,
   estimator = NULL,
   missing = "listwise",
@@ -22,7 +23,9 @@ kfa(
 )
 }
 \arguments{
-\item{variables}{a \code{data.frame} (or convertible to a \code{data.frame}) of variables (i.e., items) to factor analyze}
+\item{data}{a\code{data.frame} containing the variables (i.e., items) to factor analyze}
+
+\item{variables}{character vector of column names in \code{data} indicating the variables to factor analyze. Default is to use all columns.}
 
 \item{k}{number of folds in which to split the data. Default is \code{NULL} which determines k via \code{\link[kfa]{find_k}}.}
 
@@ -42,7 +45,7 @@ kfa(
 \item{simple}{logical; Should the simple structure be returned (default) when converting EFA results to CFA syntax?
 If \code{FALSE}, items can cross-load on multiple factors.}
 
-\item{threshold}{numeric between 0 and 1 indicating the minimum (absolute) value of the loading for a variable on a factor
+\item{min.loading}{numeric between 0 and 1 indicating the minimum (absolute) value of the loading for a variable on a factor
 when converting EFA results to CFA syntax. Must be specified when \code{simple = FALSE}.}
 
 \item{ordered}{logical; Should items be treated as ordinal and the
@@ -67,23 +70,23 @@ An object of class \code{"kfa"}, which is a four-element \code{list}:
 }
 }
 \description{
-The function splits the data into \emph{k} folds. For each fold,
-EFAs are run on the training data and the simple structure for each model
-is transformed into \code{lavaan}-compatible CFA syntax. The CFAs are then run
-on the test data.
+The function splits the data into \emph{k} folds where each fold contains training data and test data.
+For each fold, exploratory factor analyses (EFAs) are run on the training data. The structure for each model
+is transformed into \code{lavaan}-compatible confirmatory factor analysis (CFA) syntax.
+The CFAs are then run on the test data.
 }
 \details{
 In order for \code{custom.cfas} to be tested along with the EFA identified structures, each model supplied in \code{custom.cfas} must
-include all \code{variables} in \code{lavaan} compatible syntax.
+include all \code{variables} in \code{lavaan}-compatible syntax.
 
-Deciding an appropriate \emph{m} can be difficult, but is consequential for both the possible factor structures to
+Deciding an appropriate \emph{m} can be difficult, but is consequential for the possible factor structures to
 examine, the power analysis to determine \emph{k}, and overall computation time.
-The \code{n_factors} in the \code{parameters} package can assist with this decision.
+The \code{n_factors} function in the \code{parameters} package can assist with this decision.
 
 When converting EFA results to CFA syntax (via \code{\link[kfa]{efa_cfa_syntax}}), the simple structure is
 defined as each variable loading onto a single factor. This is determined using the largest factor loading for each variable.
-When \code{simple = FALSE}, variables are allowed to cross-load on multiple factors. All pathways with loadings above the \code{threshold} are
-retained in this case. However, allowing cross-loading variables can result in model under-identification.
+When \code{simple = FALSE}, variables are allowed to cross-load on multiple factors. In this case, all pathways with loadings
+above the \code{min.loading} are retained. However, allowing cross-loading variables can result in model under-identification.
 The \code{\link[kfa]{efa_cfa_syntax}}) function conducts an identification check (i.e., \code{identified = TRUE}) and
 under-identified models are not run in the CFA portion of the analysis.
 }
@@ -107,7 +110,7 @@ custom2f <- paste0("f1 =~ ", paste(colnames(sim.data)[1:10], collapse = " + "),
                    "\nf2 =~ ",paste(colnames(sim.data)[11:20], collapse = " + "))
 
 \donttest{
-mods <- kfa(variables = sim.data,
+mods <- kfa(data = sim.data,
             k = NULL, # prompts power analysis to determine number of folds
             cores = 2,
             custom.cfas = custom2f)

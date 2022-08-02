@@ -43,7 +43,7 @@ Chi-square value and degrees of freedom are always reported. Default is CFI and 
 \item{digits}{integer; number of decimal places to display in the report.}
 }
 \value{
-a summary report of factor structures and model fit within and between folds
+A summary report of factor structures and model fit within and between folds.
 }
 \description{
 Generates a report summarizing the factor analytic results over k-folds.

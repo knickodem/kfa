@@ -4,6 +4,7 @@
 #' change in RMSEA as the criterion for identifying the optimal factor model.
 #'
 #' @param variables a \code{data.frame} (or convertible to a \code{data.frame}) with variables to factor analyze in columns and observations in rows.
+#' The power analysis assumes all observations have complete data. Use \code{n} argument or remove rows manually to account for missingness.
 #' @param n integer; number of observations. Ignored if \code{variables} is provided.
 #' @param p integer; number of variables to factor analyze. Ignored if\code{variables} is provided.
 #' @param m integer; maximum number of factors expected to be extracted from \code{variables}. Default is \code{p} / 4 (i.e., 4 variables per factor).
@@ -13,7 +14,7 @@
 #' @param rmseaA numeric; RMSEA under the alternative hypothesis.
 #' @param ... other arguments passed to \code{\link[semTools]{findRMSEAsamplesize}}.
 #'
-#' @return named vector with the number of folds, sample size suggested by the power analysis, and the actual sample size used for determining k.
+#' @return named vector with the number of folds (k), sample size suggested by the power analysis (power.n), and the actual sample size used for determining k (actual.n).
 #'
 #' @references
 #' Curran, P. J., Bollen, K. A., Chen, F., Paxton, P., & Kirby, J. B. (2003). Finite sampling properties of the point estimates and confidence intervals of the RMSEA. *Sociological Methods & Research, 32*(2), 208-252. \doi{10.1177/0049124103256130}

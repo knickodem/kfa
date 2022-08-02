@@ -3,36 +3,14 @@
 #' This function is intended for use on independent samples rather than integrated
 #' with k-fold cross-validation.
 #'
-#' @param variables a \code{data.frame} (or convertible to a \code{data.frame}) of variables (i.e., items) to factor analyze
-#' @param rotation character (case-sensitive); any rotation method listed in
-#' \code{\link[GPArotation]{rotations}} in the \code{GPArotation} package.
-#' Default is "oblimin".
-#' @param m integer; maximum number of factors to extract. Default is 4 items per factor.
-#' @param simple logical; Should the most simple structure be returned (default)?
-#' If \code{FALSE}, items can cross load on multiple factors.
-#' @param threshold numeric between 0 and 1 indicating the minimum (absolute) value
-#' of the loading for an item on a factor.
-#' @param single.item character indicating how single-item factors should be treated.
-#' Use \code{"keep"} (default) to keep them in the model when generating the CFA syntax, \code{"drop"}
-#' to remove them, or \code{"none"} indicating the CFA syntax should not be generated for
-#' this model and \code{""} will be returned.
-#' @param identified logical; Should identification check for rotational uniqueness a la Millsap (2001) be performed?
-#' @param constrain0 logical; Should variable(s) with all loadings below \code{threshold} still be included in model syntax?
-#' If \code{TRUE}, variable(s) will load onto first factor with the loading constrained to 0.
-#' @param ordered logical; Should items be treated as ordinal and the
-#' polychoric correlations used in the factor analysis? When \code{FALSE} (default)
-#' the Pearson correlation matrix is used. A character vector of item names is
-#' also accepted to prompt estimation of the polychoric correlation matrix.
-#' @param estimator if \code{ordered = FALSE}, the default is "ML". If
-#' \code{ordered = TRUE}, the default is "DWLS". See \code{\link[lavaan]{lavaan}} for other options.
-#' @param missing default is "listwise". See \code{\link[lavaan]{lavaan}} for other options.
-#' @param ... other arguments passed to \code{lavaan} functions. See \code{\link[lavaan]{lavOptions}}.
+#' @inheritParams kfa
+#' @inheritParams efa_cfa_syntax
 #'
 #' @details
 #' When converting EFA results to CFA syntax (via \code{\link[kfa]{efa_cfa_syntax}}), the simple structure is
 #' defined as each variable loading onto a single factor. This is determined using the largest factor loading for each variable.
-#' When \code{simple = FALSE}, variables are allowed to cross-load on multiple factors. All pathways with loadings above the \code{threshold} are
-#' retained in this case. However, allowing cross-loading variables can result in model under-identification.
+#' When \code{simple = FALSE}, variables are allowed to cross-load on multiple factors. In this case, all pathways with loadings
+#' above the \code{min.loading} are retained. However, allowing cross-loading variables can result in model under-identification.
 #' An identification check is run by default, but can be turned off by setting \code{identified = FALSE}.
 #'
 #' @return A three-element \code{list}:
@@ -65,12 +43,12 @@
 #' @export
 #' @md
 
-run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblimin",
-                    simple = TRUE, threshold = NA, single.item = c("keep","drop", "none"),
+run_efa <- function(data, variables = names(data), m = floor(ncol(data) / 4), rotation = "oblimin",
+                    simple = TRUE, min.loading = NA, single.item = c("keep","drop", "none"),
                     identified = TRUE, constrain0 = FALSE,
                     ordered = FALSE, estimator = NULL, missing = "listwise", ...){
 
-  variables <- as.data.frame(variables)
+  data <- as.data.frame(data)
 
   # The ordered = TRUE functionality not available in lavCor (i.e., not currently equivalent to listing
   # all items), so need to do it manually since I want this functionality for our users
@@ -81,7 +59,7 @@ run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblim
         estimator <- "MLMVS"
       }
     } else if(ordered == TRUE){
-      ordered <- names(variables)
+      ordered <- variables
       if(is.null(estimator)){
         estimator <- "WLSMV"
       }
@@ -93,7 +71,8 @@ run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblim
   }
 
   ## calculate and extract sample statistics
-  sampstats <- sample_stats(variables = variables,
+  sampstats <- sample_stats(data = data,
+                            variables = variables,
                             ordered = ordered,
                             estimator = estimator,
                             missing = missing,
@@ -109,7 +88,7 @@ run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblim
   for(nf in 1:m){
 
     ## write efa syntax
-    efa.mod <- write_efa(nf = nf, vnames = names(variables))
+    efa.mod <- write_efa(nf = nf, vnames = variables)
 
     lav.objects[[nf]] <- lavaan::cfa(model = efa.mod,
                              sample.cov = sampstats$cov,
@@ -169,7 +148,7 @@ run_efa <- function(variables, m = floor(ncol(variables) / 4), rotation = "oblim
   cfa.syntax <- lapply(loadings, function(x){
     efa_cfa_syntax(loadings = x,
                    simple = simple,
-                   threshold = threshold,
+                   min.loading = min.loading,
                    single.item = single.item,
                    identified = identified,
                    constrain0 = constrain0)

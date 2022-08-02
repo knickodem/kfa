@@ -1,11 +1,12 @@
 #' Conducts k-fold cross validation for factor analysis
 #'
-#' The function splits the data into *k* folds. For each fold,
-#' EFAs are run on the training data and the simple structure for each model
-#' is transformed into \code{lavaan}-compatible CFA syntax. The CFAs are then run
-#' on the test data.
+#' The function splits the data into *k* folds where each fold contains training data and test data.
+#' For each fold, exploratory factor analyses (EFAs) are run on the training data. The structure for each model
+#' is transformed into \code{lavaan}-compatible confirmatory factor analysis (CFA) syntax.
+#' The CFAs are then run on the test data.
 #'
-#' @param variables a \code{data.frame} (or convertible to a \code{data.frame}) of variables (i.e., items) to factor analyze
+#' @param data a\code{data.frame} containing the variables (i.e., items) to factor analyze
+#' @param variables character vector of column names in \code{data} indicating the variables to factor analyze. Default is to use all columns.
 #' @param k number of folds in which to split the data. Default is \code{NULL} which determines k via \code{\link[kfa]{find_k}}.
 #' @param m integer; maximum number of factors to extract. Default is 4 items per factor.
 #' @param seed integer passed to \code{set.seed} when randomly selecting cases for each fold.
@@ -16,7 +17,7 @@
 #' \code{\link[GPArotation]{rotations}} in the \code{GPArotation} package. Default is "oblimin".
 #' @param simple logical; Should the simple structure be returned (default) when converting EFA results to CFA syntax?
 #' If \code{FALSE}, items can cross-load on multiple factors.
-#' @param threshold numeric between 0 and 1 indicating the minimum (absolute) value of the loading for a variable on a factor
+#' @param min.loading numeric between 0 and 1 indicating the minimum (absolute) value of the loading for a variable on a factor
 #' when converting EFA results to CFA syntax. Must be specified when \code{simple = FALSE}.
 #' @param ordered logical; Should items be treated as ordinal and the
 #' polychoric correlations used in the factor analysis? When \code{FALSE} (default)
@@ -29,16 +30,16 @@
 #'
 #' @details
 #' In order for \code{custom.cfas} to be tested along with the EFA identified structures, each model supplied in \code{custom.cfas} must
-#' include all \code{variables} in \code{lavaan} compatible syntax.
+#' include all \code{variables} in \code{lavaan}-compatible syntax.
 #'
-#' Deciding an appropriate *m* can be difficult, but is consequential for both the possible factor structures to
+#' Deciding an appropriate *m* can be difficult, but is consequential for the possible factor structures to
 #' examine, the power analysis to determine *k*, and overall computation time.
-#' The \code{n_factors} in the \code{parameters} package can assist with this decision.
+#' The \code{n_factors} function in the \code{parameters} package can assist with this decision.
 #'
 #' When converting EFA results to CFA syntax (via \code{\link[kfa]{efa_cfa_syntax}}), the simple structure is
 #' defined as each variable loading onto a single factor. This is determined using the largest factor loading for each variable.
-#' When \code{simple = FALSE}, variables are allowed to cross-load on multiple factors. All pathways with loadings above the \code{threshold} are
-#' retained in this case. However, allowing cross-loading variables can result in model under-identification.
+#' When \code{simple = FALSE}, variables are allowed to cross-load on multiple factors. In this case, all pathways with loadings
+#' above the \code{min.loading} are retained. However, allowing cross-loading variables can result in model under-identification.
 #' The \code{\link[kfa]{efa_cfa_syntax}}) function conducts an identification check (i.e., \code{identified = TRUE}) and
 #' under-identified models are not run in the CFA portion of the analysis.
 #'
@@ -70,7 +71,7 @@
 #'                    "\nf2 =~ ",paste(colnames(sim.data)[11:20], collapse = " + "))
 #'
 #' \donttest{
-#' mods <- kfa(variables = sim.data,
+#' mods <- kfa(data = sim.data,
 #'             k = NULL, # prompts power analysis to determine number of folds
 #'             cores = 2,
 #'             custom.cfas = custom2f)
@@ -88,19 +89,20 @@
 #' @export
 #' @md
 
-kfa <- function(variables,
+kfa <- function(data,
+                variables = names(data),
                 k = NULL,
-                m = floor(ncol(variables) / 4),
+                m = floor(length(variables) / 4),
                 seed = 101, cores = NULL,
                 custom.cfas = NULL,
                 power.args = list(rmsea0 = .05, rmseaA = .08),
-                rotation = "oblimin", simple = TRUE, threshold = NA,
+                rotation = "oblimin", simple = TRUE, min.loading = NA,
                 ordered = FALSE, estimator = NULL, missing = "listwise", ...){
 
-  variables <- as.data.frame(variables)
+  data <- as.data.frame(data)
 
-  # The ordered = TRUE functionality not available in lavCor (i.e., not currently equivalent to listing
-  # all items), so need to do it manually since I want this functionality for our users
+  # The ordered = TRUE functionality did not work with lavCor (i.e., not currently equivalent to listing
+  # all items), but we now use lavaan() directly where it does work. Could consider simplifying
   if(is.logical(ordered)){
     if(ordered == FALSE){
       ordered <- NULL
@@ -108,7 +110,7 @@ kfa <- function(variables,
         estimator <- "MLMVS"
       }
     } else if(ordered == TRUE){
-      ordered <- names(variables)
+      ordered <- variables
       if(is.null(estimator)){
         estimator <- "WLSMV"
       }
@@ -120,8 +122,8 @@ kfa <- function(variables,
   }
 
   ## cross-loading check
-  if(simple == FALSE & is.na(threshold)){
-    stop("threshold must be supplied when simple = FALSE")
+  if(simple == FALSE & is.na(min.loading)){
+    stop("min.loading must be supplied when simple = FALSE")
   }
 
   # # Not used at the moment
@@ -130,7 +132,7 @@ kfa <- function(variables,
 
   if(is.null(k)){
     ## determine number of folds based on power analysis
-    fk <- do.call(find_k, c(list(variables = variables, m = m), power.args))
+    fk <- do.call(find_k, c(list(variables = data[,variables], m = m), power.args))
     k <- fk[[1]]
   }
 
@@ -147,8 +149,8 @@ kfa <- function(variables,
   } else {
 
     # returns list of row numbers for each test fold (i.e., the cfa sample)
-    # contents of y doesn't matter, just needs to be nrow(variables) in length
-    testfolds <- caret::createFolds(y = 1:nrow(variables),
+    # contents of y doesn't matter, just needs to be nrow(data) in length
+    testfolds <- caret::createFolds(y = 1:nrow(data),
                                     k = k, list = TRUE,
                                     returnTrain = FALSE)
     if(length(testfolds[[1]]) < 200){
@@ -175,18 +177,19 @@ kfa <- function(variables,
       fold <- NULL # need this for CRAN check
       efa <- foreach::foreach(fold = 1:k) %dopar% { # use %do% if we offer a parallel = FALSE option
 
-        k_efa(variables = variables[!c(row.names(variables) %in% testfolds[[fold]]), ],
+        k_efa(data = data[!c(row.names(data) %in% testfolds[[fold]]), ],
+              variables = variables,
               m = m,
               rotation = rotation,
               simple = simple,
-              threshold = threshold,
+              min.loading = min.loading,
               ordered = ordered,
               estimator = estimator,
               missing = missing,
               ...)
 
         ## do.call version throws error for some reason ( Error in { : task 1 failed - "$ operator is invalid for atomic vectors" )
-        # do.call(k_efa, args = c(list(variables = variables[!c(row.names(variables) %in% testfolds[[fold]]), ],
+        # do.call(k_efa, args = c(list(data = data[!c(row.names(data) %in% testfolds[[fold]]), ],
         #                              m = m),
         #                         lavaan.args))
       }
@@ -235,21 +238,22 @@ kfa <- function(variables,
       }
 
       if(k == 1 & length(testfolds$Fold1) == 1){
-        testfolds$Fold1 <- 1:nrow(variables)
+        testfolds$Fold1 <- 1:nrow(data)
       }
 
       ## run CFAs
       cfas <- foreach::foreach(fold = 1:k) %dopar% {
 
         k_cfa(syntax = cfa.syntax[[fold]],
-              variables = variables[testfolds[[fold]], ],
+              data = data[testfolds[[fold]], ],
+              variables = variables,
               ordered = ordered,
               estimator = estimator,
               missing = missing,
               ...)
 
         # do.call(k_cfa, args = c(list(syntax = cfa.syntax[[fold]],
-        #                              variables = variables[testfolds[[fold]], ]),
+        #                              data = data[testfolds[[fold]], ]),
         #                         lavaan.args))
       }
 
