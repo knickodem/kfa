@@ -92,8 +92,7 @@ kfa_report <- function(models,
   kfits <- k_model_fit(models, index = index, by.fold = TRUE) # dataframe for each fold
   fit.table <- agg_model_fit(kfits, index = "all", digits = 2)
   # adjust model order to match model.names and other output
-  fit.table <- fit.table[order(factor(fit.table$model, levels=mnames)),]
-
+  fit.table <- fit.table[order(factor(fit.table$model, levels = mnames)),]
 
   ## best model in each fold
   # best.model <- best_model(kfits, index = index)
@@ -117,6 +116,8 @@ kfa_report <- function(models,
 
   ## flagged problems
   flagged <- model_flags(models, kstructures, klambdas, kcorrs, krels)
+
+
 
   ## running report
   if(report.format == "word_document"){

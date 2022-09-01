@@ -165,12 +165,12 @@ get_std_loadings <- function(object, type = "std.all", df = FALSE){
 #'
 #' @noRd
 
-sample_stats <- function(data, variables, ordered, estimator, missing, ...){
+sample_stats <- function(data, variables = names(data), ordered, estimator, missing, ...){
 
   ## calculate and extract sample statistics for test sample
-  # NOTE: using lavaan directly; lavCor, cfa, etc. are just wrappers around lavaan
-  # Requires specifying an arbitrary model
-  sampstats <- lavaan::lavaan(model = paste0("f1 =~ ", paste(variables, collapse = " + ")), # faster than write_efa
+  # NOTE: lavCor ignores most lavOptions (e.g., sampling.weights), so using
+  # cfa directly and specifying an arbitrary model; lavCor and cfa are both wrappers around lavaan
+  sampstats <- lavaan::cfa(model = paste0("f1 =~ ", paste(variables, collapse = " + ")), # faster than write_efa
                               data = data,
                               ordered = ordered,
                               estimator = estimator,

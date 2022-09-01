@@ -52,4 +52,4 @@ po/*~
 inst/doc
 
 # shiny (for now)
-shiny/
+# shiny/

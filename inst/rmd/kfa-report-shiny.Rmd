@@ -2,6 +2,63 @@
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 flextable::set_flextable_defaults(fonts_ignore = TRUE)
+```
+
+---
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+params:
+  models: NA 
+  report.title: NA
+  index: NA
+  load.flag: .30
+  cor.flag: .90
+  rel.flag: .60
+  digits: 2
+  width: NA
+title: "`r params$report.title`"
+---
+
+```{r}
+
+cfas <- params$models$cfas
+  ## analysis summary info
+  k <- length(cfas) # number of folds
+  m <- max(unlist(lapply(cfas, length))) # number of models per fold (includes both efa AND custom structures); m == length(mnames)
+  mnames <- params$models$model.names # model names
+  fac.allow <- length(params$models$efa.structures)
+  fac.max <- max(as.numeric(substring(mnames[grepl("-factor", mnames)], 1, 1)))  # kfa naming convention "#-factor"; custom functions are assumed to have different convention
+  vnames <- dimnames(lavaan::lavInspect(cfas[[1]][[1]], "sampstat")$cov)[[1]] # variable names
+  nvars <- length(vnames)
+  nobs <- sum(unlist(lapply(cfas, function(x) lavaan::lavInspect(x[[1]], "nobs"))))
+  opts <- lavaan::lavInspect(cfas[[1]][[1]], "options") # estimation options; assumed to be the same for all models
+
+  #### Model Fit ####
+  ## summarizing fit statistics by fold
+  kfits <- k_model_fit(params$models, index = params$index, by.fold = TRUE) # dataframe for each fold
+  fit.table <- agg_model_fit(kfits, index = "all", digits = 2)
+  # adjust model order to match model.names and other output
+  fit.table <- fit.table[order(factor(fit.table$model, levels = mnames)),]
+
+  ## creating appendix -  folds x model table of fit statistics
+  mfits <- k_model_fit(params$models, index = params$index, by.fold = FALSE)
+  appendix <- kfa:::get_appendix(mfits, index = "all")
+
+  #### Parameters ####
+  ## model structures
+  kstructures <- model_structure(params$models)
+
+  ## loadings
+  klambdas <- agg_loadings(params$models, flag = params$load.flag, digits = params$digits)
+
+  ## factor correlations
+  kcorrs <- agg_cors(params$models, flag = params$cor.flag)
+
+  ## score reliabilities
+  krels <- agg_rels(params$models, flag = params$rel.flag, digits = params$digits)
+
+  ## flagged problems
+  flagged <- kfa:::model_flags(params$models, kstructures, klambdas, kcorrs, krels)
+
 
 plot.settings <- list(what = "std", whatLabels = "no", layout = "tree",
                         intercepts = FALSE, residuals = FALSE, thresholds = FALSE,
@@ -13,10 +70,6 @@ border <- officer::fp_border(width = 2) # manual horizontal flextable border wid
 
 ```
 
----
-title: "`r report.title`"
-date: "`r format(Sys.Date(), '%B %d, %Y')`"
----
 
 # Overview
 
@@ -50,34 +103,28 @@ fit.map <- data.frame(col_keys = ftn,
                       bottom = c("model", df, rep(c("mean", "range"), times = length(index))))
 
 fit.flex <- flextable::flextable(fit.table)
-fit.flex <- flextable::colformat_double(fit.flex, j = -c(1,2), digits = digits)
-fit.flex <- two_level_flex(fit.flex, mapping = fit.map, vert.cols = c("model", df), border = border)
-knit_print(fit.flex)
+fit.flex <- flextable::colformat_double(fit.flex, j = -c(1,2), digits = params$digits)
+fit.flex <- kfa:::two_level_flex(fit.flex, mapping = fit.map, vert.cols = c("model", df), border = border)
+knitr::knit_print(fit.flex)
 ```
 
 
 **Count of folds out of `r k` with flagged problems**
 
 ```{r flagged, ft.align = "left", results='asis'}
-flagged.flex <- flextab_format(flagged, bold.type = "none", width = width, digits = digits)
+flagged.flex <- kfa:::flextab_format(flagged, bold.type = "none", width = params$width, digits = params$digits)
 flagged.flex <- flextable::vline(flagged.flex, j = 2, border = border)
-knit_print(flagged.flex)
+knitr::knit_print(flagged.flex)
 ```
 
 *Notes:*  
 'mode structure' is the number of folds the EFA identified the mode (most common) structure. This structure was then used in the CFA. 'mode structure' will be `r k` when the same structure was identified in every fold and < `r k` when multiple factor structures were identified. The value in 'mode structure' is the maximum value for all remaining columns. See Appendix for all structures.  
 'improper solution' is the number of folds with non-convergence or a non-positive definite matrix.  
-'high factor correlation' threshold set to `r cor.flag`.  
-'low scale reliability' threshold set to `r rel.flag` with $\omega_h$.  
-'low loading' threshold set to `r load.flag`.  
+'high factor correlation' threshold set to `r params$cor.flag`.  
+'low scale reliability' threshold set to `r params$rel.flag` with $\omega_h$.  
+'low loading' threshold set to `r params$load.flag`.  
 blanks = not applicable  
 
-
-```{r bestmodel, ft.align = "left", results='asis', eval=FALSE}
-cat("**Best model in each fold by fit index**")
-best.flex <- flextab_format(best.model, bold.type = "none", digits = digits)
-knit_print(best.flex)
-```
 
 \newpage
 
@@ -85,7 +132,7 @@ knit_print(best.flex)
 
 ```{r details, ft.align = "left", results = 'asis', warning = FALSE, message = FALSE, fig.height = 4, fig.width = 6}
 
-if(lavaan::lavInspect(models$cfas[[1]][[1]], "categorical")){
+if(lavaan::lavInspect(params$models$cfas[[1]][[1]], "categorical")){
   what <- "omega_h"
   times <- 1
   j <- 2
@@ -109,9 +156,9 @@ for(n in 1:m){
   cat("\n\n")
   ## find fold with lavaan object for the model
   for(f in 1:k){
-  if(mnames[[n]] %in% names(models$cfas[[f]])) break  
+  if(mnames[[n]] %in% names(params$models$cfas[[f]])) break  
 }
-    suppressWarnings(do.call(semPlot::semPaths, args = c(list(object = models$cfas[[f]][[mnames[[n]]]],
+    suppressWarnings(do.call(semPlot::semPaths, args = c(list(object = params$models$cfas[[f]][[mnames[[n]]]],
                                            color = list(lat = palette.colors(n = n + 1, palette = "Okabe-Ito",
                                                         recycle = TRUE)[-1]),
                                            title = FALSE),
@@ -127,35 +174,35 @@ for(n in 1:m){
       lambda.flex <- flextable::flextable(klambdas$loadings[[n]])
       lambda.flex <- flextable::colformat_double(lambda.flex,
                                                  j = which(unlist(lapply(klambdas$loadings[[n]], is.numeric))),
-                                                 digits = digits)
+                                                 digits = params$digits)
       lambda.flex <- flextable::align(lambda.flex, i = NULL, j = 1, align = "left", part = "body")
-      lambda.flex <- two_level_flex(lambda.flex, mapping = load.map,
+      lambda.flex <- kfa:::two_level_flex(lambda.flex, mapping = load.map,
                                     vert.cols = c("variable", "heywood flag"), border = border)
     
   } else{
-      lambda.flex <- flextab_format(klambdas$loadings[[n]], bold.type = "none", digits = digits)
+      lambda.flex <- kfa:::flextab_format(klambdas$loadings[[n]], bold.type = "none", digits = params$digits)
       lambda.flex <- flextable::align(lambda.flex, i = NULL, j = 1, align = "left", part = "body")
   }
-  cat(knit_print(lambda.flex))
-  cat("Note: loadings flagged when <", load.flag, "in a fold. 'heywood flag' is the number of folds the variable's estimated residual variance was negative")
+  cat(knitr::knit_print(lambda.flex))
+  cat("Note: loadings flagged when <", params$load.flag, "in a fold. 'heywood flag' is the number of folds the variable's estimated residual variance was negative")
   cat("\n\n")
   if(n > 1){
   cat("**Mean Factor Correlations**")
   cat("\n\n")
-  corr.flex <- flextab_format(kcorrs$correlations[[n]], bold.type = "none", digits = digits)
+  corr.flex <- kfa:::flextab_format(kcorrs$correlations[[n]], bold.type = "none", digits = params$digits)
   corr.flex <- flextable::compose(corr.flex, i = 1, j = 1, value = flextable::as_paragraph(""), part = "header")
   corr.flex <- flextable::vline(corr.flex, j = ncol(kcorrs$correlations[[n]]) - 1, border = border)
-  cat(knit_print(corr.flex))
-  cat("Note: 'flag' is the number of folds the factor had a correlation >", cor.flag)
+  cat(knitr::knit_print(corr.flex))
+  cat("Note: 'flag' is the number of folds the factor had a correlation >", params$cor.flag)
   cat("\n\n")
   }
   cat("**Scale Reliability Across Folds**")
   cat("\n\n")
   rel.flex <- flextable::flextable(krels$reliabilities[[n]])
-  rel.flex <- flextable::colformat_double(rel.flex, j = j, digits = digits)
-  rel.flex <- two_level_flex(rel.flex, mapping = rel.map, vert.cols = c("factor"), border = border)
-  cat(knit_print(rel.flex))
-  cat("Note: 'flag' is the number of folds the scale had a reliability <", rel.flag)
+  rel.flex <- flextable::colformat_double(rel.flex, j = j, digits = params$digits)
+  rel.flex <- kfa:::two_level_flex(rel.flex, mapping = rel.map, vert.cols = c("factor"), border = border)
+  cat(knitr::knit_print(rel.flex))
+  cat("Note: 'flag' is the number of folds the scale had a reliability <", params$rel.flag)
   cat("\n\n")
 }
 
@@ -178,7 +225,7 @@ if(ax <= 16){ # is the appendix a reasonable width?
                       top = c("fold", rep(mnames, each = length(index))),
                       bottom = c("fold", rep(index, times = length(mnames))))
 
-appendix.flex <- appendix_wrapper(appendix, appendix.map, border, digits)
+appendix.flex <- kfa:::appendix_wrapper(appendix, appendix.map, border, params$digits)
 appendix.flex
   
   
@@ -193,7 +240,7 @@ appendix1.map <- data.frame(col_keys = names(appendix1),
                            top = c("fold", rep(mnames[1:modsplit], each = length(index))),
                            bottom = c("fold", rep(index, times = modsplit)))
 
-appendix1.flex <- appendix_wrapper(appendix1, appendix1.map, border, digits)
+appendix1.flex <- kfa:::appendix_wrapper(appendix1, appendix1.map, border, params$digits)
 appendix1.flex
 # part 2 needs to be in a separate chunk for some reason
 }
@@ -204,7 +251,7 @@ if(ax > 16){
   appendix2.map <- data.frame(col_keys = names(appendix2),
                             top = c("fold", rep(mnames[(modsplit+1):length(mnames)], each = length(index))),
                             bottom = c("fold", rep(index, times = length(mnames) - modsplit)))
-  appendix2.flex <- appendix_wrapper(appendix2, appendix2.map, border, digits)
+  appendix2.flex <- kfa:::appendix_wrapper(appendix2, appendix2.map, border, params$digits)
   appendix2.flex
 }
 ```
@@ -213,7 +260,7 @@ if(ax > 16){
 ## All EFA Structures
 
 ```{r appendixstructures, results = 'asis'}
-strux <- models$efa.structures
+strux <- params$models$efa.structures
 for(n in 1:length(strux)){
   cat("### Factors:", n)
   cat("\n\n")

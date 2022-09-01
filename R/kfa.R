@@ -113,6 +113,9 @@ kfa <- function(data,
       ordered <- variables
       if(is.null(estimator)){
         estimator <- "WLSMV"
+      } else if(grepl("ML", estimator)){
+        estimator <- "WLSMV"
+        print("Estimator ML for ordered data is not supported yet in lavaan. Using WLSMV instead.")
       }
     }
   } else if(is.character(ordered)){
@@ -215,6 +218,8 @@ kfa <- function(data,
           }
         }
       }
+
+      print("Finished EFAs. Starting CFAs")
 
       ## add names to models for each fold
       mode.structure <- lapply(mode.structure, function(x) {
