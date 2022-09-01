@@ -229,7 +229,7 @@ kfa <- function(data,
 
       ## add custom models (if present)
       if(!is.null(custom.cfas)){
-        if(class(custom.cfas) != "list"){ # converting single object to named list
+        if(!inherits(custom.cfas, "list")){ # converting single object to named list
           custom.name <- deparse(substitute(custom.cfas))
           custom.cfas <- list(custom.cfas)
           names(custom.cfas) <- custom.name
