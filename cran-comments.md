@@ -13,27 +13,17 @@ Notes are:
 * checking CRAN incoming feasibility ... NOTE
 Maintainer: 'Kyle Nickodem <kyle.nickodem@gmail.com>'
 
-Found the following (possibly) invalid URLs:
-  URL: https://doi.org/10.1037/1082-989X.1.2.130
-    From: man/find_k.Rd
-    Status: 403
-    Message: Forbidden
-
-Found the following (possibly) invalid DOIs:
-  DOI: 10.1037/1082-989X.1.2.130
-    From: DESCRIPTION
-    Status: Forbidden
-    Message: 403
-  DOI: 10.1037/cbs0000069
-    From: DESCRIPTION
-    Status: Forbidden
-    Message: 403
+  Possibly misspelled words in DESCRIPTION:
+    Hastie (11:32)
+    Tibshirani (11:40)
+    isbn (11:71)
+	
 * checking for detritus in the temp directory ... NOTE
 Found the following files/directories:
   'lastMiKTeXException'
 ```
 
-* I have checked the DOIs on Google Chrome and Microsoft Edge browsers and they are accurate.
+* The two author names are spelled correctly, and isbn refers to the type of reference.
 * I have no clue what file the second note refers to, nor can I find it in the package
 
 
