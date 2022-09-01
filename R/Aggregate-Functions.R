@@ -17,7 +17,7 @@
 
 agg_loadings <- function(models, flag = .30, digits = 2){
 
-  if(class(models) == "kfa"){
+  if(inherits(models, "kfa")){
     cfas <- models$cfas
   } else {
     stop("models must be of class 'kfa'.")
@@ -142,7 +142,7 @@ agg_loadings <- function(models, flag = .30, digits = 2){
 
 agg_cors <- function(models, flag = .90, type = "factor"){
 
-  if(class(models) == "kfa"){
+  if(inherits(models, "kfa")){
     cfas <- models$cfas
   } else {
     stop("models must be of class 'kfa'.")
@@ -236,7 +236,7 @@ z2r <- function(z){
 
 agg_rels <- function(models, flag = .60, digits = 2){
 
-  if(class(models) == "kfa"){
+  if(inherits(models, "kfa")){
     cfas <- models$cfas
   } else {
     stop("models must be of class 'kfa'.")

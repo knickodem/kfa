@@ -51,8 +51,8 @@ fit.map <- data.frame(col_keys = ftn,
 
 fit.flex <- flextable::flextable(fit.table)
 fit.flex <- flextable::colformat_double(fit.flex, j = -c(1,2), digits = digits)
-fit.flex <- two_level_flex(fit.flex, mapping = fit.map, vert.cols = c("model", df), border = border)
-knit_print(fit.flex)
+fit.flex <- kfa:::two_level_flex(fit.flex, mapping = fit.map, vert.cols = c("model", df), border = border)
+knitr::knit_print(fit.flex)
 ```
 
 

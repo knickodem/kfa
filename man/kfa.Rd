@@ -23,7 +23,7 @@ kfa(
 )
 }
 \arguments{
-\item{data}{a\code{data.frame} containing the variables (i.e., items) to factor analyze}
+\item{data}{a \code{data.frame} containing the variables (i.e., items) to factor analyze}
 
 \item{variables}{character vector of column names in \code{data} indicating the variables to factor analyze. Default is to use all columns.}
 

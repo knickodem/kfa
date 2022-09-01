@@ -1,12 +1,8 @@
-## kfa 0.2.0
-
-## Resubmission
-
-* Fixed invalid URI scheme in two DOI URLs in man/find_k.Rd by using \doi in the Rd markup
+# kfa 0.2.1
 
 ## Test environments
 
-* local windows 10, R 4.1.1: 0 errors | 0 warnings  | 0 notes
+* local windows 10, R 4.2.0: 0 errors | 0 warnings  | 0 notes
 * Ubuntu Linux 20.04.1 LTS, R-release, GCC: Success
 * Fedora Linux, R-devel, clang, gfortran: Success
 * Windows Server 2022, R-devel, 64 bit:  0 errors | 0 warnings  | 2 notes

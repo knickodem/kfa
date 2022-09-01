@@ -1,5 +1,5 @@
 
-# kfa: K-Fold Cross Validation For Factor Analysis
+# kfa: K-Fold Cross-Validation For Factor Analysis
 
 [![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/kfa)](https://cran.r-project.org/package=kfa)
 [![metacran
@@ -8,10 +8,10 @@ downloads](https://cranlogs.r-pkg.org/badges/kfa)](https://cran.r-project.org/pa
 downloads](https://cranlogs.r-pkg.org/badges/grand-total/kfa)](https://cran.r-project.org/package=kfa)
 
 **kfa** provides utilities for examining the dimensionality of a set of
-variables to foster scale development. Harnessing a k-fold cross
-validation approach, **kfa** helps researchers compare possible factor
-structures and identify which structures are plausible and replicable
-across samples.
+variables to foster scale development. Harnessing a k-fold
+cross-validation approach, **kfa** helps researchers compare possible
+factor structures and identify which structures are plausible and
+replicable across samples.
 
 ## Installation
 
@@ -41,11 +41,11 @@ Then for each fold:
 
 -   calculates sample statistics (e.g., correlation matrix, thresholds
     \[if necessary\]) from training sample.
--   runs 2:*m* factor exploratory factor analysis (EFA) models using the
+-   runs `2:m` factor exploratory factor analysis (EFA) models using the
     sample statistics, applies rotation (if specified), and extracts the
     factor structure for a confirmatory factor analysis (CFA). The
     structure for a 1-factor CFA is also defined.
--   runs the 1:*m* factor CFA models on the testing sample.
+-   runs the `1:m` factor CFA models on the testing sample.
 
 The factor analyses are run using the `lavaan` package with many of the
 `lavaan` estimation and missing data options available for use in
@@ -75,9 +75,10 @@ sim.data <- simstandard::sim_standardized(sim.mod,
 custom2f <- paste0("f1 =~ ", paste(colnames(sim.data)[1:10], collapse = " + "),
                    "\nf2 =~ ",paste(colnames(sim.data)[11:20], collapse = " + "))
 
-mods <- kfa(variables = sim.data,
-            k = NULL, # prompts power analysis to determine number of folds
-            custom.cfas = custom2f)
+mods <- kfa(data = sim.data,
+            k = NULL,    # NULL prompts power analysis to determine number of folds
+            custom.cfas = custom2f  # can be a single object or named list
+            )
 ```
 
 `kfa_report()` then aggregates the CFA model fit, parameter estimates,
@@ -89,8 +90,9 @@ run below.
 
 ``` r
 # Run report
-kfa_report(mods, file.name = "example_sim_kfa_report",
-           report.title = "K-fold Factor Analysis - Example Sim"
+kfa_report(models = mods,
+           file.name = "example_sim_kfa_report",
+           report.title = "K-fold Factor Analysis - Example Sim",
            report.format = "html_document")
 ```
 

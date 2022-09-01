@@ -18,7 +18,8 @@ write_efa <- function(nf, vnames){
 
   syntax <- character(0)
   for (f in seq_along(vnames)) {
-    syntax <- c(syntax, paste0("f", f, " =~ ", paste(vnames[f:length(vnames)], collapse = " + "), "\n"))
+    syntax <- c(syntax, paste0("f", f, " =~ ", paste(vnames[f:length(vnames)],
+                                                     collapse = " + "), "\n"))
     if (f == nf) break
   }
   return(syntax)
@@ -43,13 +44,17 @@ write_efa <- function(nf, vnames){
 #' If \code{TRUE}, variable(s) will load onto first factor with the loading constrained to 0.
 #'
 #' @references
-#' Millsap, R. E. (2001). When trivial constraints are not trivial: The choice of uniqueness constraints in confirmatory factor analysis. *Structural Equation Modeling, 8*(1), 1-17. \doi{10.1207/S15328007SEM0801_1}
+#' Millsap, R. E. (2001). When trivial constraints are not trivial: The choice of uniqueness
+#' constraints in confirmatory factor analysis. *Structural Equation Modeling, 8*(1), 1-17. \doi{10.1207/S15328007SEM0801_1}
 #'
 #' @examples
 #' loadings <- matrix(c(rep(.2, 3), rep(.6, 3), rep(.8, 3), rep(.3, 3)), ncol = 2)
-#' efa_cfa_syntax(loadings) # simple structure
-#' efa_cfa_syntax(loadings, simple = FALSE, min.loading = .25) # allow cross-loadings and check if model is identified
-#' efa_cfa_syntax(loadings, simple = FALSE, min.loading = .25, identified = FALSE) # ignore identification check
+#' # simple structure
+#' efa_cfa_syntax(loadings)
+#' # allow cross-loadings and check if model is identified
+#' efa_cfa_syntax(loadings, simple = FALSE, min.loading = .25)
+#' # allow cross-loadings and ignore identification check
+#' efa_cfa_syntax(loadings, simple = FALSE, min.loading = .25, identified = FALSE)
 #'
 #' @export
 
@@ -118,7 +123,9 @@ efa_cfa_syntax <- function(loadings, simple = TRUE, min.loading = NA,
                            paste(vnames[!is.na(loadings.max[,fn])],
                                  collapse = " + ")))
     if(fn == 1 & constrain0 == TRUE){
-      cfa.syntax <- if(length(dropped) > 0) paste(cfa.syntax, "+", paste(paste0("0*", names(dropped)), collapse = " + ")) else cfa.syntax
+      cfa.syntax <- if(length(dropped) > 0) paste(cfa.syntax, "+",
+                                                  paste(paste0("0*", names(dropped)),
+                                                        collapse = " + ")) else cfa.syntax
     }
   }
 
@@ -171,7 +178,7 @@ efa_cfa_syntax <- function(loadings, simple = TRUE, min.loading = NA,
 
 model_structure <- function(models){
 
-  if(class(models) == "kfa"){
+  if(inherits(models, "kfa")){
     syntax <- models$cfa.syntax
   } else {
     stop("models must be of class 'kfa'.")

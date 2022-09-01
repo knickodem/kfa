@@ -5,7 +5,7 @@
 #' is transformed into \code{lavaan}-compatible confirmatory factor analysis (CFA) syntax.
 #' The CFAs are then run on the test data.
 #'
-#' @param data a\code{data.frame} containing the variables (i.e., items) to factor analyze
+#' @param data a \code{data.frame} containing the variables (i.e., items) to factor analyze
 #' @param variables character vector of column names in \code{data} indicating the variables to factor analyze. Default is to use all columns.
 #' @param k number of folds in which to split the data. Default is \code{NULL} which determines k via \code{\link[kfa]{find_k}}.
 #' @param m integer; maximum number of factors to extract. Default is 4 items per factor.
@@ -102,7 +102,7 @@ kfa <- function(data,
   data <- as.data.frame(data)
 
   # The ordered = TRUE functionality did not work with lavCor (i.e., not currently equivalent to listing
-  # all items), but we now use lavaan() directly where it does work. Could consider simplifying
+  # all items), but we now use cfa() directly where it does work. Could consider simplifying
   if(is.logical(ordered)){
     if(ordered == FALSE){
       ordered <- NULL

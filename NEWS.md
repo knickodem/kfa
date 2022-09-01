@@ -1,3 +1,11 @@
+# kfa 0.2.1
+
+*New features and adjustments:
+  * `data` argument added and `variable` argument re-defined as specifying column names in `data`
+  * The `sampling.weights` argument is passed appropriately to `lavaan` and incorporated into the analysis
+  * Changed name of `threshold` argument to the more specific name `min.loading`
+  * Adjusted order of `custom.cfa` models in flag table to match the order in the model fit table of the report
+
 # kfa 0.2.0
 
 * New features and major adjustments:

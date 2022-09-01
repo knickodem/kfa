@@ -13,7 +13,7 @@
 #' @export
 
 index_available <- function(models){
-  if(class(models) == "kfa"){
+  if(inherits(models, "kfa")){
     cfas <- models$cfas
   } else {
     stop("models must be of class 'kfa'.")
@@ -50,7 +50,7 @@ index_available <- function(models){
 
 k_model_fit <- function(models, index = "default", by.fold = TRUE){
 
-  if(class(models) == "kfa"){
+  if(inherits(models, "kfa")){
     cfas <- models$cfas
   } else {
     stop("models must be of class 'kfa'.")

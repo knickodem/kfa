@@ -39,9 +39,8 @@ The two primary functions are `kfa()` and `kfa_report()`. When the set of potent
 Then for each fold:
 
 * calculates sample statistics (e.g., correlation matrix, thresholds [if necessary]) from training sample.
-* runs 2:*m* factor exploratory factor analysis (EFA) models using the sample statistics, applies rotation (if specified), and
-extracts the factor structure for a confirmatory factor analysis (CFA). The structure for a 1-factor CFA is also defined.
-* runs the 1:*m* factor CFA models on the testing sample.
+* runs `2:m` factor exploratory factor analysis (EFA) models using the sample statistics, applies rotation (if specified), and extracts the factor structure for a confirmatory factor analysis (CFA). The structure for a 1-factor CFA is also defined.
+* runs the `1:m` factor CFA models on the testing sample.
 
 The factor analyses are run using the `lavaan` package with many of the `lavaan` estimation and missing data options available for use in `kfa()`. `kfa()` returns a list of lists with *k* outer elements for each fold and *m* inner elements for each replicable factor model, each containing a `lavaan` object. To expedite running *k* x *m* x 2 (EFA and CFA) models, the function utilizes the `parallel` and `foreach` packages for parallel processing.
 
@@ -65,9 +64,10 @@ sim.data <- simstandard::sim_standardized(sim.mod,
 custom2f <- paste0("f1 =~ ", paste(colnames(sim.data)[1:10], collapse = " + "),
                    "\nf2 =~ ",paste(colnames(sim.data)[11:20], collapse = " + "))
 
-mods <- kfa(variables = sim.data,
-            k = NULL, # prompts power analysis to determine number of folds
-            custom.cfas = custom2f)
+mods <- kfa(data = sim.data,
+            k = NULL,    # NULL prompts power analysis to determine number of folds
+            custom.cfas = custom2f  # can be a single object or named list
+            )
 
 ```
 
@@ -76,8 +76,9 @@ mods <- kfa(variables = sim.data,
 
 ```{r, eval = FALSE}
 # Run report
-kfa_report(mods, file.name = "example_sim_kfa_report",
-           report.title = "K-fold Factor Analysis - Example Sim"
+kfa_report(models = mods,
+           file.name = "example_sim_kfa_report",
+           report.title = "K-fold Factor Analysis - Example Sim",
            report.format = "html_document")
 ```
 

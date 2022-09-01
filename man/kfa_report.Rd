@@ -68,7 +68,7 @@ custom2f <- paste0("f1 =~ ", paste(colnames(sim.data)[1:10], collapse = " + "),
                    "\nf2 =~ ",paste(colnames(sim.data)[11:20], collapse = " + "))
 
 \donttest{
-mods <- kfa(variables = sim.data,
+mods <- kfa(data = sim.data,
             k = NULL, # prompts power analysis to determine number of folds
             cores = 2,
             custom.cfas = custom2f)

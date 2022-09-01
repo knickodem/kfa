@@ -38,11 +38,15 @@ Uses the factor loadings matrix, presumably from an exploratory factor analysis,
 }
 \examples{
 loadings <- matrix(c(rep(.2, 3), rep(.6, 3), rep(.8, 3), rep(.3, 3)), ncol = 2)
-efa_cfa_syntax(loadings) # simple structure
-efa_cfa_syntax(loadings, simple = FALSE, min.loading = .25) # allow cross-loadings and check if model is identified
-efa_cfa_syntax(loadings, simple = FALSE, min.loading = .25, identified = FALSE) # ignore identification check
+# simple structure
+efa_cfa_syntax(loadings)
+# allow cross-loadings and check if model is identified
+efa_cfa_syntax(loadings, simple = FALSE, min.loading = .25)
+# allow cross-loadings and ignore identification check
+efa_cfa_syntax(loadings, simple = FALSE, min.loading = .25, identified = FALSE)
 
 }
 \references{
-Millsap, R. E. (2001). When trivial constraints are not trivial: The choice of uniqueness constraints in confirmatory factor analysis. *Structural Equation Modeling, 8*(1), 1-17. \doi{10.1207/S15328007SEM0801_1}
+Millsap, R. E. (2001). When trivial constraints are not trivial: The choice of uniqueness
+constraints in confirmatory factor analysis. *Structural Equation Modeling, 8*(1), 1-17. \doi{10.1207/S15328007SEM0801_1}
 }

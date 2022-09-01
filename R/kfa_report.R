@@ -37,7 +37,7 @@
 #'                    "\nf2 =~ ",paste(colnames(sim.data)[11:20], collapse = " + "))
 #'
 #' \donttest{
-#' mods <- kfa(variables = sim.data,
+#' mods <- kfa(data = sim.data,
 #'             k = NULL, # prompts power analysis to determine number of folds
 #'             cores = 2,
 #'             custom.cfas = custom2f)
@@ -70,7 +70,7 @@ kfa_report <- function(models,
                        load.flag = .30, cor.flag = .90, rel.flag = .60,
                        digits = 2){
 
-  if(class(models) == "kfa"){
+  if(inherits(models, "kfa")){
     cfas <- models$cfas
   } else {
     stop("models must be of class 'kfa'.")
