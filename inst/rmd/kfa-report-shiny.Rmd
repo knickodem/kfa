@@ -18,7 +18,7 @@ params:
 title: "`r params$report.title`"
 ---
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 
 cfas <- params$models$cfas
   ## analysis summary info

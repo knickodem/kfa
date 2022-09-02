@@ -11,3 +11,4 @@ shiny/
 README Example Reports/
 ^CRAN-RELEASE$
 ^LICENSE
+^CRAN-SUBMISSION$

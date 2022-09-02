@@ -4,14 +4,15 @@ Title: K-Fold Cross Validation for Factor Analysis
 Version: 0.2.1
 Author: Kyle Nickodem [aut, cre] and Peter Halpin [aut]
 Maintainer: Kyle Nickodem <kyle.nickodem@gmail.com>
-Description: Provides functions to identify plausible and replicable factor structures
-  for a set of variables via k-fold cross validation. The process combines the exploratory
-  and confirmatory factor analytic approach to scale development
-  (Flora & Flake, 2017) <doi:10.1037/cbs0000069> with a cross validation technique that 
-	maximizes the available data (Hastie, Tibshirani, & Friedman, 2009) <isbn:978-0-387-21606-5>.
-	Also available are functions to determine k by drawing on power analytic techniques for
-	covariance structures (MacCallum, Browne, & Sugawara, 1996) <doi:10.1037/1082-989X.1.2.130>,
-	generate model syntax, and summarize results in a report.
+Description: Provides functions to identify plausible and replicable factor
+  structures for a set of variables via k-fold cross validation. The process
+  combines the exploratory and confirmatory factor analytic approach to scale
+  development (Flora & Flake, 2017) <doi:10.1037/cbs0000069> with a cross validation
+  technique that maximizes the available data (Hastie, Tibshirani, & Friedman, 2009)
+  <isbn:978-0-387-21606-5>. Also available are functions to determine k by drawing 
+  on power analytic techniques for covariance structures (MacCallum, Browne, &
+  Sugawara, 1996) <doi:10.1037/1082-989X.1.2.130>, generate model syntax, and
+  summarize results in a report.
 Depends:
     R (>= 3.6)
 Imports:
