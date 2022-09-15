@@ -236,6 +236,8 @@ kfa <- function(data,
         } else if(is.null(names(custom.cfas))){ # (if necessary) adding names to list
           names(custom.cfas) <- paste("custom", LETTERS[1:length(custom.cfas)])
         }
+        # replacing period with a space in custom names. Periods throw off creation of the appendix.
+        names(custom.cfas) <- gsub("\\.", " ", names(custom.cfas))
         # add custom models to set of models for each fold
         cfa.syntax <- lapply(mode.structure, function(x) c(x, custom.cfas))
       } else {

@@ -107,15 +107,24 @@ for(n in 1:m){
   cat("\n\n")
   cat(gsub("\\*", "\\\\*", gsub("\n", "\n\n", kstructures[kstructures$model == mnames[[n]],]$structure)))
   cat("\n\n")
-  ## find fold with lavaan object for the model
-  for(f in 1:k){
-  if(mnames[[n]] %in% names(models$cfas[[f]])) break  
+  ## find fold with admissible lavaan object for the model
+for(f in 1:k){
+  if(mnames[[n]] %in% names(models$cfas[[f]])){
+    if(lavaan::lavInspect(models$cfas[[f]][[mnames[[n]]]], "converged") &
+       suppressWarnings(lavaan::lavInspect(models$cfas[[f]][[mnames[[n]]]], "post.check"))){
+      break  
+    }
+  } else {f <- 0}
 }
-    suppressWarnings(do.call(semPlot::semPaths, args = c(list(object = models$cfas[[f]][[mnames[[n]]]],
-                                           color = list(lat = palette.colors(n = n + 1, palette = "Okabe-Ito",
-                                                        recycle = TRUE)[-1]),
-                                           title = FALSE),
-                                      plot.settings)))
+if(f != 0){
+  suppressWarnings(do.call(semPlot::semPaths, args = c(list(object = models$cfas[[f]][[mnames[[n]]]],
+                                                            color = list(lat = palette.colors(n = n + 1, palette = "Okabe-Ito",
+                                                                                              recycle = TRUE)[-1]),
+                                                            title = FALSE),
+                                                       plot.settings)))
+} else{
+  cat("*An admissible solution was not found for this model, so a plot could not be produced.*")
+}
   cat("\n\n")
   cat("**Standardized Loading Across Folds**")
   cat("\n\n")
