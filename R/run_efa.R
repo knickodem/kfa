@@ -3,8 +3,8 @@
 #' This function is intended for use on independent samples rather than integrated
 #' with k-fold cross-validation.
 #'
-#' @inheritParams kfa
 #' @inheritParams efa_cfa_syntax
+#' @inheritParams kfa
 #'
 #' @details
 #' When converting EFA results to CFA syntax (via \code{\link[kfa]{efa_cfa_syntax}}), the simple structure is

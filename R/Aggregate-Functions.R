@@ -47,7 +47,7 @@ agg_loadings <- function(models, flag = .30, digits = 2){
         lambdas[[f]] <- l.temp[l.temp$op == "=~",]
 
         # flag for model summary table
-        load.flag[[f]] <- sum(lambdas[[f]]$est.std < flag)
+        load.flag[[f]] <- sum(abs(lambdas[[f]]$est.std) < flag)
 
         ## gather residual variances
         t.temp <- lavaan::parameterestimates(cfas[[f]][[n]], se = FALSE)
@@ -82,7 +82,7 @@ agg_loadings <- function(models, flag = .30, digits = 2){
       primary.df <- data.frame(mean = tapply(primary$est.std, primary$rhs, mean),
                                range = paste(format(round(tapply(primary$est.std, primary$rhs, min), digits = digits), nsmall = digits), "-",
                                              format(round(tapply(primary$est.std, primary$rhs, max), digits = digits), nsmall = digits)),
-                               `loading flag` = tapply(primary$est.std, primary$rhs, function(x) sum(x < flag)),
+                               `loading flag` = tapply(primary$est.std, primary$rhs, function(x) sum(abs(x) < flag)),
                                `heywood flag` = tapply(thetas$est, thetas$rhs, function(x) sum(x < 0)),
                                check.names = FALSE)
       primary.df <- cbind(data.frame(variable = row.names(primary.df)), primary.df)
@@ -105,7 +105,7 @@ agg_loadings <- function(models, flag = .30, digits = 2){
       kl <- data.frame(mean = tapply(lambdas$est.std, lambdas$rhs, mean),
                        range = paste(format(round(tapply(lambdas$est.std, lambdas$rhs, min), digits = digits), nsmall = digits), "-",
                                      format(round(tapply(lambdas$est.std, lambdas$rhs, max), digits = digits), nsmall = digits)),
-                       `loading flag` = tapply(lambdas$est.std, lambdas$rhs, function(x) sum(x < flag)),
+                       `loading flag` = tapply(lambdas$est.std, lambdas$rhs, function(x) sum(abs(x) < flag)),
                        `heywood flag` = tapply(thetas$est, thetas$rhs, function(x) sum(x < 0)),
                        check.names = FALSE)
       # order dataframe by vnames

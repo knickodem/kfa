@@ -1,3 +1,8 @@
+# kfa 0.2.2
+
+*New features and adjustments:
+  * loading flag based on absolute value of loading
+
 # kfa 0.2.1
 
 *New features and adjustments:

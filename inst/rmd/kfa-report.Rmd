@@ -231,7 +231,7 @@ for(n in 1:length(strux)){
     cat("\n\n")
     cat("**In Folds:", paste(strux[[n]][[s]]$folds, collapse = ", "), "**")
     cat("\n\n")
-    if (strux[[n]][[s]]$structure == "") cat("Structure contained single item factor") else cat(gsub("\n", "\n\n", strux[[n]][[s]]$structure))
+    if (strux[[n]][[s]]$structure == "") cat("Structure contained a factor with < 2 items") else cat(gsub("\n", "\n\n", strux[[n]][[s]]$structure))
     cat("\n\n")
   }
 }

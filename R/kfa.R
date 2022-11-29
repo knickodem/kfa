@@ -19,6 +19,10 @@
 #' If \code{FALSE}, items can cross-load on multiple factors.
 #' @param min.loading numeric between 0 and 1 indicating the minimum (absolute) value of the loading for a variable on a factor
 #' when converting EFA results to CFA syntax. Must be specified when \code{simple = FALSE}.
+#' @param single.item character indicating how single-item factors should be treated.
+#' Use \code{"keep"} to keep them in the model when generating the CFA syntax or
+#' \code{"none"} (default) indicating the CFA syntax should not be generated for
+#' this model and \code{""} is returned.
 #' @param ordered logical; Should items be treated as ordinal and the
 #' polychoric correlations used in the factor analysis? When \code{FALSE} (default)
 #' the Pearson correlation matrix is used. A character vector of item names is
@@ -96,7 +100,8 @@ kfa <- function(data,
                 seed = 101, cores = NULL,
                 custom.cfas = NULL,
                 power.args = list(rmsea0 = .05, rmseaA = .08),
-                rotation = "oblimin", simple = TRUE, min.loading = NA,
+                rotation = "oblimin", simple = TRUE,
+                min.loading = NA, single.item = "none",
                 ordered = FALSE, estimator = NULL, missing = "listwise", ...){
 
   data <- as.data.frame(data)
@@ -186,6 +191,7 @@ kfa <- function(data,
               rotation = rotation,
               simple = simple,
               min.loading = min.loading,
+              single.item = single.item,
               ordered = ordered,
               estimator = estimator,
               missing = missing,

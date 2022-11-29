@@ -148,7 +148,7 @@ efa_cfa_syntax <- function(loadings, simple = TRUE, min.loading = NA,
   } else if(single.item == "none"){
 
     # check if they exist
-    if(all(nchar(cfa.syntax) - nchar(gsub("+", "", cfa.syntax,fixed = TRUE)) > 0) == TRUE){
+    if(all(nchar(cfa.syntax) - nchar(gsub("+", "", cfa.syntax, fixed = TRUE)) > 0) == TRUE){
 
       cfa.syntax <- paste(cfa.syntax, collapse = "\n")
 

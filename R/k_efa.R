@@ -13,7 +13,7 @@
 #' @noRd
 
 k_efa <- function(data, variables, m, rotation,
-                  simple, min.loading,
+                  simple, min.loading, single.item,
                   ordered, estimator, missing, ...){
 
   ## calculate and extract sample statistics
@@ -94,7 +94,7 @@ k_efa <- function(data, variables, m, rotation,
     efa_cfa_syntax(loadings = x,
                    simple = simple,
                    min.loading = min.loading,
-                   single.item = "none",
+                   single.item = single.item,
                    identified = TRUE,
                    constrain0 = TRUE)
   })
@@ -171,11 +171,12 @@ sample_stats <- function(data, variables = names(data), ordered, estimator, miss
   # NOTE: lavCor ignores most lavOptions (e.g., sampling.weights), so using
   # cfa directly and specifying an arbitrary model; lavCor and cfa are both wrappers around lavaan
   sampstats <- lavaan::cfa(model = paste0("f1 =~ ", paste(variables, collapse = " + ")), # faster than write_efa
-                              data = data,
-                              ordered = ordered,
-                              estimator = estimator,
-                              missing = missing,
-                              ...)
+                           data = data,
+                           ordered = ordered,
+                           estimator = estimator,
+                           missing = missing,
+                           meanstructure = FALSE,
+                           ...)
 
   sample.th <- lavaan::lavInspect(sampstats, "sampstat")$th
   attr(sample.th, "th.idx") <- lavaan::lavInspect(sampstats, "th.idx")
