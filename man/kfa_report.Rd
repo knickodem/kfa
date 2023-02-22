@@ -12,6 +12,7 @@ kfa_report(
   report.format = "html_document",
   word.template = NULL,
   index = "default",
+  plots = TRUE,
   load.flag = 0.3,
   cor.flag = 0.9,
   rel.flag = 0.6,
@@ -33,6 +34,8 @@ kfa_report(
 
 \item{index}{character; one or more fit indices to summarize in the report. Use \code{\link[kfa]{index_available}} to see choices.
 Chi-square value and degrees of freedom are always reported. Default is CFI and RMSEA (naive, scaled, or robust version depends on estimator used in \code{models}).}
+
+\item{plots}{logical; should plots of the factor models be included in the report?}
 
 \item{load.flag}{numeric; factor loadings of variables below this value will be flagged. Default is .30}
 

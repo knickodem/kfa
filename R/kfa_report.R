@@ -10,6 +10,7 @@
 #' @param word.template character; file path to word document to use as a formatting template when \code{report.format = "word_document"}.
 #' @param index character; one or more fit indices to summarize in the report. Use \code{\link[kfa]{index_available}} to see choices.
 #' Chi-square value and degrees of freedom are always reported. Default is CFI and RMSEA (naive, scaled, or robust version depends on estimator used in \code{models}).
+#' @param plots logical; should plots of the factor models be included in the report?
 #' @param load.flag numeric; factor loadings of variables below this value will be flagged. Default is .30
 #' @param cor.flag numeric; factor correlations above this value will be flagged. Default is .90
 #' @param rel.flag numeric; factor (scale) reliabilities below this value will be flagged. Default is .60.
@@ -67,6 +68,7 @@ kfa_report <- function(models,
                        report.format = "html_document",
                        word.template = NULL,
                        index = "default",
+                       plots = TRUE,
                        load.flag = .30, cor.flag = .90, rel.flag = .60,
                        digits = 2){
 

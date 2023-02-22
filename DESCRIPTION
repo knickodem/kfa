@@ -34,4 +34,4 @@ Encoding: UTF-8
 LazyData: true
 URL: https://github.com/knickodem/kfa
 BugReports: https://github.com/knickodem/kfa/issues
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.3

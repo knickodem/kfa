@@ -107,6 +107,7 @@ for(n in 1:m){
   cat("\n\n")
   cat(gsub("\\*", "\\\\*", gsub("\n", "\n\n", kstructures[kstructures$model == mnames[[n]],]$structure)))
   cat("\n\n")
+  if(plots == TRUE){
   ## find fold with admissible lavaan object for the model
 for(f in 1:k){
   if(mnames[[n]] %in% names(models$cfas[[f]])){
@@ -125,6 +126,7 @@ if(f != 0){
 } else{
   cat("*An admissible solution was not found for this model, so a plot could not be produced.*")
 }
+  }
   cat("\n\n")
   cat("**Standardized Loading Across Folds**")
   cat("\n\n")
