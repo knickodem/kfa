@@ -4,7 +4,6 @@
   * loading flag based on absolute value of loading
   * The degrees of freedom calculation in `find_k` is now based on a CFA model rather than EFA
   * Can toggle plots off when generating report - temporarily changed default to off to limit strong dependency with archived package
-  * Default EFA rotation switched from oblimin to geomin
 
 # kfa 0.2.1
 

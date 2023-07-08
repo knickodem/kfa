@@ -1,4 +1,4 @@
-# kfa 0.2.1
+# kfa 0.2.2
 
 ## Test environments
 

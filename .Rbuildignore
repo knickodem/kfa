@@ -12,3 +12,4 @@ README Example Reports/
 ^CRAN-RELEASE$
 ^LICENSE
 ^CRAN-SUBMISSION$
+^revdep$

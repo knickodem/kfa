@@ -1,7 +1,7 @@
 Package: kfa
 Type: Package
 Title: K-Fold Cross Validation for Factor Analysis
-Version: 0.2.1
+Version: 0.2.2
 Author: Kyle Nickodem [aut, cre] and Peter Halpin [aut]
 Maintainer: Kyle Nickodem <kyle.nickodem@gmail.com>
 Description: Provides functions to identify plausible and replicable factor

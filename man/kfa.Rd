@@ -13,7 +13,7 @@ kfa(
   cores = NULL,
   custom.cfas = NULL,
   power.args = list(rmsea0 = 0.05, rmseaA = 0.08),
-  rotation = "geomin",
+  rotation = "oblimin",
   simple = TRUE,
   min.loading = NA,
   single.item = "none",

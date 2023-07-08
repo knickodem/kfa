@@ -100,7 +100,7 @@ kfa <- function(data,
                 seed = 101, cores = NULL,
                 custom.cfas = NULL,
                 power.args = list(rmsea0 = .05, rmseaA = .08),
-                rotation = "geomin", simple = TRUE,
+                rotation = "oblimin", simple = TRUE,
                 min.loading = NA, single.item = "none",
                 ordered = FALSE, estimator = NULL, missing = "listwise", ...){
 

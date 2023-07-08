@@ -57,7 +57,6 @@
 #' @importFrom knitr knit
 #' @importFrom knitr knit_print
 #' @importFrom officer fp_border
-#' @importFrom semPlot semPaths
 #' @importFrom simstandard sim_standardized
 #'
 #' @export
