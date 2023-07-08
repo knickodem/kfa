@@ -26,9 +26,10 @@ Imports:
   officer,
   parallel,
   rmarkdown,
-  semPlot,
   semTools (>= 0.5.5),
   simstandard
+Suggests:
+  semPlot
 License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true

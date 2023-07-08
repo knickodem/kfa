@@ -68,7 +68,7 @@ kfa_report <- function(models,
                        report.format = "html_document",
                        word.template = NULL,
                        index = "default",
-                       plots = TRUE,
+                       plots = FALSE,
                        load.flag = .30, cor.flag = .90, rel.flag = .60,
                        digits = 2){
 

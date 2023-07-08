@@ -16,7 +16,7 @@ efa_cfa_syntax(
 \arguments{
 \item{loadings}{matrix of factor loadings}
 
-\item{simple}{logical; Should the simple structure be returned (default) when converting EFA results to CFA syntax?
+\item{simple}{logical; Should the perfect simple structure be returned (default) when converting EFA results to CFA syntax?
 If \code{FALSE}, items can cross-load on multiple factors.}
 
 \item{min.loading}{numeric between 0 and 1 indicating the minimum (absolute) value of the loading for a variable on a factor

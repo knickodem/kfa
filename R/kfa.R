@@ -15,7 +15,7 @@
 #' @param power.args named \code{list} of arguments to pass to \code{\link[kfa]{find_k}} and \code{\link[semTools]{findRMSEAsamplesize}} when conducting power analysis to determine \code{k}.
 #' @param rotation character (case-sensitive); any rotation method listed in
 #' \code{\link[GPArotation]{rotations}} in the \code{GPArotation} package. Default is "oblimin".
-#' @param simple logical; Should the simple structure be returned (default) when converting EFA results to CFA syntax?
+#' @param simple logical; Should the perfect simple structure be returned (default) when converting EFA results to CFA syntax?
 #' If \code{FALSE}, items can cross-load on multiple factors.
 #' @param min.loading numeric between 0 and 1 indicating the minimum (absolute) value of the loading for a variable on a factor
 #' when converting EFA results to CFA syntax. Must be specified when \code{simple = FALSE}.
@@ -100,7 +100,7 @@ kfa <- function(data,
                 seed = 101, cores = NULL,
                 custom.cfas = NULL,
                 power.args = list(rmsea0 = .05, rmseaA = .08),
-                rotation = "oblimin", simple = TRUE,
+                rotation = "geomin", simple = TRUE,
                 min.loading = NA, single.item = "none",
                 ordered = FALSE, estimator = NULL, missing = "listwise", ...){
 

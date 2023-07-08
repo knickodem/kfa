@@ -12,7 +12,7 @@ kfa_report(
   report.format = "html_document",
   word.template = NULL,
   index = "default",
-  plots = TRUE,
+  plots = FALSE,
   load.flag = 0.3,
   cor.flag = 0.9,
   rel.flag = 0.6,

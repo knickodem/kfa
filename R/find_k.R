@@ -44,7 +44,7 @@ find_k <- function(variables, n, p, m = NULL, max.k = 10, min.n = 200,
     m <- floor(p / 4)
   }
 
-  df <- p*(p+1)/2 - (p*m)+(m*(m+1))/2 # for EFA + p - m^2
+  df <- p*(p+1)/2 - (2*p + (m*(m-1))/2)  # information from cov - (loadings & residuals + factor covs [w/ factor vars = 1])
   power.n <- semTools::findRMSEAsamplesize(rmsea0 = rmsea0, rmseaA = rmseaA, df = df, ...)
   # returns sample size
   # defaults are power = .8, alpha = .05, and group = 1 unless changed via ...

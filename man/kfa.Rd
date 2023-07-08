@@ -13,7 +13,7 @@ kfa(
   cores = NULL,
   custom.cfas = NULL,
   power.args = list(rmsea0 = 0.05, rmseaA = 0.08),
-  rotation = "oblimin",
+  rotation = "geomin",
   simple = TRUE,
   min.loading = NA,
   single.item = "none",
@@ -43,7 +43,7 @@ kfa(
 \item{rotation}{character (case-sensitive); any rotation method listed in
 \code{\link[GPArotation]{rotations}} in the \code{GPArotation} package. Default is "oblimin".}
 
-\item{simple}{logical; Should the simple structure be returned (default) when converting EFA results to CFA syntax?
+\item{simple}{logical; Should the perfect simple structure be returned (default) when converting EFA results to CFA syntax?
 If \code{FALSE}, items can cross-load on multiple factors.}
 
 \item{min.loading}{numeric between 0 and 1 indicating the minimum (absolute) value of the loading for a variable on a factor
