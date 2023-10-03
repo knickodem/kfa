@@ -9,8 +9,9 @@ find_k(
   n,
   p,
   m = NULL,
+  est.pars = NULL,
   max.k = 10,
-  min.n = 200,
+  min.nk = 200,
   rmsea0 = 0.05,
   rmseaA = 0.08,
   ...
@@ -26,9 +27,11 @@ The power analysis assumes all observations have complete data. Use \code{n} arg
 
 \item{m}{integer; maximum number of factors expected to be extracted from \code{variables}. Default is \code{p} / 4 (i.e., 4 variables per factor).}
 
+\item{est.pars}{integer; number estimated model parameters. Default is 2\code{p}  + \code{m}(\code{m} - 1)/2, which reflects a standardized model with simple structure (e.g., no cross-loadings, higher order factors) or constraints (e.g., tau-equivalence)}
+
 \item{max.k}{integer; maximum number of folds. Default is 10. \code{NULL} indicates no maximum.}
 
-\item{min.n}{integer; minimum sample size per fold. Default is 200 based on simulations from Curran et al. (2003).}
+\item{min.nk}{integer; minimum sample size per fold. Default is 200 based on simulations from Curran et al. (2003).}
 
 \item{rmsea0}{numeric; RMSEA under the null hypothesis.}
 
@@ -37,17 +40,21 @@ The power analysis assumes all observations have complete data. Use \code{n} arg
 \item{...}{other arguments passed to \code{\link[semTools]{findRMSEAsamplesize}}.}
 }
 \value{
-named vector with the number of folds (k), sample size suggested by the power analysis (power.n), and the actual sample size used for determining k (actual.n).
+named vector with the number of folds (k), sample size suggested for each fold by the power analysis (power.nk),
+the degrees of freedom used for power analysis, and the sample size for each fold used for determining k (nk)--the higher of \code{power.nk} and \code{min.nk}.
 }
 \description{
 This function is specifically for determining \emph{k} in the context of factor analysis using
 change in RMSEA as the criterion for identifying the optimal factor model.
 }
 \examples{
-find_k(n = 900, p = 20, m = 3)
+find_k(n = 900, p = 11, m = 3)
 
 # adjust precision
-find_k(n = 900, p = 20, m = 3, rmsea0 = .03, rmseaA = .10)
+find_k(n = 900, p = 11, m = 3, rmsea0 = .03, rmseaA = .10)
+
+# adjust number of estimated parameters (e.g., constrain all factor loadings to be equal)
+find_k(n = 900, p = 11, m = 3, est.pars = 15)
 
 }
 \references{
