@@ -33,6 +33,6 @@ Suggests:
 License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
-URL: https://github.com/knickodem/kfa
+URL: https://github.com/knickodem/kfa, https://knickodem.github.io/kfa/
 BugReports: https://github.com/knickodem/kfa/issues
 RoxygenNote: 7.2.3

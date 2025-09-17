@@ -13,3 +13,7 @@ README Example Reports/
 ^LICENSE
 ^CRAN-SUBMISSION$
 ^revdep$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^\.github$
